@@ -81,6 +81,10 @@ jobs:
         buildah run ${CONTAINER} sh -c 'cargo cache --top-cache-items 5' 
         buildah run ${CONTAINER} sh -c 'cargo cache  --autoclean' 
         buildah run ${CONTAINER} sh -c 'ls -al $HOME'
+        buildah run ${CONTAINER} sh -c 'cat $HOME/.profile'
+        buildah run ${CONTAINER} sh -c 'tree $HOME/.local'
+        buildah run ${CONTAINER} sh -c 'tree $HOME/.ssh'
+
         #cargo install (--git git://github.com/matthiaskrgr/cargo-cache OR cargo-cache) --no-default-features --features ci-autoclean cargo-cache
         # #cargo-cache # no further arguments required
         # echo 'WASMTIME'
