@@ -21,44 +21,44 @@ jobs:
     - name: Build
       run: |
         CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
-        buildah run ${CONTAINER} sh -c 'printenv && ls $HOME'
-        # 
-        # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
-        # echo "GOLANG version ${GO_VER}" #  --http1.1
-        # buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-        # buildah run ${CONTAINER} sh -c "wget -q -O go.tgz https://go.dev/dl/${GO_VER}.linux-amd64.tar.gz && tar -C /usr/local -xzf go.tgz"
-        # buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/go && ln -s /usr/local/go/bin/* /usr/local/bin/'
-        # buildah run ${CONTAINER} sh -c 'which go'
-        # buildah run ${CONTAINER} sh -c 'mkdir -p $(go env GOPATH) $(go env GOCACHE)'
-        # echo 'GH-CLI' # the github cli 
-        # buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-        # buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
-        # buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
-        # buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-        # buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
-        # echo 'COSIGN'
-        # buildah run ${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
-        # buildah run ${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
-        # buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/cosign /usr/local/bin/'
-        # buildah run ${CONTAINER} sh -c 'which cosign && cosign'
-        # buildah run ${CONTAINER} sh -c 'rm -fR cosign' || true
-        # echo 'LAZYGIT' 
-        # buildah run ${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
-        # buildah run ${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
-        # buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
-        # buildah run ${CONTAINER} sh -c 'which lazygit'
-        # buildah run ${CONTAINER} sh -c 'rm -fR lazygit' || true
-        # echo 'CHEZMOI'
-        # buildah run ${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
-        # buildah run ${CONTAINER} sh -c 'cd chezmoi && PREFIX=/usr/local; make install-from-git-working-copy' &>/dev/null
-        # buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
-        # buildah run ${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-        # buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
-        # echo '--------------------------'
-        # buildah run ${CONTAINER} sh -c 'go clean -x -cache' || true
+        buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
+        GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
+        echo "GOLANG version ${GO_VER}" #  --http1.1
+        buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+        buildah run ${CONTAINER} sh -c "wget -q -O go.tgz https://go.dev/dl/${GO_VER}.linux-amd64.tar.gz && tar -C /usr/local -xzf go.tgz"
+        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/go && ln -s /usr/local/go/bin/* /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which go'
+        buildah run ${CONTAINER} sh -c 'mkdir -p $(go env GOPATH) $(go env GOCACHE)'
+        echo 'GH-CLI' # the github cli 
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+        buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+        buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
+        echo 'COSIGN'
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
+        buildah run ${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
+        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/cosign /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which cosign && cosign'
+        buildah run ${CONTAINER} sh -c 'rm -fR cosign' || true
+        echo 'LAZYGIT' 
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
+        buildah run ${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
+        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which lazygit'
+        buildah run ${CONTAINER} sh -c 'rm -fR lazygit' || true
+        echo 'CHEZMOI'
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
+        buildah run ${CONTAINER} sh -c 'cd chezmoi && PREFIX=/usr/local; make install-from-git-working-copy' &>/dev/null
+        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+        buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
+        echo '--------------------------'
+        buildah run ${CONTAINER} sh -c 'go clean -x -cache' || true
         # buildah run ${CONTAINER} sh -c 'du -hs $(go env GOCACHE)'
-        # buildah run ${CONTAINER} sh -c 'tree $(go env GOPATH)'
-        # # buildah run ${CONTAINER} sh -c 'rm -R $(go env GOCACHE)' || true
+        buildah run ${CONTAINER} sh -c 'tree $(go env GOPATH)'
+        buildah run ${CONTAINER} sh -c 'ls -al $HOME'
+        # buildah run ${CONTAINER} sh -c 'rm -R $(go env GOCACHE)' || true
         # echo '--------------------------'
         # echo 'RUSTUP'
         # buildah config --env RUSTUP_HOME=/usr/local/rustup --env CARGO_HOME=/usr/local/cargo ${CONTAINER}
