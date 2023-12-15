@@ -21,7 +21,7 @@ jobs:
     - name: Build
       run: |
         CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
-        buildah run ${CONTAINER} sh -c 'printenv'
+        buildah run ${CONTAINER} sh -c 'printenv && ls $HOME'
         # 
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
