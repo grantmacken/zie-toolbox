@@ -4,6 +4,9 @@ A dev toolbx  for an immutable OS
 based on fedora-minimal
 
 
+
+
+
 ```
 podman pull ghcr.io/grantmacken/zie:latest
 toolbox create --image ghcr.io/grantmacken/zie
@@ -15,3 +18,10 @@ toolbox run -c zie nvim
 # to debug
 podman start --attach zie
 ```
+
+Buildah is used to kit out to this toolbox:
+
+ - text editor: Neovim latest version from repo
+ - languages: rust, golang
+   
+
