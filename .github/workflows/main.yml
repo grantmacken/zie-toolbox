@@ -12,9 +12,8 @@ env:
   NAME: 'zie'
   VERSION: '1.0.4'
 jobs:
-  tbx:
+  zie:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
@@ -26,15 +25,15 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
           registry: ${{ env.REGISTRY }}
-    - name: Build
-      run: |
-        CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
-        echo   'LSP - lua'
-        LLS_VER="$(curl -sL https://github.com/LuaLS/lua-language-server/releases/latest | grep -m 1 -oP '(\d+\.){2}\d+')
-        buildah run ${CONTAINER} sh -c "wget -q -O lua-language-server.tgz \
-                                        https://github.com/LuaLS/lua-language-server/releases/download/${LLS_VER)/lua-language-server-${LLS_VER)-linux-x64.tar.gz \
-                                        && tar -C /usr/local -xzf lua-language-server.tgz"
-        buildah run ${CONTAINER} sh -c 'ls /usr/local'
+      - name: Build
+        run: |
+          CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
+          echo   'LSP - lua'
+          LLS_VER="$(curl -sL https://github.com/LuaLS/lua-language-server/releases/latest | grep -m 1 -oP '(\d+\.){2}\d+')
+          buildah run ${CONTAINER} sh -c "wget -q -O lua-language-server.tgz \
+                                          https://github.com/LuaLS/lua-language-server/releases/download/${LLS_VER)/lua-language-server-${LLS_VER)-linux-x64.tar.gz \
+                                          && tar -C /usr/local -xzf lua-language-server.tgz"
+          buildah run ${CONTAINER} sh -c 'ls /usr/local'
       #
       #   buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
       #   GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
