@@ -29,85 +29,92 @@ jobs:
     - name: Build
       run: |
         CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
-        buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
-        GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
-        echo "GOLANG version ${GO_VER}" #  --http1.1
-        buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-        buildah run ${CONTAINER} sh -c "wget -q -O go.tgz https://go.dev/dl/${GO_VER}.linux-amd64.tar.gz && tar -C /usr/local -xzf go.tgz"
-        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/go && ln -s /usr/local/go/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which go'
-        buildah run ${CONTAINER} sh -c 'mkdir -p $(go env GOPATH) $(go env GOCACHE)'
-        echo 'GH-CLI' # the github cli 
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-        buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-        buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
-        echo 'COSIGN'
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
-        buildah run ${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/cosign /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which cosign && cosign'
-        buildah run ${CONTAINER} sh -c 'rm -fR cosign' || true
-        echo 'LAZYGIT' 
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
-        buildah run ${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which lazygit'
-        buildah run ${CONTAINER} sh -c 'rm -fR lazygit' || true
-        echo 'CHEZMOI'
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
-        buildah run ${CONTAINER} sh -c 'cd chezmoi && PREFIX=/usr/local; make install-from-git-working-copy' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-        buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
-        echo '--------------------------'
-        buildah run ${CONTAINER} sh -c 'go clean -cache' || true
-        echo 'RUSTUP'
-        buildah config --env RUSTUP_HOME=/usr/local/rustup --env CARGO_HOME=/usr/local/cargo ${CONTAINER}
-        buildah run ${CONTAINER} sh -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
-        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/rustup /usr/local/cargo && ln -s /usr/local/cargo/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which rustup && rustup --version' 
-        buildah run ${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
-        buildah run ${CONTAINER} sh -c 'which rust-analyzer' # LSP
-        echo 'RUSTUP wasi targets'
-        buildah run ${CONTAINER} sh -c 'rustup target add wasm32-wasi'  &>/dev/null
-        buildah run ${CONTAINER} sh -c 'rustup target add wasm32-unknown-unknown'  &>/dev/null # to compile our example Wasm/WASI files for testing
-        buildah run ${CONTAINER} sh -c 'rustup show' 
-        echo 'CARGO wasi'
-        buildah run ${CONTAINER} sh -c 'which cargo && cargo --version && cargo --help'
-        buildah run ${CONTAINER} sh -c 'cargo install cargo-wasi cargo-cache' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'cargo wasi --version'
-        buildah run ${CONTAINER} sh -c 'cargo cache --version'
-      echo 'CARGO BIN INSTALL: cli utilites'
-        buildah run ${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
-        buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks fd-find just ripgrep stylua tree-sitter-cli wasm-pack' 
-        buildah run ${CONTAINER} sh -c 'cargo uninstall cargo-binstall' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'ln -sf ${CARGO_HOME}/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which rg && which just && which stylua'
-        # # https://docs.rs/crate/cargo-cache/latest
-        buildah run ${CONTAINER} sh -c 'cargo cache --top-cache-items 5' 
-        buildah run ${CONTAINER} sh -c 'cargo cache  --autoclean' 
-        # cargo install (--git git://github.com/matthiaskrgr/cargo-cache OR cargo-cache) --no-default-features --features ci-autoclean cargo-cache
-        #cargo-cache # no further arguments required
-        echo 'WASMTIME'
-        buildah config --env WASMTIME_HOME=/usr/local/wasmtime ${CONTAINER} 
-        buildah run ${CONTAINER} sh -c 'curl https://wasmtime.dev/install.sh -sSf | bash' &>/dev/null || true
-        buildah run ${CONTAINER} sh -c 'ln -sf /usr/local/wasmtime/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which wasmtime && wasmtime --help'
-        echo 'SPIN'
-        buildah run ${CONTAINER} sh -c 'mkdir -p /usr/local/spin '
-        buildah run ${CONTAINER} sh -c 'cd /usr/local/spin && curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'cd /usr/local/spin && ls -al .'
-        buildah run ${CONTAINER} sh -c 'ln -s /usr/local/spin/spin /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which spin && spin --version && spin --help'
-        echo 'CLEAN'
-        buildah run ${CONTAINER} sh -c 'rm -f  ${HOME}/.gitconfig ${HOME}/.profile'
-        buildah run ${CONTAINER} sh -c 'rm -Rf $(go env GOPATH) ${HOME}/.cache ${HOME}/.local'
-        buildah run ${CONTAINER} sh -c 'ls -al $HOME'
-        buildah run ${CONTAINER} sh -c 'ls -al ${CARGO_HOME}'
-        echo
-        buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} 
-        buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.NAME }}:latest
-        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
-        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
+        echo   'LSP - lua'
+        LLS_VER="$(curl -sL https://github.com/LuaLS/lua-language-server/releases/latest | grep -m 1 -oP '(\d+\.){2}\d+')
+        buildah run ${CONTAINER} sh -c "wget -q -O lua-language-server.tgz 
+        https://github.com/LuaLS/lua-language-server/releases/download/${LLS_VER)/lua-language-server-${LLS_VER)-linux-x64.tar.gz
+        && tar -C /usr/local -xzf lua-language-server.tgz"
+        buildah run ${CONTAINER} sh -c 'ls /usr/local'
+      #
+      #   buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
+      #   GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
+      #   echo "GOLANG version ${GO_VER}" #  --http1.1
+      #   buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+      #   buildah run ${CONTAINER} sh -c "wget -q -O go.tgz https://go.dev/dl/${GO_VER}.linux-amd64.tar.gz && tar -C /usr/local -xzf go.tgz"
+      #   buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/go && ln -s /usr/local/go/bin/* /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which go'
+      #   buildah run ${CONTAINER} sh -c 'mkdir -p $(go env GOPATH) $(go env GOCACHE)'
+      #   echo 'GH-CLI' # the github cli 
+      #   buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+      #   buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+      #   buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
+      #   echo 'COSIGN'
+      #   buildah run ${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
+      #   buildah run ${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/cosign /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which cosign && cosign'
+      #   buildah run ${CONTAINER} sh -c 'rm -fR cosign' || true
+      #   echo 'LAZYGIT' 
+      #   buildah run ${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
+      #   buildah run ${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which lazygit'
+      #   buildah run ${CONTAINER} sh -c 'rm -fR lazygit' || true
+      #   echo 'CHEZMOI'
+      #   buildah run ${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
+      #   buildah run ${CONTAINER} sh -c 'cd chezmoi && PREFIX=/usr/local; make install-from-git-working-copy' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+      #   buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
+      #   echo '--------------------------'
+      #   buildah run ${CONTAINER} sh -c 'go clean -cache' || true
+      #   echo 'RUSTUP'
+      #   buildah config --env RUSTUP_HOME=/usr/local/rustup --env CARGO_HOME=/usr/local/cargo ${CONTAINER}
+      #   buildah run ${CONTAINER} sh -c 'curl https://sh.rustup.rs -sSf | sh -s -- -y'
+      #   buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/rustup /usr/local/cargo && ln -s /usr/local/cargo/bin/* /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which rustup && rustup --version' 
+      #   buildah run ${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
+      #   buildah run ${CONTAINER} sh -c 'which rust-analyzer' # LSP
+      #   echo 'RUSTUP wasi targets'
+      #   buildah run ${CONTAINER} sh -c 'rustup target add wasm32-wasi'  &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'rustup target add wasm32-unknown-unknown'  &>/dev/null # to compile our example Wasm/WASI files for testing
+      #   buildah run ${CONTAINER} sh -c 'rustup show' 
+      #   echo 'CARGO wasi'
+      #   buildah run ${CONTAINER} sh -c 'which cargo && cargo --version && cargo --help'
+      #   buildah run ${CONTAINER} sh -c 'cargo install cargo-wasi cargo-cache' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'cargo wasi --version'
+      #   buildah run ${CONTAINER} sh -c 'cargo cache --version'
+      #   echo 'CARGO BIN INSTALL: cli utilites'
+      #   buildah run ${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks fd-find just ripgrep stylua tree-sitter-cli wasm-pack' 
+      #   buildah run ${CONTAINER} sh -c 'cargo uninstall cargo-binstall' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'ln -sf ${CARGO_HOME}/bin/* /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which rg && which just && which stylua'
+      #   # # https://docs.rs/crate/cargo-cache/latest
+      #   buildah run ${CONTAINER} sh -c 'cargo cache --top-cache-items 5' 
+      #   buildah run ${CONTAINER} sh -c 'cargo cache  --autoclean' 
+      #   # cargo install (--git git://github.com/matthiaskrgr/cargo-cache OR cargo-cache) --no-default-features --features ci-autoclean cargo-cache
+      #   #cargo-cache # no further arguments required
+      #   echo 'WASMTIME'
+      #   buildah config --env WASMTIME_HOME=/usr/local/wasmtime ${CONTAINER} 
+      #   buildah run ${CONTAINER} sh -c 'curl https://wasmtime.dev/install.sh -sSf | bash' &>/dev/null || true
+      #   buildah run ${CONTAINER} sh -c 'ln -sf /usr/local/wasmtime/bin/* /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which wasmtime && wasmtime --help'
+      #   echo   'SPIN'
+      #   buildah run ${CONTAINER} sh -c 'mkdir -p /usr/local/spin '
+      #   buildah run ${CONTAINER} sh -c 'cd /usr/local/spin && curl -fsSL https://developer.fermyon.com/downloads/install.sh | bash' &>/dev/null
+      #   buildah run ${CONTAINER} sh -c 'cd /usr/local/spin && ls -al .'
+      #   buildah run ${CONTAINER} sh -c 'ln -s /usr/local/spin/spin /usr/local/bin/'
+      #   buildah run ${CONTAINER} sh -c 'which spin && spin --version && spin --help'
+        # echo 'CLEAN'
+        # buildah run ${CONTAINER} sh -c 'rm -f  ${HOME}/.gitconfig ${HOME}/.profile'
+        # buildah run ${CONTAINER} sh -c 'rm -Rf $(go env GOPATH) ${HOME}/.cache ${HOME}/.local'
+        # buildah run ${CONTAINER} sh -c 'ls -al $HOME'
+        # buildah run ${CONTAINER} sh -c 'ls -al ${CARGO_HOME}'
+        # echo
+        # buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} 
+        # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.NAME }}:latest
+        # buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
+        # buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
