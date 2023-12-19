@@ -20,12 +20,12 @@ jobs:
       packages: write
       id-token: write
     steps:
-    - name: Log in to ghcr.io
-      uses: redhat-actions/podman-login@v1
-      with:
-        username: ${{ github.repository_owner }}
-      password: ${{ github.token }}
-      registry: ${{ env.REGISTRY }}
+      - name: Log in to ghcr.io
+        uses: redhat-actions/podman-login@v1
+        with:
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+          registry: ${{ env.REGISTRY }}
     - name: Build
       run: |
         CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
