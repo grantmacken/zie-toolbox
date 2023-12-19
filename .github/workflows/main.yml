@@ -1,9 +1,16 @@
 name: CI
-on: push
+on: 
+  schedule:
+    - cron: '0 0 * * TUE'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
   NAME: 'zie'
-  VERSION: '1.0.3'
+  VERSION: '1.0.4'
 jobs:
   tbx:
     runs-on: ubuntu-latest
@@ -11,13 +18,14 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
     - name: Log in to ghcr.io
       uses: redhat-actions/podman-login@v1
       with:
         username: ${{ github.repository_owner }}
-        password: ${{ github.token }}
-        registry: ${{ env.REGISTRY }}
+      password: ${{ github.token }}
+      registry: ${{ env.REGISTRY }}
     - name: Build
       run: |
         CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
@@ -71,9 +79,9 @@ jobs:
         buildah run ${CONTAINER} sh -c 'cargo install cargo-wasi cargo-cache' &>/dev/null
         buildah run ${CONTAINER} sh -c 'cargo wasi --version'
         buildah run ${CONTAINER} sh -c 'cargo cache --version'
-        echo 'CARGO BIN INSTALL: cli utilites'
+      echo 'CARGO BIN INSTALL: cli utilites'
         buildah run ${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
-        buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks just ripgrep stylua tree-sitter-cli wasm-pack' 
+        buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks fd-find just ripgrep stylua tree-sitter-cli wasm-pack' 
         buildah run ${CONTAINER} sh -c 'cargo uninstall cargo-binstall' &>/dev/null
         buildah run ${CONTAINER} sh -c 'ln -sf ${CARGO_HOME}/bin/* /usr/local/bin/'
         buildah run ${CONTAINER} sh -c 'which rg && which just && which stylua'
