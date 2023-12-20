@@ -33,6 +33,7 @@ jobs:
           buildah run ${CONTAINER} sh -c "wget -q -O lua-language-server.tgz https://github.com/LuaLS/lua-language-server/releases/download/${LLS_VER}/lua-language-server-${LLS_VER}-linux-x64.tar.gz"
           buildah run ${CONTAINER} sh -c 'mkdir /usr/local/lua-language-server && tar -C /usr/local/lua-language-server -xzf lua-language-server.tgz'
           buildah run ${CONTAINER} sh -c 'ls /usr/local/lua-language-server'
+          buildah run ${CONTAINER} sh -c 'ls /usr/local/lua-language-server/bin'
       #
       #   buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
       #   GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
