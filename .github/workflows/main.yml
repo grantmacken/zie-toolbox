@@ -2,11 +2,11 @@ name: CI
 on: 
   schedule:
     - cron: '0 0 * * TUE'
-  # push:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - '**/README.md'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
   NAME: 'zie-toolbox'
@@ -117,7 +117,8 @@ jobs:
         buildah run ${CONTAINER} sh -c 'ls -al $HOME'
         buildah run ${CONTAINER} sh -c 'ls -al ${CARGO_HOME}'
         echo 'COMMIT PUSH'
-        buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} 
-        buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.NAME }}:latest
-        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
-        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
+        buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}
+        # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.NAME }}:latest
+        # buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
+        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}::latest
+
