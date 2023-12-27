@@ -39,7 +39,7 @@ jobs:
         buildah run ${CONTAINER} sh -c 'printenv' || true
         buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim && cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install' &>/dev/null
         buildah run ${CONTAINER} sh -c 'which nvim && nvim --version'
-        buildah run ${CONTAINER} sh -c 'cd ../ && rm neovim'
+        buildah run ${CONTAINER} sh -c 'cd ../ && rm -R neovim'
         buildah commit ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}
         # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
         buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest

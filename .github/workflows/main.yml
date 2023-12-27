@@ -2,14 +2,14 @@ name: CI
 on: 
   schedule:
     - cron: '0 0 * * TUE'
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - '**/README.md'
+  # push:
+  #   branches:
+  #     - main
+  #   paths-ignore:
+  #     - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
-  NAME: 'zie'
+  NAME: 'zie-toolbox'
   VERSION: '1.0.5'
 jobs:
   zie:
@@ -27,7 +27,7 @@ jobs:
         registry: ${{ env.REGISTRY }}
     - name: Build
       run: |
-        CONTAINER=$(buildah from ghcr.io/grantmacken/tbx-base:latest)
+        CONTAINER=$(buildah from ghcr.io/grantmacken/zie-base-toolbox:latest)
         buildah run ${CONTAINER} sh -c 'printenv && ls -al $HOME'
         GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         echo "GOLANG version ${GO_VER}" #  --http1.1
