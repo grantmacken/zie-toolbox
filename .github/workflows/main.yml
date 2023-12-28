@@ -120,5 +120,5 @@ jobs:
         buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}
         # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }} ${{ env.REGISTRY }}/${{ env.NAME }}:latest
         # buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
-        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}::latest
+        buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
 
