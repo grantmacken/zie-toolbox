@@ -45,11 +45,12 @@ jobs:
           ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree \
           tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
         # Change root shell to BASH
-        buildah run ${CONTAINER} sh -c "sed -i -e '/^root/s/\/bin\/ash/\/bin\/bash'. /etc/passwd"
+        buildah run ${CONTAINER} sh -c "sed -i -e '/^root/s/\/bin\/ash/\/bin\/bash/' /etc/passwd"
         buildah run ${CONTAINER} sh -c 'mkdir -p /home'
         buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
         buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
         buildah push ${REGISTRY}/tbx-wolfi-core:latest
+        # podman start --attach 
         #
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
