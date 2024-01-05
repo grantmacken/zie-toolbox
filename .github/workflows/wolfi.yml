@@ -37,6 +37,7 @@ jobs:
           --label usage='This image is meant to be used with the toolbox command' \
           --label summary='a wolfi toolbox' \
           --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
+        buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
         # buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
