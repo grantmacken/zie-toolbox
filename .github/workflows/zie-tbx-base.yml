@@ -1,12 +1,12 @@
 name: CI
-on: 
-  schedule:
-    - cron: '0 0 * * MON'
-  # push:
-  #   branches:
-  #     - main
-  #   paths-ignore:
-  #     - '**/README.md'
+# on: 
+#   schedule:
+#     - cron: '0 0 * * MON'
+  push:
+    branches:
+      - xmain
+    paths-ignore:
+      - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
   NAME: 'zie-base-toolbox'
