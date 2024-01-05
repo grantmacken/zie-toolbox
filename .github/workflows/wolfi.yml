@@ -1,4 +1,4 @@
-name: CI
+name: wolfi toolbox
 on: 
   schedule:
     - cron: '0 0 * * WED'
