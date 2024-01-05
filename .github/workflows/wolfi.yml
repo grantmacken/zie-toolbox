@@ -43,7 +43,7 @@ jobs:
         buildah run ${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
         # Change root shell to BASH
         buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        buildah run ${CONTAINER} ls -al ~/
+        buildah run ${CONTAINER} sh -c 'ls -al ~/'
         # buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
         # # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
         # buildah push ${REGISTRY}/tbx-wolfi-core:latest
