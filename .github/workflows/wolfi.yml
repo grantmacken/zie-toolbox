@@ -32,21 +32,24 @@ jobs:
         # Thanks to Nuno do Carmo for the initial prototype
         buildah run ${CONTAINER} sh -c 'printenv'
         buildah config \
-          --label com.github.containers.toolbox='true' \
-          --label version=${VERSION} \
-          --label usage='This image is meant to be used with the toolbox command' \
-          --label summary='a wolfi toolbox' \
-          --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
+          --label com.github.containers.toolbox="true" \
+          --label version="${VERSION}" \
+          --label usage="This image is meant to be used with the toolbox command" \
+          --label summary="a wolfi toolbox" \
+          --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
         # TODO auto update label
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
-        buildah run ${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
+        buildah run ${CONTAINER} sh -c 'apk add \
+          bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
+          ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree \
+          tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
         # Change root shell to BASH
-        buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        buildah run ${CONTAINER} sh -c 'ls -al ~/'
-        # buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
-        # # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
-        # buildah push ${REGISTRY}/tbx-wolfi-core:latest
+        buildah run ${CONTAINER} sh -c "sed -i -e '/^root/s/\/bin\/ash/\/bin\/bash'. /etc/passwd"
+        buildah run ${CONTAINER} sh -c 'mkdir -p /home'
+        buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
+        buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
+        buildah push ${REGISTRY}/tbx-wolfi-core:latest
         #
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
