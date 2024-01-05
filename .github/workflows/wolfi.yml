@@ -48,7 +48,7 @@ jobs:
         buildah run ${CONTAINER} sh -c "sed -i -e '/^root/s/\/bin\/ash/\/bin\/bash/' /etc/passwd"
         buildah run ${CONTAINER} sh -c 'mkdir -p /home'
         buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
-        buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
+        # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
         buildah push ${REGISTRY}/tbx-wolfi-core:latest
         # podman start --attach 
         #
