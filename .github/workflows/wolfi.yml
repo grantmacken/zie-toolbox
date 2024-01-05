@@ -12,7 +12,7 @@ env:
   NAME: 'zie-wolf'
   VERSION: '1.0.0'
 jobs:
-  zie_toolbox:
+  zie_wolfi-toolbox:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,6 +38,8 @@ jobs:
           --label summary='a wolfi toolbox' \
           --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
+        # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
+        buildah run ${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
         # buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
