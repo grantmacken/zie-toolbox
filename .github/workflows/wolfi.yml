@@ -43,10 +43,11 @@ jobs:
         buildah run ${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
         # Change root shell to BASH
         buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
-        # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
-        buildah push ${REGISTRY}/tbx-wolfi-core:latest
-
+        buildah run ${CONTAINER} sh -c 'ls $HOME'
+        # buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
+        # # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
+        # buildah push ${REGISTRY}/tbx-wolfi-core:latest
+        #
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
         # buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
