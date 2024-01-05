@@ -32,7 +32,11 @@ jobs:
         # Thanks to Nuno do Carmo for the initial prototype
         buildah run ${CONTAINER} sh -c 'printenv'
         buildah config \
-          --label com.github.containers.toolbox='true' --label version={{ env.VERSION }} --label usage='This image is meant to be used with the toolbox command' --label summary='a wolfi toolbox' --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
+          --label com.github.containers.toolbox='true' \
+          --label version=${VERSION} \
+          --label usage='This image is meant to be used with the toolbox command' \
+          --label summary='a wolfi toolbox' \
+          --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
         # echo "GOLANG version ${GO_VER}" #  --http1.1
         # buildah run ${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
