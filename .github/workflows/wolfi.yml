@@ -1,7 +1,7 @@
-name: wolfi-homebrew-toolbox
-on: 
-  schedule:
-    - cron: '0 0 * * WED'
+name: CI
+# on: 
+#   schedule:
+#     - cron: '0 0 * * MON'
   push:
     branches:
       - main
@@ -9,7 +9,8 @@ on:
       - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
-  NAME: 'zie-wolf'
+  NAME: 'zie-toolbox'
+  VERSION: '1.0.5'
 jobs:
   zie_wolfi-toolbox:
     runs-on: ubuntu-latest
