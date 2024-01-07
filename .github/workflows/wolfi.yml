@@ -10,7 +10,6 @@ on:
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
   NAME: 'zie-wolf'
-  VERSION: '1.0.0'
 jobs:
   zie_wolfi-toolbox:
     runs-on: ubuntu-latest
@@ -28,28 +27,38 @@ jobs:
     - name: Build
       run: |
         set -euxo pipefail
+        buildah pull ghcr.io/ublue-os/bluefin-cli:latest
         CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
         # Thanks to Nuno do Carmo for the initial prototype
+        # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
         buildah run ${CONTAINER} sh -c 'printenv'
         buildah config \
           --label com.github.containers.toolbox="true" \
-          --label version="${VERSION}" \
           --label usage="This image is meant to be used with the toolbox command" \
-          --label summary="a wolfi toolbox" \
+          --label summary="a Wolfi Homebrew toolbox" \
           --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
         # TODO auto update label
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
+        buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
+        buildah run ${CONTAINER} sh -c 'mkdir -p /etc/pam.d'
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
+        buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
         # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
-        buildah run ${CONTAINER} sh -c 'apk add \
-          bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
-          ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree \
-          tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
+        # buildah run ${CONTAINER} sh -c 'apk add \
+        #   bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
+        #   ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree \
+        #   tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
+          # buildah run ${CONTAINER} sh -c 'apk add git'
         # Change root shell to BASH
-        buildah run ${CONTAINER} sh -c "sed -i -e '/^root/s/\/bin\/ash/\/bin\/bash/' /etc/passwd"
-        buildah run ${CONTAINER} sh -c 'mkdir -p /home'
-        buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
+        # Have Linuxbrew owned by UID = 1000
+        buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
+        buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+        buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
+        # buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
         # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
-        buildah push ${REGISTRY}/tbx-wolfi-core:latest
+        # buildah push ${REGISTRY}/tbx-wolfi-core:latest
         # podman start --attach 
         #
         # GO_VER="$(curl -s https://go.dev/dl/ | grep -m 1 -oP 'go(\d+\.){2}\d+')"
@@ -137,7 +146,7 @@ jobs:
         # echo 'CLEAN'
         # buildah run ${CONTAINER} sh -c 'rm -f  ${HOME}/.gitconfig ${HOME}/.profile'
         # buildah run ${CONTAINER} sh -c 'rm -Rf $(go env GOPATH) ${HOME}/.cache ${HOME}/.local'
-        # buildah run ${CONTAINER} sh -c 'ls -al $HOME'
+        # buildah run ${CONTAINER} sh -c 'ls -al $HOME'
         # buildah run ${CONTAINER} sh -c 'ls -al ${CARGO_HOME}'
         # echo 'COMMIT PUSH'
         # buildah commit --rm ${CONTAINER} ${{ env.REGISTRY }}/${{ env.NAME }}
