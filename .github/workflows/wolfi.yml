@@ -8,7 +8,6 @@ on:
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
   NAME: 'zie-toolbox'
-  VERSION: '1.0.5'
 jobs:
   zie_wolfi-toolbox:
     runs-on: ubuntu-latest
@@ -23,19 +22,19 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ${{ env.REGISTRY }}
-    - name: Build
-      run: |
-        set -euxo pipefail
-        # https://github.com/ublue-os/bluefin/issues/576
-        CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
-    #     # Thanks to Nuno do Carmo for the initial prototype
-    #     # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
-    #     buildah run ${CONTAINER} sh -c 'printenv'
-        buildah config \
-          --label com.github.containers.toolbox="true" \
-          --label usage="This image is meant to be used with the toolbox command" \
-          --label summary="a Wolfi Homebrew toolbox" \
-          --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
+    # - name: Build
+    #   run: |
+    #     set -euxo pipefail
+    #     # https://github.com/ublue-os/bluefin/issues/576
+    #     CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
+    # #     # Thanks to Nuno do Carmo for the initial prototype
+    # #     # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
+    # #     buildah run ${CONTAINER} sh -c 'printenv'
+    #     buildah config \
+    #       --label com.github.containers.toolbox="true" \
+    #       --label usage="This image is meant to be used with the toolbox command" \
+    #       --label summary="a Wolfi Homebrew toolbox" \
+    #       --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
         # buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         # buildah run ${CONTAINER} sh -c 'mkdir -p /etc/pam.d'
