@@ -26,14 +26,11 @@ jobs:
       run: |
         set -euxo pipefail
         CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
-    # #     # Thanks to Nuno do Carmo for the initial prototype
-    # #     # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
-    # #     buildah run ${CONTAINER} sh -c 'printenv'
-    #     buildah config \
-    #       --label com.github.containers.toolbox="true" \
-    #       --label usage="This image is meant to be used with the toolbox command" \
-    #       --label summary="a Wolfi Homebrew toolbox" \
-    #       --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
+        buildah config \
+          --label com.github.containers.toolbox="true" \
+          --label usage="This image is meant to be used with the toolbox command" \
+          --label summary="a Wolfi Homebrew toolbox" \
+          --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
         # buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         # buildah run ${CONTAINER} sh -c 'mkdir -p /etc/pam.d'
