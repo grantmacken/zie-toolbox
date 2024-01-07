@@ -1,4 +1,4 @@
-name: wolfi toolbox
+name: wolfi-homebrew-toolbox
 on: 
   schedule:
     - cron: '0 0 * * WED'
@@ -27,7 +27,7 @@ jobs:
     - name: Build
       run: |
         set -euxo pipefail
-        buildah pull ghcr.io/ublue-os/bluefin-cli:latest
+        # https://github.com/ublue-os/bluefin/issues/576
         CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
         # Thanks to Nuno do Carmo for the initial prototype
         # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
