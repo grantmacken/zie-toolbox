@@ -22,11 +22,10 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ${{ env.REGISTRY }}
-    # - name: Build
-    #   run: |
-    #     set -euxo pipefail
-    #     # https://github.com/ublue-os/bluefin/issues/576
-    #     CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
+    - name: Build
+      run: |
+        set -euxo pipefail
+        CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
     # #     # Thanks to Nuno do Carmo for the initial prototype
     # #     # https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo
     # #     buildah run ${CONTAINER} sh -c 'printenv'
@@ -57,3 +56,5 @@ jobs:
     #     # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
     #     # buildah push ${REGISTRY}/tbx-wolfi-core:latest
     #     # podman start --attach 
+    #
+    #     # https://github.com/ublue-os/bluefin/issues/576
