@@ -27,12 +27,12 @@ jobs:
         set -euxo pipefail
         CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
         buildah config \
-          --label com.github.containers.toolbox="true" \
-          --label usage="This image is meant to be used with the toolbox command" \
-          --label summary="a Wolfi Homebrew toolbox" \
-          --label maintainer="Grant MacKenzie <grantmacken@gmail.com>" ${CONTAINER}
-        # buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
-        # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
+          --label com.github.containers.toolbox='true' \
+          --label usage='This image is meant to be used with the toolbox command' \
+          --label summary='a Wolfi Homebrew toolbox' \
+          --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
+        buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
+        buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         # buildah run ${CONTAINER} sh -c 'mkdir -p /etc/pam.d'
         # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
         # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
