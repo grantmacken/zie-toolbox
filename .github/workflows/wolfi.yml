@@ -34,10 +34,10 @@ jobs:
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'ls -al /etc'
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
-        # buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
+        buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
     #     # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
     #     # buildah run ${CONTAINER} sh -c 'apk add \
     #     #   bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
