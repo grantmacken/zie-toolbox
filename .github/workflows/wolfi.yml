@@ -31,6 +31,8 @@ jobs:
           --label usage='This image is meant to be used with the toolbox command' \
           --label summary='a Wolfi Homebrew toolbox' \
           --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/brew_script.bluefin-cli' '/tmp/brew_script'
+        buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'ls -al /etc'
@@ -38,6 +40,7 @@ jobs:
         buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
         buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
         buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
+
     #     # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
     #     # buildah run ${CONTAINER} sh -c 'apk add \
     #     #   bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
