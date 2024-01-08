@@ -7,7 +7,7 @@ on:
       - '**/README.md'
 env:
   REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
-  NAME: 'zie-toolbox'
+  NAME: 'tbx-wolfi-core'
 jobs:
   zie_wolfi-toolbox:
     runs-on: ubuntu-latest
@@ -64,14 +64,15 @@ jobs:
         buildah run ${CONTAINER} sh -c 'cd ../ && rm -R neovim'
         
         # buildah run ${CONTAINER} sh -c 'ls -al /etc'
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
+        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
         # buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
         # buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
-        # buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        # buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
-
+        buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+        buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
+        buildah commit ${CONTAINER} ${REGISTRY}/${NAME}:latest
+        buildah push ${REGISTRY}/${NAME}:latest
     #     # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
     #     # buildah run ${CONTAINER} sh -c 'apk add \
     #     #   bash bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap mount \
@@ -83,9 +84,7 @@ jobs:
     #     buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
     #     buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
     #     buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
-    #     # buildah commit ${CONTAINER} ${REGISTRY}/tbx-wolfi-core
-    #     # buildah tag ${{ env.REGISTRY }}/${{ env.NAME }}:latest ${{ env.REGISTRY }}/${{ env.NAME }}:${{ env.VERSION }}
-    #     # buildah push ${REGISTRY}/tbx-wolfi-core:latest
+
     #     # podman start --attach 
     #
     #     # https://github.com/ublue-os/bluefin/issues/576
