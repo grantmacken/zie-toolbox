@@ -36,7 +36,8 @@ jobs:
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'apk add build-base ninja-build cmake zip gettext git procps sudo-rs'
+        buildah run ${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev- busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
+        # buildah run ${CONTAINER} sh -c 'apk add build-base ninja-build cmake zip gettext-dev gperf git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim'
         buildah run ${CONTAINER} sh -c 'cd neovim && make \
