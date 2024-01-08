@@ -38,9 +38,10 @@ jobs:
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'apk add bash ninja-build cmake zip gettext git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim && cd neovim'
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim'
+        buildah run ${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo'
         # && make CMAKE_BUILD_TYPE=RelWithDebInfo && make install' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'which nvim && nvim --version'
+        # buildah run ${CONTAINER} sh -c 'which nvim && nvim --version'
         buildah run ${CONTAINER} sh -c 'cd ../ && rm -R neovim'
         
         # buildah run ${CONTAINER} sh -c 'ls -al /etc'
