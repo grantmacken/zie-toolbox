@@ -34,12 +34,17 @@ jobs:
         buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/brew_script.bluefin-cli' '/tmp/brew_script'
         buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
-        buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'ls -al /etc'
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
-        buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
+        buildah run ${CONTAINER} sh -c 'apk info --vv | sort'
+
+        # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
+        # buildah run ${CONTAINER} sh -c 'ls -al /etc'
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
+        # buildah run ${CONTAINER} sh -c 'cat /etc/sudoers'
+        # buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
+        # buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+        # buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
 
     #     # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
     #     # buildah run ${CONTAINER} sh -c 'apk add \
