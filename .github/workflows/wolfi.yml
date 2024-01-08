@@ -35,8 +35,8 @@ jobs:
         buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
-
-        # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
+        buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
+        buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         # buildah run ${CONTAINER} sh -c 'ls -al /etc'
         # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
         # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
