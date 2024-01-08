@@ -36,7 +36,7 @@ jobs:
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'apk add bash ninja-build cmake zip gettext wl-clipboard'
+        buildah run ${CONTAINER} sh -c 'apk add bash ninja-build cmake zip gettext'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         # buildah run ${CONTAINER} sh -c 'ls -al /etc'
         # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
