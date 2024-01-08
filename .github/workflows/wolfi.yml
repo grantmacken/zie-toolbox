@@ -31,12 +31,16 @@ jobs:
           --label usage='This image is meant to be used with the toolbox command' \
           --label summary='a Wolfi Homebrew toolbox' \
           --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/brew_script.bluefin-cli' '/tmp/brew_script'
-        buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/brew_script.bluefin-cli' '/tmp/brew_script'
+        # buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev- busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
+        buildah run ${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey \
+          libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev \
+          msgpack samurai tree-sitter-dev unibilium-dev- busybox cmake gettext-dev gperf libtermkey \
+          libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev \
+          msgpack samurai tree-sitter-dev unibilium'
         # buildah run ${CONTAINER} sh -c 'apk add build-base ninja-build cmake zip gettext-dev gperf git procps sudo-rs'
         buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim'
