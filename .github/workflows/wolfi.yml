@@ -29,34 +29,39 @@ jobs:
         buildah config \
           --label com.github.containers.toolbox='true' \
           --label usage='This image is meant to be used with the toolbox command' \
-          --label summary='a Wolfi Homebrew toolbox' \
+          --label summary='a Wolfi based toolbox' \
           --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
-        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/brew_script.bluefin-cli' '/tmp/brew_script'
-        # buildah run ${CONTAINER} sh -c 'install -Dm755 /tmp/brew_script /usr/bin/brew_script'
         buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
-        buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
-        # buildah run ${CONTAINER} sh -c 'apk add bash brew command-not-found git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey \
-          libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev \
-          msgpack samurai tree-sitter-dev unibilium-dev'
-        buildah run ${CONTAINER} sh -c 'apk add git procps sudo-rs'
-        buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/neovim/neovim'
-        buildah run ${CONTAINER} sh -c 'cd neovim && make \
-          CMAKE_BUILD_TYPE=RelWithDebInfo \
-          CMAKE_INSTALL_PREFIX=/usr \
-          CMAKE_INSTALL_LIBDIR=lib \
-          && make install'
-                buildah run ${CONTAINER} sh -c 'which nvim && nvim --version'
-        buildah run ${CONTAINER} sh -c 'cd ../ && rm -R neovim'
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
-        buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
-        # buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
+        # buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
+        buildah run ${CONTAINER} sh -c 'apk add bash git grep command-not-found procps sudo-rs'
+        buildah run ${CONTAINER} /bin/bash -c 'apk add curl findmnt gpg mount pigz rsync umount xauth zip' 
+	      buildah run $${CONTAINER} /bin/bash -c 'apk add coreutils diffutils findutils gnupg iproute2 iputils keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client posix-libc-utils su-exec tcpdump tzdata util-linux util-linux-misc xz vulkan-loader'
+	      # Add Distrobox-host-exec
+	      buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
+	      HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=\K.+" /usr/bin/distrobox-host-exec')
+	      echo $$HOST_SPAWN_VERSION
+	      # Give UID = 1000 sudo
+        buildah run ${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
+        # sh as bash
         buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
-        buildah commit ${CONTAINER} ${REGISTRY}/${NAME}:latest
-        buildah push ${REGISTRY}/${NAME}:latest
+        buildah commit --rm $${CONTAINER} tbx-base
+
+
+        # buildah run ${CONTAINER} sh -c 'cd neovim && make \
+        #   CMAKE_BUILD_TYPE=RelWithDebInfo \
+        #   CMAKE_INSTALL_PREFIX=/usr \
+        #   CMAKE_INSTALL_LIBDIR=lib \
+        #   && make install'
+        # buildah run ${CONTAINER} sh -c 'which nvim && nvim --version'
+        # buildah run ${CONTAINER} sh -c 'cd ../ && rm -R neovim'
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo' '/etc/pam.d/sudo'  
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/pam.d/sudo-i' '/etc/pam.d/sudo-i'  
+        # buildah copy ${CONTAINER} 'https://raw.githubusercontent.com/ublue-os/bluefin/main/toolboxes/files.bluefin-cli/etc/sudoers' '/etc/sudoers'  
+        # # buildah run ${CONTAINER} sh -c 'chown -R 1000 /home/linuxbrew'
+        # buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+        # buildah run ${CONTAINER} sh -c 'cat /etc/passwd'
+        # buildah commit ${CONTAINER} ${REGISTRY}/${NAME}:latest
+        # buildah push ${REGISTRY}/${NAME}:latest
 
     #     # wolfi toolbox core files @see https://github.com/ublue-os/bluefin/blob/main/toolboxes/packages.wolfi
     #     # buildah run ${CONTAINER} sh -c 'apk add \
