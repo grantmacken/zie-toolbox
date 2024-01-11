@@ -40,7 +40,7 @@ jobs:
         buildah add ${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
         HOST_SPAWN_VERSION=$(buildah run ${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
         echo ${HOST_SPAWN_VERSION}
-        buildah run ${CONTAINER} /bin/bash -c 'wget https://github.com/1player/host-spawn/releases/download/${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn'
+        buildah run ${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
         buildah run ${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
         buildah run ${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
         # Give UID = 1000 sudo
