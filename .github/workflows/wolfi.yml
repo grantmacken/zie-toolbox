@@ -46,9 +46,9 @@ jobs:
         buildah run ${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
         # symlink 
         buildah run ${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin && \
-        ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
-        ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
-        ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+            ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
+            ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
+            ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
         # Give UID = 1000 sudo
         buildah run ${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
         # sh as bash
@@ -67,6 +67,16 @@ jobs:
         buildah run ${BUILDR} /bin/bash -c 'which nvim && nvim --version'
         buildah run ${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
         buildah commit --rm ${BUILDR} tbx-neovim
+        CONTAINER=$(buildah from localhost/tbx-base)
+        buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
+        buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/bin/nvim' '/usr/bin/nvim'
+        buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
+        # Get Distrobox-host-exec 
+        buildah add ${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
+        buildah run ${CONTAINER} sh -c 'apk add grep'
+        # buildah add  $${CONTAINER} '$(abspath files/usr/local/bin)' '/usr/local/bin'
+        buildah run ${CONTAINER} sh -c 'grep -oP "host_spawn_version=\K.+" /usr/bin/distrobox-host-exec'
+        buildah commit --rm ${CONTAINER} zie-neovim
 
         
 
