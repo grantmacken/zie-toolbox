@@ -35,8 +35,8 @@ jobs:
         # buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
         buildah run ${CONTAINER} sh -c 'apk add bash git grep command-not-found procps sudo-rs'
         buildah run ${CONTAINER} /bin/bash -c 'apk add curl findmnt gpg mount pigz rsync umount xauth zip'
-        # iputils 
-        # buildah run ${CONTAINER} /bin/bash -c 'apk add coreutils diffutils findutils gnupg iproute2 keyutils libcap mount ncurses ncurses-terminfo net-tools openssh-client posix-libc-utils su-exec tcpdump tzdata util-linux util-linux-misc xz vulkan-loader'
+        # iputils libcap conflict
+        buildah run ${CONTAINER} /bin/bash -c 'apk add coreutils diffutils findutils gnupg iproute2 iputils keyutils mount ncurses ncurses-terminfo net-tools openssh-client posix-libc-utils su-exec tcpdump tzdata util-linux util-linux-misc xz vulkan-loader'
         # Add Distrobox-host-exec
         buildah add ${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
         HOST_SPAWN_VERSION=$(buildah run ${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
