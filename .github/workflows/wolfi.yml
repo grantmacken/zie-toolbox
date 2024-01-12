@@ -55,18 +55,18 @@ jobs:
         buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
         buildah commit --rm ${CONTAINER} tbx-base
         podman images
-        # # create a container to create binaries 
-        # BUILDR=$(buildah from localhost/tbx-base)
-        # buildah run ${BUILDR} /bin/bash -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
-        # buildah run ${BUILDR} sh -c 'apk info -vv | sort'
-        # buildah commit --rm ${BUILDR} tbx-buildr
-        # # with buildr container create neovim 
-        # BUILDR=$$(buildah from localhost/tbx-buildr)
-        # buildah run ${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-        # buildah run ${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
-        # buildah run ${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
-        # buildah run ${BUILDR} /bin/bash -c 'which nvim && nvim --version'
-        # buildah run ${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
+        # create a container to create binaries 
+        BUILDR=$(buildah from localhost/tbx-base)
+        buildah run ${BUILDR} /bin/bash -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
+        buildah run ${BUILDR} sh -c 'apk info -vv | sort'
+        buildah commit --rm ${BUILDR} tbx-buildr
+        # with buildr container create neovim 
+        BUILDR=$(buildah from localhost/tbx-buildr)
+        buildah run ${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+        buildah run ${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
+        buildah run ${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
+        buildah run ${BUILDR} /bin/bash -c 'which nvim && nvim --version'
+        buildah run ${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
         # buildah commit --rm ${BUILDR} tbx-neovim
         # CONTAINER=$(buildah from localhost/tbx-base)
         # buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
