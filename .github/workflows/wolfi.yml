@@ -53,7 +53,8 @@ jobs:
         buildah run ${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
         # sh as bash
         buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        # buildah commit --rm ${CONTAINER} tbx-base
+        buildah commit --rm ${CONTAINER} tbx-base
+        podman images
         # # create a container to create binaries 
         # BUILDR=$(buildah from localhost/tbx-base)
         # buildah run ${BUILDR} /bin/bash -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
