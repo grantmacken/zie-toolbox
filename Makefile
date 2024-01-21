@@ -60,6 +60,8 @@ build-chezmoi:
 	buildah commit --rm $${CONTAINER} buildr-chezmoi
 	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
 	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
+	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
+	buildah config --cmd '/chezmoi' $${CONTAINER}
 	buildah commit --rm $${CONTAINER} chezmoi
 	podman images
 	podman run localhost/chezmoi
