@@ -58,11 +58,11 @@ build-chezmoi:
 	# buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	# # buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	# buildah commit --rm $${CONTAINER} buildr-chezmoi
-	# CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
-	# buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/usr/local/bin/chezmoi' '/chezmoi'
-	# buildah commit --rm $${CONTAINER} chezmoi
-	# podman images localhost:chezmoi
+	buildah commit --rm $${CONTAINER} buildr-chezmoi
+	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
+	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
+	buildah commit --rm $${CONTAINER} chezmoi
+	podman images localhost:chezmoi
 
 
 build-core:
