@@ -53,13 +53,15 @@ build-chezmoi:
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy'
-	# buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
-	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah run $${CONTAINER} sh -c 'ls $$(go env GOPATH)/bin'
+	buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah commit --rm $${CONTAINER} buildr-chezmoi
+	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
+	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/usr/local/bin/chezmoi' '/chezmoi'
 	buildah commit --rm $${CONTAINER} chezmoi
-	# CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
-	# buildah add --from localhost/tbx-chezmoi $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
+	podman images localhost:chezmoi
+
 
 build-core:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
