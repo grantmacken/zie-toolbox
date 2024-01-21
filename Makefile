@@ -62,7 +62,7 @@ build-chezmoi:
 	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
 	buildah commit --rm $${CONTAINER} chezmoi
 	podman images
-	docker run localhost/chezmoi
+	podman run localhost/chezmoi
 
 
 build-core:
