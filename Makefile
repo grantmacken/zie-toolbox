@@ -1,3 +1,4 @@
+SHELL=/bin/bash
 .ONESHELL:
 .SHELLFLAGS := -eu -o pipefail -c
 .DELETE_ON_ERROR:
@@ -5,7 +6,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 
-include .env
+# include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
 wolfi-base:
@@ -48,13 +49,15 @@ pull-wolfi:
 
 build-chezmoi:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
-	buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
+	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
-	buildah run $${CONTAINER} sh -c 'cd chezmoi && PREFIX=/usr/local; make install-from-git-working-copy' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy'
 	# buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
-	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah commit --rm $${CONTAINER} tbx-chezmoi
+	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah commit --rm $${CONTAINER} chezmoi
+	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
+	buildah add --from localhost/tbx-chezmoi $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
 
 build-core:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
