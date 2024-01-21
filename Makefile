@@ -55,9 +55,11 @@ build-chezmoi:
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy'
 	# buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/chezmoi /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run $${CONTAINER} sh -c 'ls $$(go env GOPATH)/bin'
+	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	buildah commit --rm $${CONTAINER} chezmoi
-	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
-	buildah add --from localhost/tbx-chezmoi $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
+	# CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
+	# buildah add --from localhost/tbx-chezmoi $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
 
 build-core:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
