@@ -108,8 +108,8 @@ build-wolfi:
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
 	# buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'cat /etc/passwd'
-	buildah commit --rm $${CONTAINER} tbx
-
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/zie-wolfi-toolbox
+	buildah push ghcr.io/grantmacken/zie-wolfi-toolbox
 
 build-brew:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
