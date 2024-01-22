@@ -49,6 +49,20 @@ pull-wolfi:
 
 build: build-wolfi
 
+fetch: $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container \
+ $(HOME)/.config/containers/systemd/bluefin-cli.container
+
+$(HOME)/.config/containers/systemd/bluefin-cli.container:
+	mkdir -p $(dir $@)
+	wget -P $(dir $@) https://github.com/ublue-os/toolboxes/blob/main/quadlets/bluefin-cli/bluefin-cli.container
+	ls $(dir $@)
+ 
+
+$(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container:
+	mkdir -p $(dir $@)
+	wget -P $(dir $@) https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
+	ls $(dir $@)
+
 
 build-chezmoi:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
@@ -81,8 +95,8 @@ build-wolfi:
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
 	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader'
 	# Add Distrobox-host-exe and host-spawn
-	buildah add ${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
-	HOST_SPAWN_VERSION=$(buildah run ${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+	buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
+	HOST_SPAWN_VERSION=$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
 	echo $${HOST_SPAWN_VERSION}
 	buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
 	buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
