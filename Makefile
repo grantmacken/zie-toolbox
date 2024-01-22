@@ -93,7 +93,7 @@ build-wolfi:
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade'
 	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader'
+	buildah run $${CONTAINER} sh -c 'apk add grep bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader'
 	# Add Distrobox-host-exe and host-spawn
 	buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
 	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
@@ -102,10 +102,7 @@ build-wolfi:
 	buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	# symlink 
-	buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin && \
-	ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
-	ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
-	ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	# Change root shell to BASH
 	buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
