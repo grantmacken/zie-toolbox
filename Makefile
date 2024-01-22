@@ -47,6 +47,9 @@ pull-wolfi:
 	podman pull cgr.dev/chainguard/apko
 
 
+build: build-wolfi
+
+
 build-chezmoi:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
@@ -60,14 +63,13 @@ build-chezmoi:
 	buildah commit --rm $${CONTAINER} buildr-chezmoi
 	CONTAINER=$$(buildah from cgr.dev/chainguard/static:latest)
 	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
-	buildah add --from localhost/buildr-chezmoi $${CONTAINER} '/root/go/bin/chezmoi' '/chezmoi'
 	buildah config --cmd '/chezmoi' $${CONTAINER}
 	buildah commit --rm $${CONTAINER} chezmoi
 	podman images
 	podman run localhost/chezmoi
 
 
-build-core:
+build-wolfi:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah config \
     --label com.github.containers.toolbox='true' \
@@ -76,13 +78,14 @@ build-core:
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade'
 	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
-	buildah run $${CONTAINER} sh -c 'apk add bash git command-not-found procps sudo-rs'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
-	# Give UID = 1000 sudo
-	buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-	buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	buildah run $${CONTAINER} sh -c 'cat /etc/passwd'
-	buildah commit --rm $${CONTAINER} tbx-base
+	buildah run $${CONTAINER} sh -c 'apk add chezmoi'
+	# buildah run $${CONTAINER} sh -c 'apk add bash git command-not-found procps sudo-rs'
+	# buildah run $${CONTAINER} /bin/bash -c 'apk add bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
+	# # Give UID = 1000 sudo
+	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
+	# buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+	# buildah run $${CONTAINER} sh -c 'cat /etc/passwd'
+	buildah commit --rm $${CONTAINER} tbx
 
 build-buildr:
 	BUILDR=$$(buildah from localhost/tbx-base)

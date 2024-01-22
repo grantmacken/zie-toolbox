@@ -25,7 +25,8 @@ jobs:
         password: ${{ github.token }}
         registry: ${{ env.REGISTRY }}
     - name: Build
-      run: make build-chezmoi
+      run: make build-wolfi
+
         # 
         # set -euxo pipefail
         # CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
