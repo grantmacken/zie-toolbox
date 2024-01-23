@@ -152,40 +152,37 @@ build-brew:
 	buildah add $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} cat $${TARG}
 	echo
-	# apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev
-	# apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
-	buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
+	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
 	buildah run $${CONTAINER} /bin/bash -c 'apk add brew cosign skopeo sudo-rs'
 	buildah run $${CONTAINER} /bin/bash -c 'mv /home/linuxbrew /home/homebrew'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/zie-brew-toolbox
 	buildah push ghcr.io/grantmacken/zie-brew-toolbox
-	# buildah commit --rm $${BUILDR} tbx-buildr
 
-build-neovim:
-	BUILDR=$$(buildah from localhost/tbx-buildr)
-	buildah run $${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-	buildah run $${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
-	buildah run $${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
-	buildah run $${BUILDR} /bin/bash -c 'which nvim && nvim --version'
-	buildah run $${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
-	buildah commit --rm $${BUILDR} tbx-neovim
-
-build: ##
-	CONTAINER=$$(buildah from localhost/tbx-base)
-	buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
-	buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/bin/nvim' '/usr/bin/nvim'
-	buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
-	# Get Distrobox-host-exec 
-	buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
-	buildah run $${CONTAINER} sh -c 'apk add grep'
-	# buildah add  $${CONTAINER} '$(abspath files/usr/local/bin)' '/usr/local/bin'
-	buildah run $${CONTAINER} sh -c 'grep -oP "host_spawn_version=\K.+" /usr/bin/distrobox-host-exec'
-	buildah commit --rm $${CONTAINER} zie-neovim
-
-
-
-
-
+# build-neovim:
+# 	BUILDR=$$(buildah from localhost/tbx-buildr)
+# 	buildah run $${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+# 	buildah run $${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
+# 	buildah run $${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
+# 	buildah run $${BUILDR} /bin/bash -c 'which nvim && nvim --version'
+# 	buildah run $${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
+# 	buildah commit --rm $${BUILDR} tbx-neovim
+#
+# build: ##
+# 	# CONTAINER=$$(buildah from localhost/tbx-base)
+# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
+# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/bin/nvim' '/usr/bin/nvim'
+# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
+# 	# # Get Distrobox-host-exec 
+# 	# buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
+# 	# buildah run $${CONTAINER} sh -c 'apk add grep'
+# 	# # buildah add  $${CONTAINER} '$(abspath files/usr/local/bin)' '/usr/local/bin'
+# 	# buildah run $${CONTAINER} sh -c 'grep -oP "host_spawn_version=\K.+" /usr/bin/distrobox-host-exec'
+# 	# buildah commit --rm $${CONTAINER} zie-neovim
+# 	#
+#
+#
+#
+#
 
 # https://github.com/memorysafety/sudo-rs
 
