@@ -17,6 +17,9 @@ sbom:
 	# podman run --rm wolfi-base ls /var/lib/db/sbom
 	# podman run --rm maven ls /var/lib/db/sbom
 
+pull-zie:
+	# for building
+	podman pull ghcr.io/grantmacken/zie-wolfi-toolbox:latest
 
 pull-lang:
 	# for building
@@ -47,21 +50,31 @@ pull-wolfi:
 	podman pull cgr.dev/chainguard/apko
 
 
-build: build-wolfi
+build: build-wolfi build-brew
 
-fetch: $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container \
- $(HOME)/.config/containers/systemd/bluefin-cli.container
 
-$(HOME)/.config/containers/systemd/bluefin-cli.container:
-	mkdir -p $(dir $@)
-	wget -P $(dir $@) https://github.com/ublue-os/toolboxes/blob/main/quadlets/bluefin-cli/bluefin-cli.container
-	ls $(dir $@)
- 
+clean: 
+	rm -f $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
+	rm -f $(HOME)/.config/containers/systemd/bluefin-cli.container
+
+check: 
+	systemctl --no-pager --user show wolfi-distrobox-quadlet.service
+	# journalctl --no-pager --user -xeu wolfi-distrobox-quadlet.service
+	# cat $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
+	echo
+	# systemctl --no-pager --user list-unit-files
+	# podman auto-update --dry-run --format "{{.Image}} {{.Updated}}"
+	# /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
+
+fetch: $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
+	tree $(HOME)/.config/containers/systemd
+	systemctl --user daemon-reload
 
 $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container:
 	mkdir -p $(dir $@)
-	wget -P $(dir $@) https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
-	ls $(dir $@)
+	wget -qO- https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container |
+	sed 's%ghcr.io/ublue-os/wolfi-toolbox:latest%ghcr.io/grantmacken/zie-wolfi-toolbox:latest%' | 
+	tee $@
 
 
 build-chezmoi:
@@ -95,7 +108,9 @@ build-wolfi:
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
 	buildah run $${CONTAINER} sh -c 'apk add grep bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader'
 	# Add Distrobox-host-exe and host-spawn
-	buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	TARG=/usr/bin/distrobox-host-exec
+	buildah add $${CONTAINER} $${SRC} $${TARG}
 	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
 	echo $${HOST_SPAWN_VERSION}
 	buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
@@ -104,7 +119,7 @@ build-wolfi:
 	# symlink 
 	buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	# Change root shell to BASH
-	buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
 	# buildah run $${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'cat /etc/passwd'
@@ -112,14 +127,39 @@ build-wolfi:
 	buildah push ghcr.io/grantmacken/zie-wolfi-toolbox
 
 build-brew:
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-
-
-build-buildr:
-	BUILDR=$$(buildah from localhost/tbx-base)
-	buildah run $${BUILDR} /bin/bash -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
-	buildah run $${BUILDR} sh -c 'apk info -vv | sort'
-	buildah commit --rm $${BUILDR} tbx-buildr
+	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox)
+	buildah config \
+    --label com.github.containers.toolbox='true' \
+    --label usage='Enter toolbox to install cli applications' \
+    --label summary='a Wolfi based toolbox with brew' \
+    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/profile.d/bash_completion.sh
+	TARG=/etc/profile.d/bash_completion.sh
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} cat $${TARG}
+	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/profile.d/00-bluefin-cli-brew-firstrun.sh
+	TARG=/etc/profile.d/00-bluefin-cli-brew-firstrun.sh
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} cat $${TARG}
+	echo
+	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/root/.bash_profile
+	TARG=/root/.bash_profile
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} cat $${TARG}
+	echo
+	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/root/.bashrc
+	TARG=/root/.bashrc
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} cat $${TARG}
+	echo
+	# apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev
+	# apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
+	buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} /bin/bash -c 'apk add brew cosign skopeo sudo-rs'
+	buildah run $${CONTAINER} /bin/bash -c 'mv /home/linuxbrew /home/homebrew'
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/zie-brew-toolbox
+	buildah push ghcr.io/grantmacken/zie-brew-toolbox
+	# buildah commit --rm $${BUILDR} tbx-buildr
 
 build-neovim:
 	BUILDR=$$(buildah from localhost/tbx-buildr)

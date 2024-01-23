@@ -24,8 +24,8 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ${{ env.REGISTRY }}
-    - name: Build
-      run: make build-wolfi
+    - name: Build 
+      run: make build
 
         # 
         # set -euxo pipefail
