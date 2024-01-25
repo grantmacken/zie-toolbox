@@ -10,9 +10,10 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
 
-build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
+build: zie-wolfi-toolbox  ## build the toolboxes
 
 zie-wolfi-toolbox: 
+	buildah pull -q cgr.dev/chainguard/wolfi-base
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah config \
     --label com.github.containers.toolbox='true' \
