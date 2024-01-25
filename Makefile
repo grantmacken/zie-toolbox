@@ -10,7 +10,7 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
 
-build: zie-wolfi-toolbox  ## build the toolboxes
+build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
 
 zie-wolfi-toolbox: 
 	buildah pull -q cgr.dev/chainguard/wolfi-base
@@ -64,7 +64,7 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 zie-toolbox: buildr-go
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin/chezmoi' '/usr/local/bin/chezmoi'
-	buildah commit --rm $${CONTAINER} $@
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
 
