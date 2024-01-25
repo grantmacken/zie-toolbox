@@ -19,10 +19,10 @@ zie-wolfi-toolbox:
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade'
-	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add grep bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader'
+	buildah run $${CONTAINER} sh -c 'apk add grep bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
 	# Add Distrobox-host-exe and host-spawn
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
@@ -43,14 +43,15 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	buildah push ghcr.io/grantmacken/$@
+	podman images
+	buildah push ghcr.io/grantmacken/$@:latest
 
 buildr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
-	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy'
+	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
 	# buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH) '
@@ -60,10 +61,11 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 
 
 zie-toolbox: buildr-go
-	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox)
+	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin/chezmoi' '/usr/local/bin/chezmoi'
 	buildah commit --rm $${CONTAINER} $@
-	buildah push ghcr.io/grantmacken/$@
+	podman images
+	buildah push ghcr.io/grantmacken/$@:latest
 
 
 clean: 
