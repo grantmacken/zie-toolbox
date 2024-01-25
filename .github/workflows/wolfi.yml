@@ -6,7 +6,7 @@ on:
     paths-ignore:
       - '**/README.md'
 env:
-  REGISTRY: 'ghcr.io/${{ github.repository_owner }}'
+  REGISTRY: 
   NAME: 'zie-toolbox'
 jobs:
   zie_wolfi-toolbox:
@@ -23,60 +23,6 @@ jobs:
       with:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
-        registry: ${{ env.REGISTRY }}
+        registry: ghcr.io/${{ github.repository_owner }}
     - name: Build 
       run: make build
-
-        # 
-        # set -euxo pipefail
-        # CONTAINER=$(buildah from cgr.dev/chainguard/wolfi-base)
-        # buildah config \
-        #   --label com.github.containers.toolbox='true' \
-        #   --label usage='This image is meant to be used with the toolbox command' \
-        #   --label summary='a Wolfi based toolbox' \
-        #   --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' ${CONTAINER}
-        # buildah run ${CONTAINER} sh -c 'apk update && apk upgrade'
-        # # buildah run ${CONTAINER} sh -c 'apk info -vv | sort'
-        # buildah run ${CONTAINER} sh -c 'apk add bash git grep command-not-found procps sudo-rs'
-        # buildah run ${CONTAINER} /bin/bash -c 'apk add bzip2 coreutils curl diffutils findmnt findutils gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount util-linux util-linux-misc wget xz zip vulkan-loader'
-        # # Add Distrobox-host-exec
-        # buildah add ${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
-        # HOST_SPAWN_VERSION=$(buildah run ${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-        # echo ${HOST_SPAWN_VERSION}
-        # buildah run ${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
-        # buildah run ${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
-        # buildah run ${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-        # # symlink 
-        # buildah run ${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin && \
-        #     ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak && \
-        #     ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman && \
-        #     ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-        # # Give UID = 1000 sudo
-        # buildah run ${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-        # # sh as bash
-        # buildah run ${CONTAINER} sh -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-        # buildah commit --rm ${CONTAINER} tbx-base
-        # podman images
-        # # create a container to create binaries 
-        # BUILDR=$(buildah from localhost/tbx-base)
-        # buildah run ${BUILDR} /bin/bash -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
-        # buildah run ${BUILDR} sh -c 'apk info -vv | sort'
-        # buildah commit --rm ${BUILDR} tbx-buildr
-        # # with buildr container create neovim 
-        # BUILDR=$(buildah from localhost/tbx-buildr)
-        # buildah run ${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-        # buildah run ${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
-        # buildah run ${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
-        # buildah run ${BUILDR} /bin/bash -c 'which nvim && nvim --version'
-        # buildah run ${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
-        # buildah commit --rm ${BUILDR} tbx-neovim
-        # CONTAINER=$(buildah from localhost/tbx-base)
-        # buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
-        # buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/bin/nvim' '/usr/bin/nvim'
-        # buildah add --from localhost/tbx-neovim ${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
-        # echo 'COMMIT PUSH'
-        # buildah commit --rm ${CONTAINER} ${REGISTRY}/${NAME}
-        # buildah push ${REGISTRY}/${NAME}:latest
-        #
-
-# https://github.com/ublue-os/bluefin/issues/576
