@@ -11,13 +11,27 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-    - name: Build
+    - name: Build go cli tools
       run: make bldr-go
     - name: UploadArtifact
       uses: actions/upload-artifact@v4
       with:
         name: bldr-go
         path: bldr-go.tar
+        retention-days: 1
+jobs:
+  bldr_go:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Build rust cli tools
+      run: make bldr-rust
+    - name: UploadArtifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: bldr-rust
+        path: bldr-rust.tar
         retention-days: 1
 # jobs:
 #   zie_wolfi-toolbox:
