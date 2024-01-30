@@ -56,7 +56,7 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
+	buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
 	echo 'GH-CLI' # the github cli 
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
 	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
@@ -64,13 +64,21 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
 	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
 	buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
+	echo 'LAZYGIT' 
+	buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
+	buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
+	buildah run $${CONTAINER} sh -c 'which lazygit'
+	buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
+	
 
 zie-toolbox: buildr-go
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run $${CONTAINER} sh -c 'which lazygit'
 	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
