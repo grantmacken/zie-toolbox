@@ -20,7 +20,7 @@ jobs:
         path: bldr-go.tar
         retention-days: 1
 jobs:
-  bldr_go:
+  bldr_rust:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
