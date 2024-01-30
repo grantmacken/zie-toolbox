@@ -9,7 +9,7 @@ MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
-build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
+# build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
 
 zie-wolfi-toolbox: 
 	buildah pull -q cgr.dev/chainguard/wolfi-base
@@ -46,7 +46,7 @@ zie-wolfi-toolbox:
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
 
-buildr-go: ## a ephemeral localhost container which builds go executables
+bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
