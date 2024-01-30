@@ -9,7 +9,6 @@ MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
-
 build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
 
 zie-wolfi-toolbox: 
@@ -55,13 +54,14 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
-        echo 'GH-CLI' # the github cli 
-        buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-        buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
-        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
-        buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-        buildah run ${CONTAINER} sh -c 'tree /usr/local/gh'
-        buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
+	echo 'GH-CLI' # the github cli 
+	buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH)'
+	# buildah run $${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
+	# buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+	# buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
+	# buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	# buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH) '
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	# # buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
