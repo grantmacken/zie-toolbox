@@ -55,6 +55,13 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
+        echo 'GH-CLI' # the github cli 
+        buildah run ${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+        buildah run ${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+        buildah run ${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
+        buildah run ${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+        buildah run ${CONTAINER} sh -c 'tree /usr/local/gh'
+        buildah run ${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	# buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH) '
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	# # buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
@@ -68,17 +75,33 @@ zie-toolbox: buildr-go
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
 
+upgrade:
+	distrobox-upgrade zie
+
+stop:
+	distrobox stop --all
+
+remove:
+	distrobox rm --all
+
+start:
+	podman golang
+
+ps:
+	podman ps --all
 
 clean: 
-	rm -f $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
-	rm -f $(HOME)/.config/containers/systemd/bluefin-cli.container
+	podman rmi cgr.dev/chainguard/dive
+	podman rmi cgr.dev/chainguard/wait-for-it
+	# am -f $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
+	# rm -f $(HOME)/.config/containers/systemd/bluefin-cli.container
 
 create:
 	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-create.md
-	# distrobox create --compatibility
-	# man --no-pager distrobox-compatibility
 	# distrobox create --image ghcr.io/grantmacken/zie-brew-toolbox --name brew  # --verbose
-	distrobox create --image localhost/tbx:latest --name tbx  # --verbose
+	# distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie  # --verbose
+	# https://docs.podman.io/en/stable/markdown/podman-create.1.html
+	podman create cgr.dev/chainguard/go:latest -n golang
 
 export-bin: 
 	# from within container
@@ -86,12 +109,13 @@ export-bin:
 	# distrobox-export
 
 ephemeral:
-	https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-ephemeral.md
+	#https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-ephemeral.md
 
-
+inspect:
+	# podman inspect zie | jq -r '.[0].Config.CreateCommand'
+	podman inspect cgr.dev/chainguard/go
 
 check: 
-ifdef CONTAINER_ID
 	echo 'hi'
 	#systemctl --no-pager --user show wolfi-distrobox-quadlet.service
 	# journalctl --no-pager --user -xeu wolfi-distrobox-quadlet.service
@@ -100,171 +124,48 @@ ifdef CONTAINER_ID
 	# systemctl --no-pager --user list-unit-files
 	# podman auto-update --dry-run --format "{{.Image}} {{.Updated}}"
 	# /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
-endif
-
-quadlets: $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
-	tree $(HOME)/.config/containers/systemd
-	systemctl --user daemon-reload
-
-$(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container:
-	mkdir -p $(dir $@)
-	wget -qO- https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container |
-	sed 's%ghcr.io/ublue-os/wolfi-toolbox:latest%ghcr.io/grantmacken/zie-wolfi-toolbox:latest%' | 
-	tee $@
+ # $(HOME)/.config/containers/systemd/golang.image \
+ # $(HOME)/.config/containers/systemd/erlang.image \
+ # $(HOME)/.config/containers/systemd/nodelang.image \
 
 
-
-wolfi-base:
-	podman pull cgr.dev/chainguard/wolfi-base
-	podman run --rm wolfi-base sh -c 'apk info -vv | sort' | tee pkg.list
-
-sbom:
-	# podman run --rm wolfi-base ls /var/lib/db/sbom
-	# podman run --rm maven ls /var/lib/db/sbom
-
-pull-zie:
-	# for building
-	podman pull ghcr.io/grantmacken/zie-wolfi-toolbox:latest
-
-pull-lang:
-	# for building
-	podman pull cgr.dev/chainguard/rust:latest
-	podman pull cgr.dev/chainguard/node:latest
-	podman pull cgr.dev/chainguard/go:latest
-	podman pull cgr.dev/chainguard/maven:latest
-	podman pull cgr.dev/chainguard/erlan:latestg
-	podman pull cgr.dev/chainguard/ocam:latest
-	podman pull cgr.dev/chainguard/perl:latest
-
-pull-deploy:
-	# for deployment
-	podman pull cgr.dev/chainguard/google-cloud-sdk:latest
-	podman pull cgr.dev/chainguard/static:latest
-	podman pull cgr.dev/chainguard/opam
-	podman pull cgr.dev/chainguard/wasmtime
-	# apps
-
-pull-apps:
-	podman pull cgr.dev/chainguard/cosign
-	podman pull cgr.dev/chainguard/curl
-	podman pull cgr.dev/chainguard/dive
-	podman pull cgr.dev/chainguard/wait-for-it
-
-pull-wolfi:
-	podman pull cgr.dev/chainguard/melange
-	podman pull cgr.dev/chainguard/apko
-
-# info:
-# 	apk info --installed brew
-# 	apk info --version brew
-# 	echo
-# 	apk info --provides brew
-# 	apk info --depends brew
-# 	echo
-# 	apk info --contents brew
-	# apk info --description brew
-
-
-# build-brew:
-# 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox)
-# 	buildah config \
-#     --label com.github.containers.toolbox='true' \
-#     --label usage='Enter toolbox to install cli applications' \
-#     --label summary='a Wolfi based toolbox with brew' \
-#     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-# 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/profile.d/bash_completion.sh
-# 	TARG=/etc/profile.d/bash_completion.sh
-# 	buildah add $${CONTAINER} $${SRC} $${TARG}
-# 	buildah run $${CONTAINER} cat $${TARG}
-# 	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/profile.d/00-bluefin-cli-brew-firstrun.sh
-# 	TARG=/etc/profile.d/00-bluefin-cli-brew-firstrun.sh
-# 	buildah add $${CONTAINER} $${SRC} $${TARG}
-# 	buildah run $${CONTAINER} cat $${TARG}
-# 	echo
-# 	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/root/.bash_profile
-# 	TARG=/root/.bash_profile
-# 	buildah add $${CONTAINER} $${SRC} $${TARG}
-# 	buildah run $${CONTAINER} cat $${TARG}
-# 	echo
-# 	FILE=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/root/.bashrc
-# 	TARG=/root/.bashrc
-# 	buildah add $${CONTAINER} $${SRC} $${TARG}
-# 	buildah run $${CONTAINER} cat $${TARG}
-# 	echo
-# 	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-# 	buildah run $${CONTAINER} /bin/bash -c 'apk add brew cosign skopeo sudo-rs'
-# 	buildah run $${CONTAINER} /bin/bash -c 'mv /home/linuxbrew /home/homebrew'
-# 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/zie-brew-toolbox
-# 	buildah push ghcr.io/grantmacken/zie-brew-toolbox
-
-
-# init-brew:
-# 	green=$$'\033[32m'; bold=$$'\033[1m'; normal=$$'\033[0m'
-# 	echo $${XDG_DATA_HOME}
-# 	if test ! -f /etc/linuxbrew.firstrun
-# 	then
-# 	 printf "Setting up sudo for $${green}$${USER}$${normal}...\t\t\t "
-# 	 # echo "#$${UID} ALL = (root) NOPASSWD:ALL" | su-exec root tee -a /etc/sudoers > /dev/null
-# 	 printf "$${green}[ OK ]$${normal}\n"
-# 	 su-exec root cat /etc/sudoers
-# 	fi
-# 	printf "Setting up Linuxbrew" && echo
-# 	if test ! -d /home/linuxbrew; then
-# 	printf ' -  mkdir /home/linuxbrew'
-# 	su-exec root mkdir -p /home/linuxbrew
-# 	fi
-# 	if test ! -d /home/linuxbrew/.linuxbrew
-# 	then
-# 	 echo "create in xdg data dir a brew cli"
-# 	 if test ! -d "$${XDG_DATA_HOME}"/brew-cli
-# 	 then
-# 	 mkdir -p "$${XDG_DATA_HOME}"/brew-cli
-# 	 fi
-# 	fi
-# 	if test ! -d /usr/local/share/bash-completion/completions
-# 	then
-# 	printf "Setting up Tab-Completions...\t "
-# 	su-exec root mkdir -p /usr/local/share/bash-completion
-# 	su-exec root mount --bind /run/host/usr/share/bash-completion /usr/local/share/bash-completion
-# 	printf "$${green}[ OK ]$${normal}\n"
-# 	fi
-# 	if test ! -f /etc/linuxbrew.firstrun
-# 	then
-# 	 su-exec root touch /etc/linuxbrew.firstrun
-# 	 printf "\nBluefin-CLI first run complete!\n\n"
-# 	fi
-
-
-
-
-
-
-# build-neovim:
-# 	BUILDR=$$(buildah from localhost/tbx-buildr)
-# 	buildah run $${BUILDR} /bin/bash -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-# 	buildah run $${BUILDR} /bin/bash -c 'git clone https://github.com/neovim/neovim'
-# 	buildah run $${BUILDR} /bin/bash -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr CMAKE_INSTALL_LIBDIR=lib && make install'
-# 	buildah run $${BUILDR} /bin/bash -c 'which nvim && nvim --version'
-# 	buildah run $${BUILDR} /bin/bash -c 'cd ../ && rm -R neovim'
-# 	buildah commit --rm $${BUILDR} tbx-neovim
+# https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html
 #
-# build: ##
-# 	# CONTAINER=$$(buildah from localhost/tbx-base)
-# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/share/nvim' '/usr/share/nvim'
-# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/bin/nvim' '/usr/bin/nvim'
-# 	# buildah add --from localhost/tbx-neovim $${CONTAINER} '/usr/lib/nvim' '/usr/lib/nvim'
-# 	# # Get Distrobox-host-exec 
-# 	# buildah add $${CONTAINER} 'https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec' '/usr/bin/distrobox-host-exec'
-# 	# buildah run $${CONTAINER} sh -c 'apk add grep'
-# 	# # buildah add  $${CONTAINER} '$(abspath files/usr/local/bin)' '/usr/local/bin'
-# 	# buildah run $${CONTAINER} sh -c 'grep -oP "host_spawn_version=\K.+" /usr/bin/distrobox-host-exec'
-# 	# buildah commit --rm $${CONTAINER} zie-neovim
-# 	#
-#
-#
-#
-#
+# We create the quadlet image file. 
+# This generates a oneshot systemd unit
+# Then we invoke `systemctl --user daemon-reload`, so systemd sees the unit
+# Then we start the oneshot systemd unit which pulls the latest image specified in the quadlet image file
+# Next we set up a systemd timer for the unit so the latest container image is pulled on a weekly bases  
+# TODO! check is pulling from remote registry
 
-# https://github.com/memorysafety/sudo-rs
+IMAGE_NAME_LIST := wait-for-it
+BuildImagesList :=  $(patsubst %,$(HOME)/.config/containers/systemd/%.image,$(IMAGE_NAME_LIST))
+
+.PHONY: images
+images: $(BuildImagesList)
+
+.PHONY: images
+images-clean:
+	echo $(BuildImagesList)
+	rm -fv $(BuildImagesList) || true
+
+
+status:
+	#systemctl --no-pager --user cat erlang-image.service || true
+	# systemctl --no-pager --user is-enabled rustlang-image.service || true
+	# systemctl --no-pager --user list-unit-files --state=generated | grep -oP '^.+-image.service'
+	# systemctl --no-pager --user status dive-image.service || true
+	# systemctl --no-pager --user status dive-image.timer || true
+	# # systemctl --no-pager --user status wait-for-it-image.service || true
+	# # systemctl --no-pager --user  list-units --type=target || true
+	# systemctl --no-pager --user --user list-jobs || true
+	# # podman images | grep -oP '^cgr.+'
+	# systemctl --no-pager --user cat dive-image.service || true
+	systemctl --no-pager --user  list-timers --all || true
+	# # systemd-analyze --no-pager --user unit-paths || true
+	# cat /home/gmack/.local/share/systemd/timers/stamp-flatpak-user-update.timer || true
+	# systemctl --user show-environment
+
+	systemctl --no-pager  --user list-units || true
 
 

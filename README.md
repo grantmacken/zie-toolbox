@@ -1,27 +1,32 @@
 # grantmacken/zie-toolbox
 
-A dev toolbx  for an immutable OS
-based on fedora-minimal
+
+wolfi based toolboxes for an immutable operating systems
 
 
+# IDE is baked into OS 
 
+  - neovim: installed as default editor 
+  - Make or Just as a task runners
 
+# Containerized Build Tooling 
 
+Built by wolfi 
 ```
-podman pull ghcr.io/grantmacken/zie:latest
-toolbox create --image ghcr.io/grantmacken/zie
-toolbox list
-# enter
-toolbox enter 
-# to boot directly into neovim
-toolbox run -c zie nvim
-# to debug
-podman start --attach zie
+podman pull cgr.dev/chainguard/rust:latest
+podman pull cgr.dev/chainguard/node:latest
+podman pull cgr.dev/chainguard/go:latest
+podman pull cgr.dev/chainguard/maven:latest
+podman pull cgr.dev/chainguard/erlang:latest
+podman pull cgr.dev/chainguard/ocaml:latest
+podman pull cgr.dev/chainguard/perl:latest
 ```
 
-Buildah is used to kit out to this toolbox:
+# cli apps are in zie-toolbox
 
- - text editor: Neovim latest version from repo
- - languages: rust, golang
-   
+dotfile management
+
+
+
+
 
