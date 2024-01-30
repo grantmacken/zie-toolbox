@@ -67,7 +67,7 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	echo 'LAZYGIT' 
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
 	buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'mv $(go env GOPATH)/bin/lazygit /usr/local/bin/'
+	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/lazygit /usr/local/bin/'
 	buildah run $${CONTAINER} sh -c 'which lazygit'
 	buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
@@ -78,7 +78,7 @@ zie-toolbox: buildr-go
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah run $${CONTAINER} sh -c 'which lazygit'
+	buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
 	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
