@@ -22,7 +22,13 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add grep bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
+	# additional tools from chainguard
+	echo "grep: GNU grep implementation"
+	echo 'gh GitHub's official command line tool'
+	buildah run $${CONTAINER} sh -c 'apk add cosign grep gh' &>/dev/null
+	#gcloud Google Cloud Command Line Interface
+	buildah run $${CONTAINER} sh -c 'apk add google-cloud-sdk' &>/dev/null
 	# Add Distrobox-host-exe and host-spawn
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
@@ -51,16 +57,12 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# #buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
 	buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
-	echo 'COSIGN'
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
-	buildah run $${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' 
+	# echo 'COSIGN' install with apk
+	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' 
 	# buildah run $${CONTAINER} sh -c 'which cosign'
 	# #buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
-	buildah commit --rm $${CONTAINER} $@
-	podman save --quiet -o $@.tar localhost/$@
-
-xxx:
 	echo 'CHEZMOI'
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
@@ -68,13 +70,13 @@ xxx:
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
-	echo 'GH-CLI' # the github cli 
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
-	buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
-	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-	buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
+	echo 'GH-CLI' # the github cli install with apk
+	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+	# buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
+	# buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
+	# buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+	# buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	echo 'LAZYGIT' 
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
 	buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
@@ -100,11 +102,12 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 zie-toolbox:
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
-	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run $${CONTAINER} sh -c 'which gh && gh --version'
+	buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
+	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
 	buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
 	buildah run $${CONTAINER} sh -c 'which cosign && cosign --version'
-	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
