@@ -84,10 +84,13 @@ xxx:
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
-	
+
+## https://edu.chainguard.dev/chainguard/chainguard-images/reference/rust/
 bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
-	# buildah run $${CONTAINER} sh -c 'which rustup && rustup --version'  
+	buildah run $${CONTAINER} sh -c 'tree /usr'
+	buildah run $${CONTAINER} rustc --version
+	buildah run $${CONTAINER} cargo --version
 	# buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
 	# buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
 	buildah commit --rm $${CONTAINER} $@
