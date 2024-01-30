@@ -50,27 +50,28 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+	echo 'CHEZMOI'
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
+	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run ${CONTAINER} sh -c 'rm -fR chezmoi' || true
 	echo 'GH-CLI' # the github cli 
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH)'
-	# buildah run $${CONTAINER} sh -c 'chmod -R a+w /usr/local/gh && ln -s /usr/local/gh/bin/* /usr/local/bin/'
-	# buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-	# buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
-	# buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
-	# buildah run $${CONTAINER} sh -c 'tree $$(go env GOPATH) '
-	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	# # buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
+	buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
+	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+	buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	buildah commit --rm $${CONTAINER} $@
-
 
 zie-toolbox: buildr-go
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
@@ -90,11 +91,6 @@ start:
 ps:
 	podman ps --all
 
-clean: 
-	podman rmi cgr.dev/chainguard/dive
-	podman rmi cgr.dev/chainguard/wait-for-it
-	# am -f $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
-	# rm -f $(HOME)/.config/containers/systemd/bluefin-cli.container
 
 create:
 	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-create.md
