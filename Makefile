@@ -87,11 +87,11 @@ xxx:
 	
 bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
-	buildah run $${CONTAINER} sh -c 'which rustup && rustup --version'  
-	buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
-	buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
-	podman images
+	# buildah run $${CONTAINER} sh -c 'which rustup && rustup --version'  
+	# buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
+	# buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
 	buildah commit --rm $${CONTAINER} $@
+	podman images
 	podman save --quiet -o $@.tar localhost/$@
 
 zie-toolbox:
