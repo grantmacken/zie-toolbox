@@ -48,20 +48,18 @@ zie-wolfi-toolbox:
 
 bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
-	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
-	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-	buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
-	echo 'COSIGN'
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
-	buildah run $${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'which cosign'
-	#buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
-	buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
+	# #buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
+	# buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
+	# buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
+	# echo 'COSIGN'
+	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
+	# buildah run $${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'which cosign'
+	# #buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
+	# buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
 	buildah commit --rm $${CONTAINER} $@
 	podman save --quiet -o $@.tar localhost/$@
 
-
-	
 xxx:
 	echo 'CHEZMOI'
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
@@ -84,15 +82,19 @@ xxx:
 	buildah run $${CONTAINER} sh -c 'which lazygit'
 	buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
+	podman images
+	podman save --quiet -o $@.tar localhost/$@
 	
 bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
-	buildah run $${CONTAINER} sh -c 'which rustup && rustup --version' 
+	buildah run $${CONTAINER} sh -c 'which rustup && rustup --version'  
 	buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
 	buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
+	podman images
 	buildah commit --rm $${CONTAINER} $@
+	podman save --quiet -o $@.tar localhost/$@
 
-zie-toolbox: bldr-go
+zie-toolbox:
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
