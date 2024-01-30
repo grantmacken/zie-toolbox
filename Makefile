@@ -57,6 +57,10 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} sh -c 'which cosign'
 	#buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
 	buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
+	buildah commit --rm $${CONTAINER} $@
+	podman save --quiet -o $@.tar localhost/$@
+
+
 	
 xxx:
 	echo 'CHEZMOI'
