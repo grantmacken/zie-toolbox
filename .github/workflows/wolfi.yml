@@ -9,8 +9,25 @@ env:
   REGISTRY: 
   NAME: 'zie-toolbox'
 jobs:
+  bldr-rust:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Build 
+      run: make bldr-rust
+jobs:
+  bldr-go:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Build 
+      run: make bldr-go
+jobs:
   zie_wolfi-toolbox:
     runs-on: ubuntu-latest
+    needs: [bldr-rust,bldr-go ]
     permissions:
       contents: read
       packages: write
@@ -25,4 +42,4 @@ jobs:
         password: ${{ github.token }}
         registry: ghcr.io
     - name: Build 
-      run: make build
+      run: echo 'hi'
