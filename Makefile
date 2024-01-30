@@ -70,7 +70,7 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 
 zie-toolbox: buildr-go
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
-	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin/chezmoi' '/usr/local/bin/chezmoi'
+	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
