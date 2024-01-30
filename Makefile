@@ -50,7 +50,7 @@ buildr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	#buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
 	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
-        buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
+	buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
 	echo 'COSIGN'
 	buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign'
 	buildah run $${CONTAINER} sh -c 'cd cosign && go install ./cmd/cosign' &>/dev/null
