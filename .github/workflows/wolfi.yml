@@ -1,10 +1,10 @@
 name: CI
-on: 
+on:
   push:
     branches:
-      - main
+    - main
     paths-ignore:
-      - '**/README.md'
+    - '**/README.md'
 jobs:
   bldr_go:
     runs-on: ubuntu-latest
