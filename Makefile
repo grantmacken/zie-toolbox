@@ -71,18 +71,18 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
 	# buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
 	echo 'GH-CLI' # the github cli install with apk
-	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
-	# buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
-	# buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
-	# buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
-	# buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
-	# buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
+	buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
+	buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'tree /usr/local/gh'
+	buildah run $${CONTAINER} sh -c 'mv /usr/local/gh/bin/* /usr/local/bin/'
+	buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
+	buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	echo 'LAZYGIT' 
-	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
-	# buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
-	# buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/lazygit /usr/local/bin/'
-	# buildah run $${CONTAINER} sh -c 'which lazygit'
-	# buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
+	buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
+	buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/lazygit /usr/local/bin/'
+	buildah run $${CONTAINER} sh -c 'which lazygit'
+	buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
@@ -112,10 +112,8 @@ zie-toolbox:
 	# like boxkit add additional tools from chainguard
 	echo "grep: GNU grep implementation - so I can use -oP flag "
 	echo 'gh: GitHub's official command line tool'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add cosign grep gh' &>/dev/null
-	#gcloud Google Cloud Command Line Interface
-	buildah run $${CONTAINER} /bin/bash -c 'apk add google-cloud-sdk' &>/dev/null
-	# buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin'
+	echo 'gcloud: Google Cloud Command Line Interface'
+	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
 	# Add stuff NOT avaiable thru apk
 	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	# Add Distrobox-host-exe and host-spawn
@@ -140,7 +138,6 @@ zie-toolbox:
 	buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
 	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
 	buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
-	buildah run $${CONTAINER} sh -c 'which cosign && cosign --version'
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
