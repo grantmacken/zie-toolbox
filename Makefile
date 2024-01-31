@@ -64,12 +64,12 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# #buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
 	echo 'CHEZMOI'
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
-	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
-	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
-	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
+	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
+	# buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
+	# buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
+	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	# buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
 	echo 'GH-CLI' # the github cli install with apk
 	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
 	# buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
@@ -78,11 +78,11 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} sh -c 'which gh && gh --version && gh --help'
 	# buildah run $${CONTAINER} sh -c 'rm -fR gh-cli' || true
 	echo 'LAZYGIT' 
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
-	buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/lazygit /usr/local/bin/'
-	buildah run $${CONTAINER} sh -c 'which lazygit'
-	buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
+	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/jesseduffield/lazygit.git' 
+	# buildah run $${CONTAINER} sh -c 'cd lazygit && go install' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/lazygit /usr/local/bin/'
+	# buildah run $${CONTAINER} sh -c 'which lazygit'
+	# buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
