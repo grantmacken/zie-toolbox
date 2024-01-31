@@ -44,6 +44,10 @@ jobs:
       run: |
         ls -al bldr-go
         ls -al bldr-rust
+        tar --to-stdout --extract bldr-go/bldr-go.tar | podman load
+        tar --to-stdout --extract bldr-rust/bldr-rust.tar | podman load
+        podman images
+
 #       podman load --quiet -i fedora.tar.gz
 # jobs:
 #   bldr_go:
