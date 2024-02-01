@@ -42,17 +42,13 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-      uses: docker/login-action@v3
     - name: Login
+      uses: docker/login-action@v3
       with:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ghcr.io
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v4
-    - name: Load
-      run: |
-        podman load --quiet --input bldr-go/bldr-go.tar
-        podman load --quiet --input bldr-rust/bldr-rust.tar
-        podman images
-        make zie-toolbox
+    - name: Build the zie toolbox
+      run: make zie-toolbox
