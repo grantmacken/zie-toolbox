@@ -98,6 +98,7 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua
+	buildah run $${CONTAINER} sh -c 'rm /home/nonroot/.cargo/bin/cargo-binstall'
 	buildah run $${CONTAINER} sh -c 'ls /home/nonroot/.cargo/bin/'
 	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
 	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
@@ -109,7 +110,7 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 # LSPs
 # https://github.com/wolfi-dev/os/blob/main/rust-analyzer.yaml
 #  description: A Rust compiler front-end for IDEs
-#  
+
 zie-toolbox: 
 	podman load --quiet --input bldr-go/bldr-go.tar
 	podman load --quiet --input bldr-rust/bldr-rust.tar
@@ -129,7 +130,8 @@ zie-toolbox:
 	echo 'lazygit: simple terminal UI for git command'
 	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
 	# Add stuff NOT avaiable thru apk
-	buildah add --from localhost/buildr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	# Add Distrobox-host-exe and host-spawn
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
@@ -172,13 +174,26 @@ start:
 ps:
 	podman ps --all
 
+clean: 
+	distrobox stop --yes zie || true
+	distrobox rm -f zie || true
+	distrobox ls
+	podman rmi -f -i ghcr.io/grantmacken/zie-toolbox:latest || true
+	podman rmi -f -i localhost/tbx-chezmoi || true
+	podman rmi -f -i localhost/tbx-buildr || true
+	podman rmi -f -i localhost/tbx || true
+	podman images
 
-create:
+
+
+
+create: clean
 	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-create.md
-	# distrobox create --image ghcr.io/grantmacken/zie-brew-toolbox --name brew  # --verbose
+	distrobox  stop -y zie
+	distrobox  stop -y zie
 	# distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie  # --verbose
 	# https://docs.podman.io/en/stable/markdown/podman-create.1.html
-	podman create cgr.dev/chainguard/go:latest -n golang
+	# podman create cgr.dev/chainguard/go:latest -n golang
 
 export-bin: 
 	# from within container
