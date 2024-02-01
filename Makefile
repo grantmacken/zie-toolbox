@@ -90,15 +90,26 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 ## https://edu.chainguard.dev/chainguard/chainguard-images/reference/rust/
 bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
-	buildah run $${CONTAINER} sh -c 'tree /usr'
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
+	buildah run $${CONTAINER} sh -c 'ls /usr/local'
+	buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'ls /usr/local'
+	buildah run $${CONTAINER} sh -c '
+	# buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks fd-find just ripgrep stylua tree-sitter-cli wasm-pack' 
+	# buildah run $${CONTAINER} sh -c 'ln -sf ${CARGO_HOME}/bin/* /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
 	# buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
 
+# https://github.com/wolfi-dev/os/blob/main/lazygit.yaml
+# LSPs
+# https://github.com/wolfi-dev/os/blob/main/rust-analyzer.yaml
+#  description: A Rust compiler front-end for IDEs
+#  
 zie-toolbox: 
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah config \
