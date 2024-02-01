@@ -92,10 +92,10 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
-	buildah run $${CONTAINER} sh -c 'ls /usr/local'
-	buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'ls /usr/local'
+	buildah run $${CONTAINER} cargo install cargo-binstall
+	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
+	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
+	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
