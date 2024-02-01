@@ -96,11 +96,6 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'cargo install cargo-binstall' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls /usr/local'
-	buildah run $${CONTAINER} sh -c '
-	# buildah run ${CONTAINER} sh -c '${CARGO_HOME}/bin/cargo-binstall --no-confirm --no-symlinks fd-find just ripgrep stylua tree-sitter-cli wasm-pack' 
-	# buildah run $${CONTAINER} sh -c 'ln -sf ${CARGO_HOME}/bin/* /usr/local/bin/'
-	# buildah run $${CONTAINER} sh -c 'which rustfmt && rustfmt --version'  # Formatter
-	# buildah run $${CONTAINER} sh -c 'which rust-analyzer' # LSP
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 	podman save --quiet -o $@.tar localhost/$@
