@@ -55,7 +55,4 @@ jobs:
         podman load --quiet --input bldr-go/bldr-go.tar
         podman load --quiet --input bldr-rust/bldr-rust.tar
         podman images
-    - name: Build 
-      run: make zie-toolbox
-    - name: Check 
-      run: podman images
+        make zie-toolbox
