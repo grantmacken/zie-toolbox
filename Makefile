@@ -95,7 +95,7 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
-	buildah run $${CONTAINER} echo $${CARGO_HOME} || true
+	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua
 	buildah run $${CONTAINER} sh -c 'ls /home/nonroot/.cargo/bin/'
@@ -111,6 +111,8 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 #  description: A Rust compiler front-end for IDEs
 #  
 zie-toolbox: 
+	podman load --quiet --input bldr-go/bldr-go.tar
+	podman load --quiet --input bldr-rust/bldr-rust.tar
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah config \
     --label com.github.containers.toolbox='true' \
