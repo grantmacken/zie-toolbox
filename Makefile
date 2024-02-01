@@ -95,6 +95,8 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
+	buildah run $${CONTAINER} echo '$${CARGO_HOME}' || true
+        buildah run ${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua
 	buildah run $${CONTAINER} sh -c 'ls /home/nonroot/.cargo/bin/'
 	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
