@@ -122,15 +122,23 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
 	buildah run $${CONTAINER} sh -c 'apk add git tree grep'
-	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git'
-	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local'
+	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim && make install'
-	buildah run $${CONTAINER} sh -c 'tree /usr/local'
-	# buildah run $${CONTAINER} sh -c 'cd neovim && cmake -S cmake.deps -B .deps -G Ninja -D 
-	# CMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_BUNDLED=OFF -DUSE_BUNDLED_TS_PARSERS=ON'
-	# buildah run $${CONTAINER} sh -c 'cd neovim && cmake cmake --build .deps'
-	# buildah run $${CONTAINER} sh -c 'cd neovim && cmake -B output -G Ninja 
-	# -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_JEMALLOC=FALSE -DENABLE_LTO=TRUE -DCMAKE_VERBOSE_MAKEFILE=TRUE -DCI_BUILD=OFF'
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah commit --rm $${CONTAINER} $@
+
+bldr-distrobox: bldr-neovim
+	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
+	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
+	buildah config \
+    --label com.github.containers.toolbox='true' \
+    --label usage='This image is meant to be used with the distrobox command' \
+    --label summary='a Wolfi based toolbox' \
+    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
+	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+	buildah commit --rm $${CONTAINER} $@
 
 zie-toolbox: 
 	# podman load --quiet --input bldr-go/bldr-go.tar
@@ -145,11 +153,11 @@ zie-toolbox:
 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
 	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
 	# like boxkit add additional tools from chainguard
-	echo "grep: GNU grep implementation - so I can use -oP flag "
-	echo 'gh: GitHub official command line tool'
-	echo 'gcloud: Google Cloud Command Line Interface'
-	echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
+	# echo "grep: GNU grep implementation - so I can use -oP flag "
+	# echo 'gh: GitHub official command line tool'
+	# echo 'gcloud: Google Cloud Command Line Interface'
+	# echo 'lazygit: simple terminal UI for git command'
+	# buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
 	# echo 'xxxx' | buildah run $${CONTAINER} /bin/bash -c 'cat - ' 
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
@@ -172,10 +180,10 @@ zie-toolbox:
 	# Change root shell to BASH
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-	buildah run $${CONTAINER} sh -c 'which gh && gh --version'
-	buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
-	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
-	buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
+	# buildah run $${CONTAINER} sh -c 'which gh && gh --version'
+	# buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
+	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
+	# buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
