@@ -125,7 +125,7 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git'
 	buildah run $${CONTAINER} sh -c 'cd neovim && cmake -S cmake.deps -B .deps -G Ninja -D CMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_BUNDLED=OFF -DUSE_BUNDLED_TS_PARSERS=ON'
 	buildah run $${CONTAINER} sh -c 'cd neovim && cmake cmake --build .deps'
-	buildah run $${CONTAINER} sh -c 'cd neovim && cmake cmake --build .deps'
+	buildah run $${CONTAINER} sh -c 'cd neovim && cmake -B output -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_INSTALL_LIBDIR=lib -DENABLE_JEMALLOC=FALSE -DENABLE_LTO=TRUE -DCMAKE_VERBOSE_MAKEFILE=TRUE -DCI_BUILD=OFF'
 
 zie-toolbox: 
 	# podman load --quiet --input bldr-go/bldr-go.tar
