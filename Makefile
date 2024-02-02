@@ -123,8 +123,8 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
 	buildah run $${CONTAINER} sh -c 'apk add git tree grep'
 	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git'
-	buildah run $${CONTAINER} sh -c 'make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local'
-	buildah run $${CONTAINER} sh -c 'make install'
+	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local'
+	buildah run $${CONTAINER} sh -c 'cd neovim && make install'
 	buildah run $${CONTAINER} sh -c 'tree /usr/local'
 	# buildah run $${CONTAINER} sh -c 'cd neovim && cmake -S cmake.deps -B .deps -G Ninja -D 
 	# CMAKE_BUILD_TYPE=RelWithDebInfo -DUSE_BUNDLED=OFF -DUSE_BUNDLED_TS_PARSERS=ON'
