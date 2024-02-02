@@ -12,7 +12,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
     - name: Build neovim
-      run: make bldr-neovim
+      run: make bldr-distrobox
 #   bldr_go:
 #     runs-on: ubuntu-latest
 #     steps:
