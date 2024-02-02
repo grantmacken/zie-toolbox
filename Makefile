@@ -111,8 +111,8 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 #  description: A Rust compiler front-end for IDEs
 
 zie-toolbox: 
-	podman load --quiet --input bldr-go/bldr-go.tar
-	podman load --quiet --input bldr-rust/bldr-rust.tar
+	# podman load --quiet --input bldr-go/bldr-go.tar
+	# podman load --quiet --input bldr-rust/bldr-rust.tar
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah config \
     --label com.github.containers.toolbox='true' \
@@ -129,23 +129,23 @@ zie-toolbox:
 	echo 'lazygit: simple terminal UI for git command'
 	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
 	# Add stuff NOT avaiable thru apk
-	buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
-	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	# Add Distrobox-host-exe and host-spawn
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	TARG=/usr/bin/distrobox-host-exec
-	buildah add $${CONTAINER} $${SRC} $${TARG}
-	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-	echo $${HOST_SPAWN_VERSION}
-	buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
-	buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	# symlink to exectables on host
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# Add Make as already in os symlink here? otherwise use build-base
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
+	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	# TARG=/usr/bin/distrobox-host-exec
+	# buildah add $${CONTAINER} $${SRC} $${TARG}
+	# HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+	# echo $${HOST_SPAWN_VERSION}
+	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
+	# buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+	# # symlink to exectables on host
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	# # Add Make as already in os symlink here? otherwise use build-base
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
 	# Change root shell to BASH
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
@@ -178,8 +178,6 @@ clean:
 	distrobox rm -f zie || true
 	distrobox ls
 	podman rmi -f -i ghcr.io/grantmacken/zie-toolbox:latest || true
-	podman rmi -f -i localhost/tbx-chezmoi || true
-	podman rmi -f -i localhost/tbx-buildr || true
 	podman rmi -f -i localhost/tbx || true
 	podman images
 
