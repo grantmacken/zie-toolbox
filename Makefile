@@ -118,7 +118,7 @@ zie-distro:
 	buildah add $${CONTAINER} $${SRC} $${TARG} from cgr.dev/chainguard/wolfi-base)
 
 
-zie-neovim: 
+bldr-neovim: 
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
