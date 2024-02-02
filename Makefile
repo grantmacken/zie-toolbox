@@ -55,7 +55,6 @@ zie-wolfi-toolbox:
 bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
 	# #buildah run $${CONTAINER} /bin/bash -c 'go env GOPATH'
-	buildah run $${CONTAINER} sh -c 'git config --global http.postBuffer 524288000 && git config --global http.version HTTP/1.1 '
 	buildah run $${CONTAINER} sh -c 'mkdir -p $$(go env GOPATH) $$(go env GOCACHE)'
 	# echo 'COSIGN' install with apk
 	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/sigstore/cosign' &>/dev/null
@@ -64,7 +63,7 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# #buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
 	echo 'CHEZMOI'
-	buildah run $${CONTAINER} sh -c 'git clone https://github.com/twpayne/chezmoi.git'
+	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/twpayne/chezmoi.git'
 	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
 	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
@@ -98,8 +97,8 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua
-	buildah run $${CONTAINER} sh -c 'rm /home/nonroot/.cargo/bin/cargo-binstall'
-	buildah run $${CONTAINER} sh -c 'ls /home/nonroot/.cargo/bin/'
+	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
+	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
 	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@
