@@ -9,48 +9,97 @@ MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
-build: bldr-distrobox  ## build the toolboxes
+build: zie-wolfi-toolbox  ## build the toolboxes
 
-zie-wolfi-toolbox: 
-	buildah pull -q cgr.dev/chainguard/wolfi-base
+zie-wolfi-toolbox:
+	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
+	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade && apk add grep' &>/dev/null
 	buildah config \
     --label com.github.containers.toolbox='true' \
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
-	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
-	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
-	# additional tools from chainguard
-	echo "grep: GNU grep implementation"
-	echo 'gh GitHub's official command line tool'
-	buildah run $${CONTAINER} sh -c 'apk add cosign grep gh' &>/dev/null
-	#gcloud Google Cloud Command Line Interface
-	buildah run $${CONTAINER} sh -c 'apk add google-cloud-sdk' &>/dev/null
-	# Add Distrobox-host-exe and host-spawn
+	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
+	TARG=/toolbox-packages
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
+	buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
+	# echo "grep: GNU grep implementation - so I can use -oP flag "
+	# echo 'gh: GitHub official command line tool'
+	# echo 'gcloud: Google Cloud Command Line Interface'
+	# echo 'lazygit: simple terminal UI for git command'
+	# buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
-	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
+	TARG=/usr/bin/distrobox-export
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
+	TARG=/usr/bin/entrypoint
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-	echo $${HOST_SPAWN_VERSION}
-	buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
-	buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	# symlink to exectables on host
-	buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin'
+	echo "$${HOST_SPAWN_VERSION}"
+	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
+	TARG=/usr/bin/host-spawn
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	# buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
+	# buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
+	#symlink to exectables on host
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# Add Make as already in os symlink here? otherwise use build-base
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
-	# Change root shell to BASH
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	buildah commit $${CONTAINER} $@
+	buildah tag localhost/@:latest ghcr.io/grantmacken/$@:latest
 	podman images
-	buildah push ghcr.io/grantmacken/$@:latest
+	echo '##[ ------------------------------- ]##'
+
+# zie-wolfi-toolbox: 
+# 	buildah pull -q cgr.dev/chainguard/wolfi-base
+# 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
+# 	buildah config \
+#     --label com.github.containers.toolbox='true' \
+#     --label usage='This image is meant to be used with the distrobox command' \
+#     --label summary='a Wolfi based toolbox' \
+#     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+# 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
+# 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+# 	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
+# 	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
+# 	# additional tools from chainguard
+# 	echo "grep: GNU grep implementation"
+# 	echo 'gh GitHub's official command line tool'
+# 	buildah run $${CONTAINER} sh -c 'apk add cosign grep gh' &>/dev/null
+# 	#gcloud Google Cloud Command Line Interface
+# 	buildah run $${CONTAINER} sh -c 'apk add google-cloud-sdk' &>/dev/null
+# 	# Add Distrobox-host-exe and host-spawn
+# 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+# 	TARG=/usr/bin/distrobox-host-exec
+# 	buildah add $${CONTAINER} $${SRC} $${TARG}
+# 	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+# 	echo $${HOST_SPAWN_VERSION}
+# 	buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
+# 	buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
+# 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+# 	# symlink to exectables on host
+# 	buildah run $${CONTAINER} /bin/bash -c 'mkdir -p /usr/local/bin'
+# 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
+# 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+# 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+# 	# Add Make as already in os symlink here? otherwise use build-base
+# 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
+# 	# Change root shell to BASH
+# 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+# 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
+# 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+# 	podman images
+# 	buildah push ghcr.io/grantmacken/$@:latest
 
 bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
@@ -122,56 +171,6 @@ bldr-neovim:
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-wolfi-toolbox:
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade && apk add grep' &>/dev/null
-	buildah config \
-    --label com.github.containers.toolbox='true' \
-    --label usage='This image is meant to be used with the distrobox command' \
-    --label summary='a Wolfi based toolbox' \
-    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
-	TARG=/toolbox-packages
-	buildah add $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
-	buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
-	# echo "grep: GNU grep implementation - so I can use -oP flag "
-	# echo 'gh: GitHub official command line tool'
-	# echo 'gcloud: Google Cloud Command Line Interface'
-	# echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	TARG=/usr/bin/distrobox-host-exec
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
-	TARG=/usr/bin/distrobox-export
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
-	TARG=/usr/bin/entrypoint
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-	echo "$${HOST_SPAWN_VERSION}"
-	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
-	TARG=/usr/bin/host-spawn
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	# buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin/' || true
-	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
-	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
-	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
-	# buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
-	#symlink to exectables on host
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	buildah commit $${CONTAINER} $@
-	buildah tag localhost/@latest ghcr.io/grantmacken/$@:latest
-	podman images
-	echo '##[ ------------------------------- ]##'
 
 zie-toolbox: 
 	# podman load --quiet --input bldr-go/bldr-go.tar
