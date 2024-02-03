@@ -154,16 +154,21 @@ bldr-distrobox:
 	echo "$${HOST_SPAWN_VERSION}"
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/bin/host-spawn
-	buildah add --chmod 755  $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin/' || true
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	# buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin/' || true
 	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
 	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
 	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
 	# buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	#buildah commit --rm $${CONTAINER} $@
+	#symlink to exectables on host
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+	buildah commit --rm $${CONTAINER} $@
+	podman images
 	echo '##[ ------------------------------- ]##'
 
 zie-toolbox: 
