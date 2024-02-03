@@ -8,6 +8,11 @@ MAKEFLAGS += --silent
 
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
+# echo "grep: GNU grep implementation - so I can use -oP flag "
+# echo 'gh: GitHub official command line tool'
+# echo 'gcloud: Google Cloud Command Line Interface'
+# echo 'lazygit: simple terminal UI for git command'
+# buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 
 build: zie-wolfi-toolbox  ## build the toolboxes
 
@@ -25,11 +30,6 @@ zie-wolfi-toolbox:
 	buildah add $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
 	buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
-	# echo "grep: GNU grep implementation - so I can use -oP flag "
-	# echo 'gh: GitHub official command line tool'
-	# echo 'gcloud: Google Cloud Command Line Interface'
-	# echo 'lazygit: simple terminal UI for git command'
-	# buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
@@ -55,8 +55,9 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	buildah commit $${CONTAINER} $@
 	buildah tag localhost/@:latest ghcr.io/grantmacken/$@:latest
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
 
