@@ -143,18 +143,18 @@ bldr-distrobox:
 	buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
-	buildah add --chmod 751 $${CONTAINER} $${SRC} $${TARG}
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
 	TARG=/usr/bin/distrobox-export
-	buildah add --chmod 751 $${CONTAINER} $${SRC} $${TARG}
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
 	TARG=/usr/bin/entrypoint
-	buildah add --chmod 751 $${CONTAINER} $${SRC} $${TARG}
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
 	echo "$${HOST_SPAWN_VERSION}"
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/bin/host-spawn
-	buildah add --chmod 751  $${CONTAINER} $${SRC} $${TARG}
+	buildah add --chmod 755  $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin/' || true
 	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
 	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
