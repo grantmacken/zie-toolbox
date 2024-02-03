@@ -122,7 +122,7 @@ bldr-neovim:
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-bldr-distrobox:
+zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade && apk add grep' &>/dev/null
@@ -158,16 +158,18 @@ bldr-distrobox:
 	# buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin/' || true
 	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
 	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
 	# buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
 	#symlink to exectables on host
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	buildah commit --rm $${CONTAINER} $@
+	buildah commit $${CONTAINER} $@
+	buildah tag localhost/@latest ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
 
