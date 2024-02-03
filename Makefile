@@ -134,9 +134,8 @@ bldr-distrobox:
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
 	TARG=/toolbox-packages
 	buildah add $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" || true
-	#buildah run $${CONTAINER} sh -c "grep -oP '^.'/toolbox-packages | xargs apk add" || true
-	# buildah run $${CONTAINER} sh -c "rm /toolbox-packages"
+	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
+	buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
@@ -151,11 +150,13 @@ bldr-distrobox:
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
 	TARG=/usr/bin/entrypoint
 	buildah add $${CONTAINER} $${SRC} $${TARG}
+	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+	echo $$HOST_SPAWN_VERSION=
 	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
-	# buildah run $${CONTAINER} /bin/bash -c 'which neovim'
+	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	#buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
