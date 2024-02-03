@@ -9,7 +9,7 @@ MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 
-# build: zie-wolfi-toolbox zie-toolbox ## build the toolboxes
+build: bldr-distrobox  ## build the toolboxes
 
 zie-wolfi-toolbox: 
 	buildah pull -q cgr.dev/chainguard/wolfi-base
@@ -115,7 +115,6 @@ zie-distro:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
-	buildah add $${CONTAINER} $${SRC} $${TARG} from cgr.dev/chainguard/wolfi-base)
 
 bldr-neovim: 
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
@@ -140,7 +139,20 @@ bldr-distrobox: bldr-neovim
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
 	TARG=/toolbox-packages
 	buildah add $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
+	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add"
+	buildah run $${CONTAINER} sh -c "rm /toolbox-packages"
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	TARG=/usr/bin/distrobox-host-exec
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
+	TARG=/usr/bin/distrobox-export
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
+	TARG=/usr/bin/entrypoint
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint'
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	buildah commit --rm $${CONTAINER} $@
 
