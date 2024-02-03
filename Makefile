@@ -134,7 +134,7 @@ bldr-distrobox:
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
 	TARG=/toolbox-packages
 	buildah add $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages
+	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages"
 
 	# buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add"
 	# buildah run $${CONTAINER} sh -c "rm /toolbox-packages"
