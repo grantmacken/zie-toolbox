@@ -145,18 +145,19 @@ bldr-distrobox:
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add $${CONTAINER} $${SRC} $${TARG}
-	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
-	# TARG=/usr/bin/distrobox-export
-	# buildah add $${CONTAINER} $${SRC} $${TARG}
-	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
-	# TARG=/usr/bin/entrypoint
-	# buildah add $${CONTAINER} $${SRC} $${TARG}
-	# buildah run $${CONTAINER} /bin/bash -c 'which entrypoint'
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'
-	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
+	TARG=/usr/bin/distrobox-export
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
+	TARG=/usr/bin/entrypoint
+	buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
+	# buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
+	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	# buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
 	# buildah run $${CONTAINER} /bin/bash -c 'which neovim'
 	# buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	# buildah commit --rm $${CONTAINER} $@
+	#buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
 zie-toolbox: 
