@@ -6,7 +6,7 @@ on:
     paths-ignore:
     - '**/README.md'
 jobs:
-  bldr_neovim:
+  bldr_distrobox:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
