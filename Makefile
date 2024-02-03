@@ -109,13 +109,6 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 # LSPs
 # https://github.com/wolfi-dev/os/blob/main/rust-analyzer.yaml
 #  description: A Rust compiler front-end for IDEs
-zie-distro: 
-	# podman load --quiet --input bldr-go/bldr-go.tar
-	# podman load --quiet --input bldr-rust/bldr-rust.tar
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	TARG=/usr/bin/distrobox-host-exec
-
 bldr-neovim: 
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
@@ -135,12 +128,17 @@ bldr-distrobox: bldr-neovim
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	# buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
 	TARG=/toolbox-packages
 	buildah add $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add"
 	buildah run $${CONTAINER} sh -c "rm /toolbox-packages"
+	echo "grep: GNU grep implementation - so I can use -oP flag "
+	echo 'gh: GitHub official command line tool'
+	echo 'gcloud: Google Cloud Command Line Interface'
+	echo 'lazygit: simple terminal UI for git command'
+	PACKAGES="gh google-cloud-sdk"
+	buildah run $${CONTAINER} /bin/bash -c "apk add $${PACKAGES}" &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add $${CONTAINER} $${SRC} $${TARG}
@@ -153,6 +151,7 @@ bldr-distrobox: bldr-neovim
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'
+	buildah run $${CONTAINER} /bin/bash -c 'which neovim'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	buildah commit --rm $${CONTAINER} $@
 
