@@ -141,11 +141,10 @@ bldr-distrobox:
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
-	PACKAGES=gh google-cloud-sdk
-	buildah run $${CONTAINER} sh -c "apk add $${PACKAGES}" &>/dev/null
-	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	# TARG=/usr/bin/distrobox-host-exec
-	# buildah add $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	TARG=/usr/bin/distrobox-host-exec
+	buildah add $${CONTAINER} $${SRC} $${TARG}
 	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
 	# TARG=/usr/bin/distrobox-export
 	# buildah add $${CONTAINER} $${SRC} $${TARG}
