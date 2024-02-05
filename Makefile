@@ -125,11 +125,17 @@ bldr-neovim:
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev'
+	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add git tree grep'
 	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd neovim && make \
+ CMAKE_BUILD_TYPE=RelWithDebInfo \
+ CMAKE_INSTALL_PREFIX=/usr \
+ CMAKE_INSTALL_LIBDIR=lib \
+ ENABLE_JEMALLOC=FALSE \
+ ENABLE_LTO=TRUE ' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim && make install'
+	buildah run $${CONTAINER} sh -c 'ls -alR /usr'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
@@ -137,7 +143,7 @@ bldr-neovim:
 
 zie-toolbox: bldr-neovim 
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
-	# like boxkit add additional tools from chainguard
+	# add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
