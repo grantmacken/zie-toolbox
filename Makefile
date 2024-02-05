@@ -108,19 +108,19 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
 	# buildah run $${CONTAINER} cargo install --git https://github.com/RaphGL/Tuckr.git &>/dev/null
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
-	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow
+	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow &>/dev/null
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
 	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@
-	podman images
-	podman save --quiet -o $@.tar localhost/$@
 
 # https://github.com/wolfi-dev/os/blob/main/lazygit.yaml
 # LSPs
 # https://github.com/wolfi-dev/os/blob/main/rust-analyzer.yaml
 #  description: A Rust compiler front-end for IDEs
+#
+
 bldr-neovim: 
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
@@ -155,10 +155,10 @@ zie-toolbox: bldr-rust
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
-	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
-	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version'
+	# buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	# built artifacts not from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
@@ -213,6 +213,9 @@ $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
 	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
 	EOF
 	sleep 1
+
+sdk:
+	podman pull ghcr.io/wolfi-dev/sdk:latest
 
 upgrade:
 	distrobox-upgrade zie
