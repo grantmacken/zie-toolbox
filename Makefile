@@ -149,7 +149,7 @@ zie-toolbox:
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
 	buildah run $${CONTAINER} /bin/bash -c 'apk add neovim grep gh lazygit' &>/dev/null
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
+	# buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
