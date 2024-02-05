@@ -131,19 +131,18 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim && make install'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah run $${CONTAINER} sh -c 'rm neovim'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
 
-zie-toolbox: bldr-neovim
+zie-toolbox: bldr-neovim bldr-rust
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	# like boxkit add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
-	# buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
+	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh' &>/dev/null
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local'
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
