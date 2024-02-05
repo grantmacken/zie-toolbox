@@ -14,7 +14,7 @@ MAKEFLAGS += --silent
 # echo 'lazygit: simple terminal UI for git command'
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 
-build: zie-wolfi-toolbox  ## build the toolboxes
+build: zie-toolbox  ## build the toolboxes
 quadlet: $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container
 
 zie-wolfi-toolbox:
@@ -106,7 +106,7 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
 	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
-	buildah run $${CONTAINER} cargo install --git https://github.com/RaphGL/Tuckr.git &>/dev/null
+	# buildah run $${CONTAINER} cargo install --git https://github.com/RaphGL/Tuckr.git &>/dev/null
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
@@ -141,7 +141,7 @@ bldr-neovim:
 	echo '##[ ------------------------------- ]##'
 
 
-zie-toolbox: 
+zie-toolbox: bldr-rust
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	# add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
@@ -152,23 +152,16 @@ zie-toolbox:
 	# buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
-	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	# # symlink to exectables on host
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# # Add Make as already in os symlink here? otherwise use build-base
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
-	# Change root shell to BASH
-	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-	buildah run $${CONTAINER} sh -c 'which gh && gh --version'
-	# buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
-	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
-	# buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
-	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
-
-	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
+	# built artifacts not from apk
+	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
