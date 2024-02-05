@@ -130,24 +130,25 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim && make \
  CMAKE_BUILD_TYPE=RelWithDebInfo \
- CMAKE_INSTALL_PREFIX=/usr/local \
+ CMAKE_INSTALL_PREFIX=/usr \
  CMAKE_INSTALL_LIBDIR=lib \
  ENABLE_JEMALLOC=FALSE \
  ENABLE_LTO=TRUE && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -alR /usr/local'
-	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah run $${CONTAINER} sh -c 'printenv'
+	# buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
 
-zie-toolbox: bldr-neovim 
+zie-toolbox: 
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	# add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh' &>/dev/null
+	buildah run $${CONTAINER} /bin/bash -c 'apk add neovim grep gh lazygit' &>/dev/null
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
@@ -161,10 +162,12 @@ zie-toolbox: bldr-neovim
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
 	# Change root shell to BASH
 	# buildah run $${CONTAINER} sh -c 'echo "#1000 ALL = (root) NOPASSWD:ALL" >> /etc/sudoers'
-	# buildah run $${CONTAINER} sh -c 'which gh && gh --version'
+	buildah run $${CONTAINER} sh -c 'which gh && gh --version'
 	# buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
 	# buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
+
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
