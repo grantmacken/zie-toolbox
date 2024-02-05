@@ -15,6 +15,7 @@ MAKEFLAGS += --silent
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 
 build: zie-wolfi-toolbox  ## build the toolboxes
+quadlet: $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container
 
 zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
@@ -54,6 +55,7 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
@@ -104,8 +106,9 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
 	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
+	buildah run $${CONTAINER} cargo install --git https://github.com/RaphGL/Tuckr.git &>/dev/null
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
-	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua
+	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
@@ -128,40 +131,23 @@ bldr-neovim:
 	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=RelWithDebInfo CMAKE_INSTALL_PREFIX=/usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim && make install'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah run $${CONTAINER} sh -c 'rm neovim'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
 
-zie-toolbox: 
-	# podman load --quiet --input bldr-go/bldr-go.tar
-	# podman load --quiet --input bldr-rust/bldr-rust.tar
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-	buildah config \
-    --label com.github.containers.toolbox='true' \
-    --label usage='This image is meant to be used with the distrobox command' \
-    --label summary='a Wolfi based toolbox' \
-    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
-	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add bash bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap=2.68-r0 libsm libx11 libxau libxcb libxdmcp libxext libice libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc wget xauth xz zip vulkan-loader' &>/dev/null
+zie-toolbox: bldr-neovim
+	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	# like boxkit add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
 	# buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh google-cloud-sdk' &>/dev/null
-	# echo 'xxxx' | buildah run $${CONTAINER} /bin/bash -c 'cat - ' 
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local'
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	# Add Distrobox-host-exe and host-spawn
-	# SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	# TARG=/usr/bin/distrobox-host-exec
-	# buildah add $${CONTAINER} $${SRC} $${TARG}
-	# HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-	# echo $${HOST_SPAWN_VERSION}
-	# buildah run $${CONTAINER} /bin/bash -c "wget https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64 -O /usr/bin/host-spawn"
-	# buildah run $${CONTAINER} /bin/bash -c 'chmod +x /usr/bin/host-spawn'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	# # symlink to exectables on host
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
@@ -176,10 +162,58 @@ zie-toolbox:
 	# buildah run $${CONTAINER} sh -c 'which gcloud && gcloud --version'
 	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi'
 	# buildah run $${CONTAINER} sh -c 'which lazygit && lazygit --version'
-	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
+
+# https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
+$(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
+	mkdir -p $(dir $@)
+	echo '##[ $(notdir $@) ]]##'
+	cat << EOF | tee $@
+	[Unit]
+	Description=Wolfi Toolbox for your distrobox fun
+	[Container]
+	Annotation=run.oci.keep_original_groups=1
+	AutoUpdate=registry
+	ContainerName=wolfi-quadlet
+	Environment=SHELL=%s
+	Environment=HOME=%h
+	Environment=XDG_RUNTIME_DIR=%t
+	Environment=USER=%u
+	Environment=USERNAME=%u
+	Environment=container=podman
+	Exec=--verbose --name %u  --user %U --group %G --home %h --init "0" --pre-init-hooks " " --additional-packages " " -- " "
+	Image=ghcr.io/grantmacken/zie-wolfi-toolbox:latest
+	HostName=zie-wolfi-quadlet.%l
+	Network=host
+	PodmanArgs=--entrypoint /usr/bin/entrypoint
+	PodmanArgs=--ipc host
+	PodmanArgs=--no-hosts
+	PodmanArgs=--privileged
+	PodmanArgs=--label manager=distrobox
+	PodmanArgs=--security-opt label=disable
+	PodmanArgs=--security-opt apparmor=unconfined
+	Ulimit=host
+	User=root:root
+	UserNS=keep-id
+	Volume=/:/run/host:rslave
+	Volume=/tmp:/tmp:rslave
+	Volume=%h:%h:rslave
+	Volume=/dev:/dev:rslave
+	Volume=/sys:/sys:rslave
+	Volume=/dev/pts
+	Volume=/dev/null:/dev/ptmx
+	Volume=/sys/fs/selinux
+	Volume=/var/log/journal
+	Volume=/var/home/%u:/var/home/%u:rslave
+	Volume=%t:%t:rslave
+	Volume=/etc/hosts:/etc/hosts:ro
+	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
+	EOF
+	sleep 1
 
 upgrade:
 	distrobox-upgrade zie
@@ -205,16 +239,6 @@ clean:
 	podman images
 
 
-
-
-create: clean
-	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-create.md
-	distrobox  stop -y zie
-	distrobox  stop -y zie
-	# distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie  # --verbose
-	# https://docs.podman.io/en/stable/markdown/podman-create.1.html
-	# podman create cgr.dev/chainguard/go:latest -n golang
-
 export-bin: 
 	# from within container
 	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-export.md
@@ -229,11 +253,11 @@ inspect:
 
 check: 
 	echo 'hi'
-	#systemctl --no-pager --user show wolfi-distrobox-quadlet.service
-	# journalctl --no-pager --user -xeu wolfi-distrobox-quadlet.service
-	# cat $(HOME)/.config/containers/systemd/wolfi-distrobox-quadlet.container
-	#echo
-	# systemctl --no-pager --user list-unit-files
+	# systemctl --no-pager --user show zie-wolfi-toolbox.service
+	# journalctl --no-pager --user -xeu zie-wolfi-toolbox.service
+	# systemctl --no-pager --user list-unit-files | grep wolfi
+	systemctl --no-pager --user status zie-wolfi-toolbox.service
+	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
 	# podman auto-update --dry-run --format "{{.Image}} {{.Updated}}"
 	# /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
  # $(HOME)/.config/containers/systemd/golang.image \
