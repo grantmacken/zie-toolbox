@@ -135,7 +135,7 @@ bldr-neovim:
 	echo '##[ ------------------------------- ]##'
 
 
-zie-toolbox: bldr-neovim bldr-rust
+zie-toolbox: bldr-neovim 
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
 	# like boxkit add additional tools from chainguard
 	# echo "grep: GNU grep implementation - so I can use -oP flag "
