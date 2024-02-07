@@ -15,7 +15,46 @@ MAKEFLAGS += --silent
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 
 build: zie-toolbox  ## build the toolboxes
-quadlet: $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container
+
+
+quadlet-reset: 
+	if systemctl --no-pager --user is-active zie-toolbox.service
+	then 
+	systemctl --no-pager --user stop zie-toolbox.service
+	fi
+	if systemctl --no-pager --user is-enabled zie-toolbox.service
+	then 
+	systemctl --no-pager --user disable zie-toolbox.service
+	fi
+	rm $(HOME)/.config/containers/systemd/zie-toolbox.container || true
+	systemctl --user daemon-reload
+	systemctl --no-pager --user list-unit-files  --state=generated | grep zie-toolbox || true
+	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+
+
+quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
+	echo 'OK! quadlet added'
+	# podman images | grep ghcr.io/grantmacken/zie-wolfi-toolbox || ''
+	systemctl --user daemon-reload
+	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
+	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
+	systemctl --no-pager --user list-unit-files  --state=generated || grep zie
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
+	# systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	# systemctl --no-pager --user is-active zie-toolbox.service || true
+	# systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
+	# systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
+	# systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
+	# systemctl --no-pager --user list-unit-files  --state=generated | grep -oP '$(*)-image.service' || true
+	# journalctl --no-pager --user -xeu zie-wolfi-toolbox.service
+	# systemctl --no-pager --user list-unit-files | grep wolfi
+	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
+	distrobox ls
+	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
+
 
 zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
@@ -74,12 +113,12 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# #buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/cosign /usr/local/bin/'
 	# buildah run $${CONTAINER} sh -c 'rm -fR cosign' || true
 	echo 'CHEZMOI'
-	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/twpayne/chezmoi.git'
-	buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
-	buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
-	buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
-	buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
+	# buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/twpayne/chezmoi.git'
+	# buildah run $${CONTAINER} sh -c 'cd chezmoi; make install-from-git-working-copy' &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'mkdir -p /usr/local/bin'
+	# buildah run $${CONTAINER} sh -c 'mv $$(go env GOPATH)/bin/chezmoi /usr/local/bin/chezmoi'
+	# buildah run $${CONTAINER} sh -c 'which chezmoi && chezmoi --help'
+	# buildah run $${CONTAINER} sh -c 'rm -fR chezmoi' || true
 	echo 'GH-CLI' # the github cli install with apk
 	# buildah run $${CONTAINER} sh -c 'git clone https://github.com/cli/cli.git gh-cli'
 	# buildah run $${CONTAINER} sh -c 'cd gh-cli && make install prefix=/usr/local/gh' &>/dev/null
@@ -95,7 +134,6 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	# buildah run $${CONTAINER} sh -c 'rm -fR lazygit' || true
 	buildah commit --rm $${CONTAINER} $@
 	podman images
-	podman save --quiet -o $@.tar localhost/$@
 
 ## https://edu.chainguard.dev/chainguard/chainguard-images/reference/rust/
 ## https://github.com/wolfi-dev/os/blob/main/ripgrep.yaml
@@ -105,14 +143,10 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
-	# buildah run $${CONTAINER} echo $${CARGO_HOME} || true
-	# buildah run $${CONTAINER} cargo install --git https://github.com/RaphGL/Tuckr.git &>/dev/null
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow &>/dev/null
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
-	# buildah config --env CARGO_HOME=/usr/local $${CONTAINER}
-	# buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@
 
 # https://github.com/wolfi-dev/os/blob/main/lazygit.yaml
@@ -148,26 +182,26 @@ zie-toolbox: bldr-rust
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add neovim grep gh lazygit' &>/dev/null
+	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh lazygit' &>/dev/null
 	# buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
+	# use Make on host
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
 	# buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
+	# buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	# built artifacts not from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
 	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
 
-# https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
 $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
 	mkdir -p $(dir $@)
 	echo '##[ $(notdir $@) ]]##'
@@ -214,8 +248,62 @@ $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
 	EOF
 	sleep 1
 
+# TODO check often if up to date
+# https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
+$(HOME)/.config/containers/systemd/zie-toolbox.container:
+	mkdir -p $(dir $@)
+	echo '##[ $(notdir $@) ]]##'
+	cat << EOF | tee $@
+	[Unit]
+	Description=Distrobox Wolfi-OS Toolbox 
+	[Container]
+	Annotation=run.oci.keep_original_groups=1
+	AutoUpdate=registry
+	ContainerName=zie-quadlet
+	Environment=SHELL=%s
+	Environment=HOME=%h
+	Environment=XDG_RUNTIME_DIR=%t
+	Environment=USER=%u
+	Environment=USERNAME=%u
+	Environment=container=podman
+	Exec=--verbose --name %u  --user %U --group %G --home %h --init "0" --pre-init-hooks " " --additional-packages " " -- " "
+	Image=ghcr.io/grantmacken/zie-toolbox:latest
+	HostName=zie-quadlet.%l
+	Network=host
+	PodmanArgs=--entrypoint /usr/bin/entrypoint
+	PodmanArgs=--ipc host
+	PodmanArgs=--no-hosts
+	PodmanArgs=--privileged
+	PodmanArgs=--label manager=distrobox
+	PodmanArgs=--security-opt label=disable
+	PodmanArgs=--security-opt apparmor=unconfined
+	Ulimit=host
+	User=root:root
+	UserNS=keep-id
+	Volume=/:/run/host:rslave
+	Volume=/tmp:/tmp:rslave
+	Volume=%h:%h:rslave
+	Volume=/dev:/dev:rslave
+	Volume=/sys:/sys:rslave
+	Volume=/dev/pts
+	Volume=/dev/null:/dev/ptmx
+	Volume=/sys/fs/selinux
+	Volume=/var/log/journal
+	Volume=/var/home/%u:/var/home/%u:rslave
+	Volume=%t:%t:rslave
+	Volume=/etc/hosts:/etc/hosts:ro
+	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
+	EOF
+
 sdk:
-	podman pull ghcr.io/wolfi-dev/sdk:latest
+	# podman pull ghcr.io/wolfi-dev/sdk:latest
+	# podman pull cgr.dev/chainguard/apko
+	podman pull ghcr.io/wolfi-dev/melange
+	podman run --rm cgr.dev/chainguard/apko apko version
+
+melange:
+	podman pull ghcr.io/wolfi-dev/melange
+	podman run --rm --privileged -v $(CURDIR):/work -w /work  cgr.dev/chainguard/melange build build/neovim.yaml
 
 upgrade:
 	distrobox-upgrade zie
@@ -237,7 +325,6 @@ clean:
 	distrobox rm -f zie || true
 	distrobox ls
 	podman rmi -f -i ghcr.io/grantmacken/zie-toolbox:latest || true
-	podman rmi -f -i localhost/tbx || true
 	podman images
 
 
@@ -258,7 +345,7 @@ check:
 	# systemctl --no-pager --user show zie-wolfi-toolbox.service
 	# journalctl --no-pager --user -xeu zie-wolfi-toolbox.service
 	# systemctl --no-pager --user list-unit-files | grep wolfi
-	systemctl --no-pager --user status zie-wolfi-toolbox.service
+	systemctl --no-pager --user status zie-toolbox.target
 	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
 	# podman auto-update --dry-run --format "{{.Image}} {{.Updated}}"
 	# /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
@@ -303,7 +390,6 @@ status:
 	# # systemd-analyze --no-pager --user unit-paths || true
 	# cat /home/gmack/.local/share/systemd/timers/stamp-flatpak-user-update.timer || true
 	# systemctl --user show-environment
-
 	systemctl --no-pager  --user list-units || true
 
 
