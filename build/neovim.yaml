@@ -31,41 +31,16 @@ environment:
       - samurai
       - tree-sitter-dev
       - unibilium-dev
-
 pipeline:
   - uses: git-checkout
     with:
       repository: https://github.com/neovim/neovim
       tag: nightly
       expected-commit: f6042d5c300c008fb4b3e3ec4e81537feffbaa0b
-
-  # TODO: Don't rely on bundled treesitter grammars
-  - runs: |
-      cmake -S cmake.deps -B .deps -G Ninja -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-        -DUSE_BUNDLED=OFF \
-        -DUSE_BUNDLED_TS_PARSERS=ON
-      cmake --build .deps
-
-  - runs: |
-      cmake -B output -G Ninja \
-       -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-       -DCMAKE_INSTALL_PREFIX=/usr \
-       -DCMAKE_INSTALL_LIBDIR=lib \
-       -DENABLE_JEMALLOC=FALSE \
-       -DENABLE_LTO=TRUE \
-       -DCMAKE_VERBOSE_MAKEFILE=TRUE \
-       -DCI_BUILD=OFF
-
-  - uses: cmake/build
-
-  - uses: cmake/install
-
+  - uses: autoconf/make
+    with:
+      opts: |
+        CMAKE_BUILD_TYPE=RelWithDebInfo \
+        CMAKE_INSTALL_PREFIX=/usr/local
+  - uses: autoconf/make-install
   - uses: strip
-
-update:
-  enabled: true
-  github:
-    identifier: neovim/neovim
-#     strip-prefix: v
-#     tag-filter: v
-
