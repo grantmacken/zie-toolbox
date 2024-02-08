@@ -11,9 +11,6 @@ default: apko
 apko:
 	podman pull cgr.dev/chainguard/apko
 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi apko-wolfi.tar
-	podman load --input apko-wolfi.tar
-	podman images
-
-run:
-	podman run --rm -it apko-wolfi:test-amd64
+	#podman load --input apko-wolfi.tar
+	#podman images
 

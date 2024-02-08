@@ -13,7 +13,7 @@ MAKEFLAGS += --silent
 # echo 'gcloud: Google Cloud Command Line Interface'
 # echo 'lazygit: simple terminal UI for git command'
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
-build: zie-toolbox  ## build the toolboxes
+default: zie-toolbox  ## build the toolboxes
 
 quadlet-reset: 
 	if systemctl --no-pager --user is-active zie-toolbox.service
@@ -55,8 +55,7 @@ quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 
 zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade && apk add grep' &>/dev/null
+	CONTAINER=$$(buildah from docker-archive:wolfi/apko-wolfi.tar)
 	buildah config \
     --label com.github.containers.toolbox='true' \
     --label usage='This image is meant to be used with the distrobox command' \
