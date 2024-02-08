@@ -166,18 +166,9 @@ bldr-neovim:
 
 zie-toolbox: bldr-rust
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
-	# add additional tools from chainguard
-	# echo "grep: GNU grep implementation - so I can use -oP flag "
-	# echo 'gh: GitHub official command line tool'
-	# echo 'gcloud: Google Cloud Command Line Interface'
-	# echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
-	buildah run $${CONTAINER} /bin/bash -c 'apk add fd gh grep lazygit neovim ripgrep sed sudo-rs zoxide ' &>/dev/null
-	# buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
-	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	# use Make on host
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
 	# buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
@@ -187,7 +178,7 @@ zie-toolbox: bldr-rust
 	# built artifacts not from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
-	# buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	podman images
 	buildah push ghcr.io/grantmacken/$@:latest

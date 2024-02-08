@@ -21,9 +21,11 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ghcr.io
-    - name: Build with apko
-      run: cd wolfi && make
-    - name: Create zie-wolfi-toolbox
-      run: make zie-wolfi-toolbox
+    # - name: Build with apko
+    #   run: cd wolfi && make
+    # - name: Create zie-wolfi-toolbox
+    #   run: make zie-wolfi-toolbox
+    - name: Build zie-toolbox
+      run: make zie-toolbox
 
 
