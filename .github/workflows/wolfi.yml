@@ -22,7 +22,7 @@ jobs:
         password: ${{ github.token }}
         registry: ghcr.io
     - name: Build
-      run: make melange
+      run: make bldr-neovim
 #   bldr_go:
 #     runs-on: ubuntu-latest
 #     steps:

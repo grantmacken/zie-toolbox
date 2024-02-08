@@ -160,14 +160,9 @@ bldr-neovim:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add git tree grep'
+	buildah run $${CONTAINER} sh -c 'apk add git'
 	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim && make \
- CMAKE_BUILD_TYPE=RelWithDebInfo \
- CMAKE_INSTALL_PREFIX=/usr \
- CMAKE_INSTALL_LIBDIR=lib \
- ENABLE_JEMALLOC=FALSE \
- ENABLE_LTO=TRUE && make install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=Release && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -alR /usr/local'
 	buildah run $${CONTAINER} sh -c 'printenv'
 	# buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
@@ -302,8 +297,12 @@ sdk:
 	podman run --rm cgr.dev/chainguard/apko apko version
 
 melange:
-	podman pull ghcr.io/wolfi-dev/melange
-	podman run --rm --privileged -v $(CURDIR):/work -w /work  cgr.dev/chainguard/melange build build/neovim.yaml
+	# podman pull ghcr.io/wolfi-dev/melange
+	# podman run --rm --privileged -v "$${PWD}":/work cgr.dev/chainguard/melange keygen
+	podman run --rm --privileged -v "$${PWD}":/work -w /work -- \
+ cgr.dev/chainguard/melange build build/neovim.yaml \
+ --arch x86_64 \
+ --signing-key melange.rsa --keyring-append melange.rsa.pub
 
 upgrade:
 	distrobox-upgrade zie
