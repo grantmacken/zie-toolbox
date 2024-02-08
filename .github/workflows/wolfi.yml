@@ -23,6 +23,7 @@ jobs:
         registry: ghcr.io
     - name: Build with apko
       run: cd wolfi && make
-    - name: Create toolbox
-      podman images
+    - name: Create zie-wolfi-toolbox
+      run: make zie-wolfi-toolbox
+
 
