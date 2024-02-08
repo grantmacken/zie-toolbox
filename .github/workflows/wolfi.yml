@@ -21,5 +21,8 @@ jobs:
         username: ${{ github.repository_owner }}
         password: ${{ github.token }}
         registry: ghcr.io
-    - name: Build
+    - name: Build with apko
       run: cd wolfi && make
+    - name: Create toolbox
+      podman images
+
