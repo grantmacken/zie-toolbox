@@ -15,6 +15,11 @@ MAKEFLAGS += --silent
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
 default: zie-toolbox  ## build the toolboxes
 
+quadlet-status: 
+	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+	# systemctl --no-pager --user list-unit-files  --state=generated | grep zie-toolbox || true
+
 quadlet-reset: 
 	if systemctl --no-pager --user is-active zie-toolbox.service
 	then 
@@ -30,10 +35,8 @@ quadlet-reset:
 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
 	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
 
-
 quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	echo 'OK! quadlet added'
-	# podman images | grep ghcr.io/grantmacken/zie-wolfi-toolbox || ''
 	systemctl --user daemon-reload
 	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
 	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
@@ -41,17 +44,11 @@ quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
-	# systemctl --no-pager --user is-enabled zie-toolbox.service || true
-	# systemctl --no-pager --user is-active zie-toolbox.service || true
-	# systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
-	# systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
-	# systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
-	# systemctl --no-pager --user list-unit-files  --state=generated | grep -oP '$(*)-image.service' || true
-	# journalctl --no-pager --user -xeu zie-wolfi-toolbox.service
-	# systemctl --no-pager --user list-unit-files | grep wolfi
 	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
+	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+	# journalctl --no-pager --user -xeu zie-toolbox.service
 	distrobox ls
-	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
 
 zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
@@ -61,11 +58,11 @@ zie-wolfi-toolbox:
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
-	TARG=/toolbox-packages
-	buildah add $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
-	buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
+	# SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
+	# TARG=/toolbox-packages
+	# buildah add $${CONTAINER} $${SRC} $${TARG}
+	# buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
+	# buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
@@ -85,7 +82,8 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
-	# buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
+	# check some wolfi apk packages
+	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
 	#symlink to exectables on host
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
@@ -96,6 +94,13 @@ zie-wolfi-toolbox:
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
+
+distrobox: 
+	podman pull ghcr.io/grantmacken/zie-wolfi-toolbox:latest
+	podman run -
+
+
+
 
 bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
@@ -275,6 +280,7 @@ $(HOME)/.config/containers/systemd/zie-toolbox.container:
 	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
 	EOF
 
+
 upgrade:
 	distrobox-upgrade zie
 
@@ -282,13 +288,28 @@ stop:
 	distrobox stop --all
 
 remove:
-	distrobox rm --all
+	podman rm --all --force
+	podman ps --all
+	distrobox ls
+	podman rmi $$(podman images -qa) --force || true
+	podman images
+
+prune: 
+	podman container prune --force
+	podman image prune --all --force
+	podman system prune --all --force
+
+list: 
+	podman container list
+	podman images
+
+
 
 start:
 	podman golang
 
 ps:
-	podman ps --all
+	podman ps --all | grep zie
 
 clean: 
 	distrobox stop --yes zie || true
@@ -333,33 +354,6 @@ check:
 # Next we set up a systemd timer for the unit so the latest container image is pulled on a weekly bases  
 # TODO! check is pulling from remote registry
 
-IMAGE_NAME_LIST := wait-for-it
-BuildImagesList :=  $(patsubst %,$(HOME)/.config/containers/systemd/%.image,$(IMAGE_NAME_LIST))
 
-.PHONY: images
-images: $(BuildImagesList)
-
-.PHONY: images
-images-clean:
-	echo $(BuildImagesList)
-	rm -fv $(BuildImagesList) || true
-
-
-status:
-	#systemctl --no-pager --user cat erlang-image.service || true
-	# systemctl --no-pager --user is-enabled rustlang-image.service || true
-	# systemctl --no-pager --user list-unit-files --state=generated | grep -oP '^.+-image.service'
-	# systemctl --no-pager --user status dive-image.service || true
-	# systemctl --no-pager --user status dive-image.timer || true
-	# # systemctl --no-pager --user status wait-for-it-image.service || true
-	# # systemctl --no-pager --user  list-units --type=target || true
-	# systemctl --no-pager --user --user list-jobs || true
-	# # podman images | grep -oP '^cgr.+'
-	# systemctl --no-pager --user cat dive-image.service || true
-	systemctl --no-pager --user  list-timers --all || true
-	# # systemd-analyze --no-pager --user unit-paths || true
-	# cat /home/gmack/.local/share/systemd/timers/stamp-flatpak-user-update.timer || true
-	# systemctl --user show-environment
-	systemctl --no-pager  --user list-units || true
 
 
