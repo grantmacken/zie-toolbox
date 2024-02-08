@@ -177,7 +177,8 @@ zie-toolbox: bldr-rust
 	# echo 'gh: GitHub official command line tool'
 	# echo 'gcloud: Google Cloud Command Line Interface'
 	# echo 'lazygit: simple terminal UI for git command'
-	buildah run $${CONTAINER} /bin/bash -c 'apk add grep gh lazygit' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
+	buildah run $${CONTAINER} /bin/bash -c 'apk add fd gh grep lazygit neovim ripgrep sed sudo-rs zoxide ' &>/dev/null
 	# buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local' '/usr/local' || true
 	# Add stuff NOT avaiable thru apk
 	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
