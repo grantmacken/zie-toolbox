@@ -13,9 +13,7 @@ MAKEFLAGS += --silent
 # echo 'gcloud: Google Cloud Command Line Interface'
 # echo 'lazygit: simple terminal UI for git command'
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
-
 build: zie-toolbox  ## build the toolboxes
-
 
 quadlet-reset: 
 	if systemctl --no-pager --user is-active zie-toolbox.service
@@ -54,7 +52,6 @@ quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
 	distrobox ls
 	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
-
 
 zie-wolfi-toolbox:
 	echo '##[ $@ ]##'
@@ -100,7 +97,6 @@ zie-wolfi-toolbox:
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
-
 
 bldr-go: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/go:latest)
@@ -168,7 +164,6 @@ bldr-neovim:
 	# buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
-
 
 zie-toolbox: bldr-rust
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
@@ -242,7 +237,6 @@ $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
 	Volume=/etc/hosts:/etc/hosts:ro
 	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
 	EOF
-	sleep 1
 
 # TODO check often if up to date
 # https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
@@ -290,20 +284,6 @@ $(HOME)/.config/containers/systemd/zie-toolbox.container:
 	Volume=/etc/hosts:/etc/hosts:ro
 	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
 	EOF
-
-sdk:
-	# podman pull ghcr.io/wolfi-dev/sdk:latest
-	# podman pull cgr.dev/chainguard/apko
-	podman pull ghcr.io/wolfi-dev/melange
-	podman run --rm cgr.dev/chainguard/apko apko version
-
-melange:
-	# podman pull ghcr.io/wolfi-dev/melange
-	# podman run --rm --privileged -v "$${PWD}":/work cgr.dev/chainguard/melange keygen
-	podman run --rm --privileged -v "$${PWD}":/work -w /work -- \
- cgr.dev/chainguard/melange build build/neovim.yaml \
- --arch x86_64 \
- --signing-key melange.rsa --keyring-append melange.rsa.pub
 
 upgrade:
 	distrobox-upgrade zie
