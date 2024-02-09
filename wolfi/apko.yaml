@@ -61,7 +61,7 @@ contents:
     - ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
     - sed     # GNU stream editor TODO? replace with sd"
     - sudo-rs # A memory safe implementation of sudo and su
-    - tree-siiter # for nvim treesitter  - Incremental parsing system for programming tools
+    - tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
     - zoxide  # A smarter cd command. Supports all major shells
 
 entrypoint:
