@@ -50,15 +50,18 @@ contents:
     - xz
     - zip
     - vulkan-loader
-    - fd      # A simple, fast and user-friendly alternative to 'find'
+    - build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
     - eza     # A modern, maintained replacement for ls.
+    - fd      # A simple, fast and user-friendly alternative to 'find'
     - gh      #  GitHub's official command line tool
+    - google-cloud-sdk # Google Cloud Command Line Interface
     - grep    # GNU grep implementation implement -P flag Perl RegEx engine"
     - lazygit # simple terminal UI for git commands
     - neovim  # Vim-fork focused on extensibility and agility
     - ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
     - sed     # GNU stream editor TODO? replace with sd"
     - sudo-rs # A memory safe implementation of sudo and su
+    - tree-siiter # for nvim treesitter  - Incremental parsing system for programming tools
     - zoxide  # A smarter cd command. Supports all major shells
 
 entrypoint:
