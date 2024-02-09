@@ -50,56 +50,10 @@ quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	# journalctl --no-pager --user -xeu zie-toolbox.service
 	distrobox ls
 
-zie-wolfi-toolbox:
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from docker-archive:wolfi/apko-wolfi.tar)
-	buildah config \
-    --label com.github.containers.toolbox='true' \
-    --label usage='This image is meant to be used with the distrobox command' \
-    --label summary='a Wolfi based toolbox' \
-    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	# SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/wolfi-toolbox/packages.wolfi
-	# TARG=/toolbox-packages
-	# buildah add $${CONTAINER} $${SRC} $${TARG}
-	# buildah run $${CONTAINER} sh -c "grep -v '^#' /toolbox-packages | xargs apk add" &>/dev/null
-	# buildah run $${CONTAINER} sh -c "rm -f /toolbox-packages"
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
-	TARG=/usr/bin/distrobox-host-exec
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
-	TARG=/usr/bin/distrobox-export
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
-	TARG=/usr/bin/entrypoint
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
-	echo "$${HOST_SPAWN_VERSION}"
-	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
-	TARG=/usr/bin/host-spawn
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	# buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
-	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
-	# check some wolfi apk packages
-	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
-	#symlink to exectables on host
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
-	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	buildah push ghcr.io/grantmacken/$@:latest
-	podman images
-	echo '##[ ------------------------------- ]##'
 
 distrobox: 
 	podman pull ghcr.io/grantmacken/zie-wolfi-toolbox:latest
-	podman run -
-
-
+	distrobox create --image ghcr.io/grantmacken/zie-wolfi-toolbox:latest --name zie-wolfi
 
 
 bldr-go: ## a ephemeral localhost container which builds go executables
@@ -135,10 +89,6 @@ bldr-go: ## a ephemeral localhost container which builds go executables
 	buildah commit --rm $${CONTAINER} $@
 	podman images
 
-## https://edu.chainguard.dev/chainguard/chainguard-images/reference/rust/
-## https://github.com/wolfi-dev/os/blob/main/ripgrep.yaml
-## https://github.com/wolfi-dev/os/blob/main/tree-sitter.yaml
-## https://github.com/wolfi-dev/os/blob/main/fd.yaml
 bldr-rust: ## a ephemeral localhost container which builds go executables
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
 	buildah run $${CONTAINER} rustc --version
@@ -149,44 +99,54 @@ bldr-rust: ## a ephemeral localhost container which builds go executables
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	buildah commit --rm $${CONTAINER} $@
 
-# https://github.com/wolfi-dev/os/blob/main/lazygit.yaml
-# LSPs
-# https://github.com/wolfi-dev/os/blob/main/rust-analyzer.yaml
-#  description: A Rust compiler front-end for IDEs
-#
-
-bldr-neovim: 
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-	buildah run $${CONTAINER} sh -c 'apk update && apk upgrade' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add build-base busybox cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add git'
-	buildah run $${CONTAINER} sh -c 'git clone --depth 1 https://github.com/neovim/neovim.git' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim && make CMAKE_BUILD_TYPE=Release && make install' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'ls -alR /usr/local'
-	buildah run $${CONTAINER} sh -c 'printenv'
-	# buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah commit --rm $${CONTAINER} $@
-	echo '##[ ------------------------------- ]##'
-
 zie-toolbox: bldr-rust
-	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-wolfi-toolbox:latest)
-	# buildah add --from localhost/bldr-go $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from docker-archive:wolfi/apko-wolfi.tar)
+	buildah config \
+    --label com.github.containers.toolbox='true' \
+    --label usage='This image is meant to be used with the distrobox command' \
+    --label summary='a Wolfi based toolbox' \
+    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	TARG=/usr/bin/distrobox-host-exec
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
+	TARG=/usr/bin/distrobox-export
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
+	TARG=/usr/bin/entrypoint
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+	echo "$${HOST_SPAWN_VERSION}"
+	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
+	TARG=/usr/bin/host-spawn
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	# buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
+	#symlink to exectables on host
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
-	# use Make on host
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/make'
-	# buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
+	# binaries from apk
+	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
 	# built artifacts not from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
 	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	podman images
 	buildah push ghcr.io/grantmacken/$@:latest
+	podman images
+	echo '##[ ------------------------------- ]##'
 
 $(HOME)/.config/containers/systemd/zie-wolfi-toolbox.container:
 	mkdir -p $(dir $@)
@@ -303,8 +263,6 @@ list:
 	podman container list
 	podman images
 
-
-
 start:
 	podman golang
 
@@ -318,10 +276,7 @@ clean:
 	podman rmi -f -i ghcr.io/grantmacken/zie-toolbox:latest || true
 	podman images
 
-
-export-bin: 
-	# from within container
-	# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-export.md
+# https://github.com/89luca89/distrobox/blob/main/docs/usage/distrobox-export.md
 	# distrobox-export
 
 ephemeral:
@@ -340,9 +295,7 @@ check:
 	# systemctl --no-pager --user restart zie-wolfi-toolbox.service
 	# podman auto-update --dry-run --format "{{.Image}} {{.Updated}}"
 	# /usr/lib/systemd/system-generators/podman-system-generator --user --dryrun
- # $(HOME)/.config/containers/systemd/golang.image \
- # $(HOME)/.config/containers/systemd/erlang.image \
- # $(HOME)/.config/containers/systemd/nodelang.image \
+
 
 
 # https://docs.podman.io/en/stable/markdown/podman-systemd.unit.5.html
@@ -357,3 +310,42 @@ check:
 
 
 
+zie-wolfi-toolbox:
+	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from docker-archive:wolfi/apko-wolfi.tar)
+	buildah config \
+    --label com.github.containers.toolbox='true' \
+    --label usage='This image is meant to be used with the distrobox command' \
+    --label summary='a Wolfi based toolbox' \
+    --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
+	TARG=/usr/bin/distrobox-host-exec
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-export
+	TARG=/usr/bin/distrobox-export
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-init
+	TARG=/usr/bin/entrypoint
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	HOST_SPAWN_VERSION=$$(buildah run $${CONTAINER} /bin/bash -c 'grep -oP "host_spawn_version=.\K(\d+\.){2}\d+" /usr/bin/distrobox-host-exec')
+	echo "$${HOST_SPAWN_VERSION}"
+	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
+	TARG=/usr/bin/host-spawn
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	# buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
+	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'|| true
+	# check some wolfi apk packages
+	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
+	#symlink to exectables on host
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	buildah push ghcr.io/grantmacken/$@:latest
+	podman images
+	echo '##[ ------------------------------- ]##'
