@@ -21,17 +21,16 @@ melange: commitish
  --signing-key melange.rsa --keyring-append melange.rsa.pub
 
 commitish: latest.json
-	jq -r .tag_name latest.json 
+	jq -r .tag_name latest.json
 	NEW=$$(jq -r .target_commitish $< ) 
 	jq -r .name latest.json 
-	OLD=$$(grep -oP 'expected-sha256: \K.+$$' $< )
+	OLD=$$(grep -oP 'expected-sha256: \K.+$$' neovim.yaml )
 	echo "old: $${OLD}"
 	echo "new: $${NEW}"
 	sed -i "s/$${OLD}/$${NEW}/" neovim.yaml 
-	grep -oP 'expected-sha256: \K.+$$' neovim.yaml
-	rm -f latest.json
+	# grep -oP 'expected-sha256: \K.+$$' neovim.yaml
 
 latest.json:
-	curl https://api.github.com/repos/neovim/neovim/releases -s -s | jq -r '.[0]' > $@
+	curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0]' > $@
 
 

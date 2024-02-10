@@ -31,10 +31,13 @@ environment:
       - samurai
       - tree-sitter-dev
       - unibilium-dev
+      
 pipeline:
   - uses: fetch
     with:
       uri: https://github.com/neovim/neovim/archive/refs/tags/${{package.version}}.tar.gz
+      expected-sha256: 4948fa42efb90333a3b5738fd943b75f35415a7b
+      
   - uses: autoconf/make
     with:
       opts: |
