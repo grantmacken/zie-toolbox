@@ -24,4 +24,4 @@ jobs:
     - name: Build with apko
       run: cd wolfi && make
     - name: Create zie-toolbox
-      run: make zie-toolbox
+      run: make

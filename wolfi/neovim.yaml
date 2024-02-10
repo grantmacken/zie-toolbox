@@ -1,0 +1,46 @@
+package:
+  name: neovim
+  version: nightly
+  epoch: 0
+  description: "Nvim development (prerelease) build"
+  copyright:
+    - license: Apache-2.0 AND Vim
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - build-base
+      - busybox
+      - cmake
+      - gettext-dev
+      - gperf
+      - libtermkey
+      - libtermkey-dev
+      - libuv-dev
+      - libvterm-dev
+      - lua-luv
+      - lua-luv-dev
+      - lua5.1-lpeg
+      - lua5.1-mpack
+      - luajit-dev
+      - msgpack
+      - samurai
+      - tree-sitter-dev
+      - unibilium-dev
+pipeline:
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://github.com/neovim/neovim/archive/refs/tags/${{package.version}}.tar.gz
+  - uses: autoconf/make
+    with:
+      opts: |
+        CMAKE_BUILD_TYPE=RelWithDebInfo
+        CMAKE_INSTALL_PREFIX=/usr
+        CMAKE_INSTALL_LIBDIR=lib
+  - uses: autoconf/make-install
+  - uses: strip

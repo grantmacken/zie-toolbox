@@ -13,7 +13,7 @@ MAKEFLAGS += --silent
 # echo 'gcloud: Google Cloud Command Line Interface'
 # echo 'lazygit: simple terminal UI for git command'
 # buildah run $${CONTAINER} sh -c "apk add gh" &>/dev/null
-default: zie-toolbox  ## build the toolboxes
+default: zie-toolbox  ## build the toolbox
 
 quadlet-status: 
 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
@@ -132,7 +132,7 @@ zie-toolbox: bldr-rust
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	buildah run $${CONTAINER} /bin/bash -c 'sed -i -e "/^root/s/\/bin\/ash/\/bin\/bash/" /etc/passwd'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	# binaries from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which neovim' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
@@ -142,7 +142,7 @@ zie-toolbox: bldr-rust
 	# built artifacts not from apk
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
-	buildah run $${CONTAINER} sh -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
@@ -239,6 +239,11 @@ $(HOME)/.config/containers/systemd/zie-toolbox.container:
 	Volume=/etc/hosts:/etc/hosts:ro
 	Volume=/etc/resolv.conf:/etc/resolv.conf:ro	
 	EOF
+
+restart:
+	systemctl --no-pager --user status zie-toolbox.service
+	systemctl --no-pager --user stop zie-toolbox.service
+	systemctl --no-pager --user start zie-toolbox.service
 
 
 upgrade:
