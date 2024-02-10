@@ -32,7 +32,6 @@ environment:
       - tree-sitter-dev
       - unibilium-dev
 pipeline:
-pipeline:
   - uses: fetch
     with:
       uri: https://github.com/neovim/neovim/archive/refs/tags/${{package.version}}.tar.gz
