@@ -30,4 +30,22 @@ jobs:
           sign-with-temporary-key: true
           empty-workspace: true
           config: neovim.yaml
+      - uses: chainguard-dev/actions/apko-build@main
+        id: apko
+        with:
+          archs: x86_64
+          keyring-append: /github/workspace/melange.rsa.pub
+          tag: ghcr.io/${{ github.repository }}:latest
+          source-date-epoch: ${{ steps.snapshot-date.outputs.epoch }}
+      - uses: docker/login-action@v3
+        with:
+          registry: cgr.dev
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
+      - shell: bash
+        run: |
+          # TODO: Add attributes based on things like the commit.
+          COSIGN_EXPERIMENTAL=true cosign sign ${{ steps.apko.outputs.digest }}
+          ls -al .
+          podman images
     
