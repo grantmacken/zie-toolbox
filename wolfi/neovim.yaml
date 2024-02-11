@@ -1,3 +1,5 @@
+vars:
+  sha: 4948fa42efb90333a3b5738fd943b75f35415a7b
 package:
   name: neovim
   version: nightly
@@ -33,11 +35,9 @@ environment:
       - unibilium-dev
       
 pipeline:
-  - uses: fetch
-    with:
-      uri: https://github.com/neovim/neovim/archive/4948fa42efb90333a3b5738fd943b75f35415a7b.tar.gz
-      expected-sha256: 4948fa42efb90333a3b5738fd943b75f35415a7b
-      
+  - runs: |
+      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz - -C ./tmp
+      cd neovim-${{vars.sha}}
   - uses: autoconf/make
     with:
       opts: |

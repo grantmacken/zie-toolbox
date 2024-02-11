@@ -24,11 +24,11 @@ commitish: latest.json
 	jq -r .tag_name latest.json
 	NEW=$$(jq -r .target_commitish $< ) 
 	jq -r .name latest.json 
-	OLD=$$(grep -oP 'expected-sha256: \K.+$$' neovim.yaml )
+	OLD=$$(grep -oP 'vars: \K.+$$' neovim.yaml )
 	echo "old: $${OLD}"
 	echo "new: $${NEW}"
-	sed -i "s/$${OLD}/$${NEW}/g" neovim.yaml 
-	# grep -oP 'expected-sha256: \K.+$$' neovim.yaml
+	sed -i "s/$${OLD}/$${NEW}/" neovim.yaml 
+	grep -oP 'vars: \K.+$$' neovim.yaml
 
 latest.json:
 	curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0]' > $@
