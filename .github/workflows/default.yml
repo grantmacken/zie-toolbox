@@ -16,16 +16,15 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - name: Generate snapshot date
-        id: snapshot-date
+      - uses: actions/checkout@main
+      - name: Neovim latest release sha
         shell: bash
         run: |
-          echo ::set-output name=date::$(date -u +%Y%m%d)
-          echo ::set-output name=epoch::$(date -u +%s)
-      - uses: actions/checkout@main
-      - uses: sigstore/cosign-installer@main
-      - uses: chainguard-dev/actions/melange-build@main
-        with:
-          sign-with-temporary-key: true
-          empty-workspace: true      
+          NEW=$(curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0].target_commitish') 
+	curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0]' > $@
+        OLD=$(grep -oP 'sha: \K.+$$' neovim.yaml ) || true
+        echo "old: $${OLD}"   
+        echo "new: $${NEW}"   
+
+  
     
