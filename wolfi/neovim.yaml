@@ -34,10 +34,12 @@ environment:
       - samurai
       - tree-sitter-dev
       - unibilium-dev
+      - wget
+      - tar
       
 pipeline:
   - runs: |
-      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz - -C ./tmp
+      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz 
       cd neovim-${{vars.sha}}
   - uses: autoconf/make
     with:
