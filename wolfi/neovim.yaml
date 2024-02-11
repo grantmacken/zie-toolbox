@@ -41,7 +41,7 @@ environment:
 
 pipeline:
   - runs: |
-      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz &>/dev/null | tar xvz 
+      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz 
       [ -d '/home/build' ] || mkdir -p '/home/build'
       mv neovim-${{vars.sha}}/* /home/build/
 
