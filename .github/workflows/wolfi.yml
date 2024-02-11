@@ -1,18 +1,31 @@
-name: CI
+name: Build
 on:
   push:
     branches:
-    - main
+    - xxmain
     paths-ignore:
     - '**/README.md'
 jobs:
-  bldr_distrobox:
+  build:
+    name: Build wolfi image
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
       id-token: write
     steps:
+      - name: Generate snapshot date
+        id: snapshot-date
+        shell: bash
+        run: |
+          echo ::set-output name=date::$(date -u +%Y%m%d)
+          echo ::set-output name=epoch::$(date -u +%s)
+      - uses: actions/checkout@main
+      - uses: sigstore/cosign-installer@main
+      - uses: chainguard-dev/actions/melange-build@main
+        with:
+          sign-with-temporary-key: true
+          empty-workspace: true      
     - name: Checkout
       uses: actions/checkout@v4
     - name: Login
@@ -25,3 +38,14 @@ jobs:
       run: cd wolfi && make
     - name: Create zie-toolbox
       run: make
+    - name: Generate snapshot date
+      id: snapshot-date
+      shell: bash
+      run: |
+        echo ::set-output name=date::$(date -u +%Y%m%d)
+        echo ::set-output name=epoch::$(date -u +%s)
+    - uses: sigstore/cosign-installer@main
+    - uses: chainguard-dev/actions/melange-build@main
+      with:
+        sign-with-temporary-key: true
+        empty-workspace: true   
