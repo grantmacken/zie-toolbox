@@ -1,5 +1,6 @@
 vars:
   sha: 4948fa42efb90333a3b5738fd943b75f35415a7b
+
 package:
   name: neovim
   version: nightly
