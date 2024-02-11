@@ -37,6 +37,7 @@ jobs:
           keyring-append: /github/workspace/melange.rsa.pub
           tag: ghcr.io/${{ github.repository }}:latest
           source-date-epoch: ${{ steps.snapshot-date.outputs.epoch }}
+          config: apko.yaml
       - name: Check
         shell: bash
         run: |

@@ -1,0 +1,72 @@
+contents:
+  keyring:
+    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+  repositories:
+    - https://packages.wolfi.dev/os
+    - '@local /github/workspace/packages'
+  packages: # 
+    - wolfi-base # "Wolfi base metapackage
+    - bash
+    - bzip2
+    - coreutils
+    - curl
+    - diffutils
+    - findmnt
+    - findutils
+    - git
+    - gnupg
+    - gpg
+    - iproute2
+    - iputils
+    - keyutils
+    - libcap
+    - libsm
+    - libx11
+    - libxau
+    - libxcb
+    - libxdmcp
+    - libxext
+    - libice
+    - libxmu
+    - libxt
+    - mount
+    - ncurses
+    - ncurses-terminfo
+    - net-tools
+    - openssh-client
+    - pigz
+    - posix-libc-utils
+    - procps
+    - rsync
+    - su-exec
+    - tcpdump
+    - tree
+    - tzdata
+    - umount
+    - unzip
+    - util-linux
+    - util-linux-misc
+    - wget
+    - xauth
+    - xz
+    - zip
+    - vulkan-loader
+    - build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
+    - eza     # A modern, maintained replacement for ls.
+    - fd      # A simple, fast and user-friendly alternative to 'find'
+    - gh      #  GitHub's official command line tool
+    - google-cloud-sdk # Google Cloud Command Line Interface
+    - grep    # GNU grep implementation implement -P flag Perl RegEx engine"
+    - lazygit # simple terminal UI for git commands
+    - neovim@local  # Vim-fork focused on extensibility and agility
+    - ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
+    - sed     # GNU stream editor TODO? replace with sd"
+    - sudo-rs # A memory safe implementation of sudo and su
+    - tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
+    - zoxide  # A smarter cd command. Supports all major shells
+
+entrypoint:
+  command: /bin/bash -l
+
+archs:
+  - x86_64
