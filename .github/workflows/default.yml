@@ -16,6 +16,12 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@main
-   
+      - name: Neovim latest release sha
+        shell: bash
+        run: |
+          NEW=$(curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0].target_commitish') 
+          OLD=$(grep -oP 'sha: \K.+$' neovim.yaml ) || true
+          echo "old: ${OLD}"   
+          echo "new: ${NEW}"   
   
     
