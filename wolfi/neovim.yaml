@@ -43,7 +43,7 @@ pipeline:
   - runs: |
       wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz &>/dev/null | tar xvz 
       [ -d '/home/build' ] || mkdir -p '/home/build'
-      mv neovim-${{vars.sha}}/* /home/build
+      mv neovim-${{vars.sha}}/* /home/build/
 
   - uses: autoconf/make
     with:
