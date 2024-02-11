@@ -27,7 +27,7 @@ commitish: latest.json
 	OLD=$$(grep -oP 'expected-sha256: \K.+$$' neovim.yaml )
 	echo "old: $${OLD}"
 	echo "new: $${NEW}"
-	sed -i "s/$${OLD}/$${NEW}/" neovim.yaml 
+	sed -i "s/$${OLD}/$${NEW}/g" neovim.yaml 
 	# grep -oP 'expected-sha256: \K.+$$' neovim.yaml
 
 latest.json:
