@@ -122,3 +122,11 @@ jobs:
         # buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
         buildah push ${{ env.REGISTRY }}/${{ env.NAME }}:latest
 
+      - uses: chainguard-dev/actions/apko-build@main
+        id: apko
+        with:
+          archs: x86_64
+          keyring-append: /github/workspace/melange.rsa.pub
+          tag: ghcr.io/${{ github.repository }}:latest
+          source-date-epoch: ${{ steps.snapshot-date.outputs.epoch }}
+          config: apko.yaml

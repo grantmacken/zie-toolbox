@@ -15,7 +15,7 @@ jobs:
       packages: write
       id-token: write
     steps:
-      - uses: actions/checkout@main
+      - uses: actions/checkout@v4
       - name: Neovim latest release sha
         shell: bash
         run: |
@@ -30,18 +30,9 @@ jobs:
           sign-with-temporary-key: true
           empty-workspace: true
           config: neovim.yaml
-      - uses: chainguard-dev/actions/apko-build@main
-        id: apko
-        with:
-          archs: x86_64
-          keyring-append: /github/workspace/melange.rsa.pub
-          tag: ghcr.io/${{ github.repository }}:latest
-          source-date-epoch: ${{ steps.snapshot-date.outputs.epoch }}
-          config: apko.yaml
       - name: Check
         shell: bash
         run: |
           ls .al
-          podman images
 
     
