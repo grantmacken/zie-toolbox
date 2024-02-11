@@ -13,7 +13,7 @@ apko: melange
 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi apko-wolfi.tar
 
 melange: commitish
-	# podman pull ghcr.io/wolfi-dev/melange
+	podman pull ghcr.io/wolfi-dev/melange:latest
 	podman run --rm --privileged -v "$${PWD}":/work cgr.dev/chainguard/melange keygen
 	podman run --rm --privileged -v "$${PWD}":/work -w /work -- \
  cgr.dev/chainguard/melange build neovim.yaml \

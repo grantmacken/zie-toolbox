@@ -1,5 +1,5 @@
 vars:
-  sha: 4948fa42efb90333a3b5738fd943b75f35415a7b
+  sha: 170c890dca8f160bdcd41e4fdc6bf15ee0bdba49
 
 package:
   name: neovim
@@ -16,6 +16,9 @@ environment:
     keyring:
       - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     packages:
+      - autoconf
+      - automake
+      - bash
       - build-base
       - busybox
       - cmake
@@ -35,8 +38,7 @@ environment:
       - tree-sitter-dev
       - unibilium-dev
       - wget
-      - tar
-      
+
 pipeline:
   - runs: |
       wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz 
