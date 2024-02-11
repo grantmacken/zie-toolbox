@@ -1,7 +1,5 @@
 name: Build
 on:
-  schedule:
-    - cron: '15 3 * * *'  # every day at 03:15 (just wanted to avoid midnight)
   push:
     branches:
     - main
@@ -11,20 +9,13 @@ jobs:
   build:
     name: Build wolfi image
     runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/reference/authentication-in-a-workflow
     permissions:
       contents: read
       packages: write
       id-token: write
     steps:
       - uses: actions/checkout@main
-      - name: Neovim latest release sha
-        shell: bash
-        run: |
-          NEW=$(curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0].target_commitish') 
-	curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0]' > $@
-        OLD=$(grep -oP 'sha: \K.+$$' neovim.yaml ) || true
-        echo "old: $${OLD}"   
-        echo "new: $${NEW}"   
-
+   
   
     
