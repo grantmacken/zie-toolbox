@@ -22,6 +22,11 @@ jobs:
           NEW=$(curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0].target_commitish') 
           OLD=$(grep -oP 'sha: \K.+$' neovim.yaml ) || true
           echo "old: ${OLD}"   
-          echo "new: ${NEW}"   
-  
+          echo "new: ${NEW}"
+          sed -i "s/$${OLD}/$${NEW}/" neovim.yaml
+      - uses: sigstore/cosign-installer@main
+      - uses: chainguard-dev/actions/melange-build@main
+        with:
+          sign-with-temporary-key: true
+          empty-workspace: true 
     
