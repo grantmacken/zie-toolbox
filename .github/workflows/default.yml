@@ -37,8 +37,8 @@ jobs:
         shell: bash
         run: |
           podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
-      - name: Check apko build
+      - name: Build wolfi distrobox
         shell: bash
-        run: ls -al .
+        run: make
 
     
