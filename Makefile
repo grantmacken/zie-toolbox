@@ -56,9 +56,7 @@ zie-toolbox: bldr-rust
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	echo ' - check apk installed binaries'
-	buildah run $${CONTAINER} /bin/bash -c 'which neovim && neovim --version' || true
-
-	buildah run $${CONTAINER} /bin/bash -c 'which neovim && neovim --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
@@ -66,9 +64,8 @@ zie-toolbox: bldr-rust
 	echo ' check built binary artifacts not from apk' 
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-	 buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim' || true
+	 buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim-nightly' || true
 	echo '##[ ------------------------------- ]##'
 	 buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
 	echo '##[ ------------------------------- ]##'

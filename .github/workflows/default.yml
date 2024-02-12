@@ -29,17 +29,12 @@ jobs:
           ls -al .
           ls -alR packages || true
           cat packages/x86_64/APKINDEX.json | jq '.'
-          false
-      - name: Apko build then check nvim version
+      - name: Apko build
         shell: bash
         run: |
           podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
-          podman load --input apko-wolfi.tar
-          podman run --rm --privileged apko-wolfi:latest-amd64 sh -c 'nvim --version ' || true
-          podman run --rm --privileged apko-wolfi:latest-amd64 sh -c 'ls .' || true
-          podman run --rm --privileged apko-wolfi:latest-amd64 /bin/bash -c 'nvim --version ' || true
-      - name: Build wolfi distrobox
+      - name: Wolfi os distrobox build
         shell: bash
-        run: make || true
+        run: make
 
     
