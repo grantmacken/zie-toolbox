@@ -28,6 +28,8 @@ jobs:
           pwd
           ls -al .
           ls -alR packages || true
+          cat packages/x86_64/APKINDEX.json | jq '.'
+          false
       - name: Apko build then check nvim version
         shell: bash
         run: |
