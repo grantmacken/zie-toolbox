@@ -3,7 +3,7 @@ contents:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
-    - '@local /home/runner/work/zie-toolbox/zie-toolbox/packages/x86_64'
+    - '@local /home/runner/work/zie-toolbox/zie-toolbox/packages'
   packages: # 
     - wolfi-base # "Wolfi base metapackage
     - bash
@@ -58,7 +58,7 @@ contents:
     - google-cloud-sdk # Google Cloud Command Line Interface
     - grep    # GNU grep implementation implement -P flag Perl RegEx engine"
     - lazygit # simple terminal UI for git commands
-    - neovim-nightly@local  # Nvim development (prerelease) build 
+    - neovim@local  # Nvim development (prerelease) build 
     - ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
     - sed     # GNU stream editor TODO? replace with sd"
     - sudo-rs # A memory safe implementation of sudo and su
