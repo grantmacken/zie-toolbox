@@ -53,7 +53,7 @@ zie-toolbox: bldr-rust
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	echo ' - check apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which neovim && neovim --version' || true
@@ -64,12 +64,17 @@ zie-toolbox: bldr-rust
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
 	echo ' check built binary artifacts not from apk' 
-	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
-	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	 buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim' || true
+	 buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
+	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
+	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+
+
+
 	#buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	#buildah push ghcr.io/grantmacken/$@:latest
 	#podman images
