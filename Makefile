@@ -9,6 +9,18 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
 
+bldr-neovim: ## a ephemeral localhost container which builds neovim
+	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
+	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget'
+	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz' 
+	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install'
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah commit --rm $${CONTAINER} $@
+	echo '##[ ------------------------------- ]##'
+
+
+
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/rust:latest)
@@ -21,7 +33,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: bldr-rust
+zie-toolbox: bldr-rust bldr-neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
 	buildah config \
