@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
-          podman load --input docker-archive:apko-wolfi.tar
+          podman load --input apko-wolfi.tar
           podman images
           
       - name: Build wolfi distrobox
