@@ -28,14 +28,14 @@ jobs:
           pwd
           ls -al .
           ls -alR packages || true
-          ls -al /github/workspace/packages || true
       - name: Apko build then check nvim version
         shell: bash
         run: |
           podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
           podman load --input apko-wolfi.tar
-          podman run --rm  apko-wolfi:latest-amd64 ls /usr/bin || true
-          podman run --rm  apko-wolfi:latest-amd64 nvim --version || true
+          podman run --rm --privileged apko-wolfi:latest-amd64 sh -c 'nvim --version ' || true
+          podman run --rm --privileged apko-wolfi:latest-amd64 sh -c 'ls .' || true
+          podman run --rm --privileged apko-wolfi:latest-amd64 /bin/bash -c 'nvim --version ' || true
       - name: Build wolfi distrobox
         shell: bash
         run: make || true

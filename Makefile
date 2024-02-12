@@ -52,7 +52,6 @@ zie-toolbox: bldr-rust
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	buildah run $${CONTAINER} /bin/bash -c 'sed -i "%/bin/ash%/bin/bash%" /etc/passwd'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
@@ -67,9 +66,12 @@ zie-toolbox: bldr-rust
 	echo ' check built binary artifacts not from apk' 
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --help' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --help' || true
-	buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	buildah push ghcr.io/grantmacken/$@:latest
-	podman images
+	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
+	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
+	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	#buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	#buildah push ghcr.io/grantmacken/$@:latest
+	#podman images
 	echo '##[ ------------------------------- ]##'
 
