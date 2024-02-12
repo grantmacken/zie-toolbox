@@ -29,7 +29,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 
 zie-toolbox: bldr-rust
 	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from docker-archive:wolfi/apko-wolfi.tar)
+	CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
 	buildah config \
     --label com.github.containers.toolbox='true' \
     --label usage='This image is meant to be used with the distrobox command' \
