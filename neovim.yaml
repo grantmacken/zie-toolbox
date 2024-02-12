@@ -1,6 +1,3 @@
-vars:
-  sha: 170c890dca8f160bdcd41e4fdc6bf15ee0bdba49
-
 package:
   name: neovim
   version: nightly
@@ -41,9 +38,9 @@ environment:
 
 pipeline:
   - runs: |
-      wget -qO- https://github.com/neovim/neovim/archive/${{vars.sha}}.tar.gz | tar xvz 
+      wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz 
       [ -d '/home/build' ] || mkdir -p '/home/build'
-      mv neovim-${{vars.sha}}/* /home/build/
+      mv neovim-nightly/* /home/build/
 
   - uses: autoconf/make
     with:
