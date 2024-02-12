@@ -32,7 +32,11 @@ jobs:
           config: neovim.yaml
       - name: Check melange build
         shell: bash
-        run: ls -al .
+        run: |
+          pwd
+          ls -al .
+          ls -al packages || true
+          ls -al /github/workspace/packages || true
       - name: Apko build
         shell: bash
         run: |
