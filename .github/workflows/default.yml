@@ -30,9 +30,19 @@ jobs:
           sign-with-temporary-key: true
           empty-workspace: true
           config: neovim.yaml
-      - name: Check
+      - name: Check melange build
+        shell: bash
+        run: ls -al .
+      - name: Apko build
         shell: bash
         run: |
-          ls -al .
+          podman run --rm --privileged -v "$${PWD}":/work -w /work \
+          cgr.dev/chainguard/melange build neovim.yaml \
+          --arch x86_64 \
+          --signing-key melange.rsa \
+          --keyring-append melange.rsa.pub
+      - name: Check apko build
+        shell: bash
+        run: ls -al .
 
     
