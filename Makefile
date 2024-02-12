@@ -9,6 +9,11 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
 
+bldr-luarocks: ## a ephemeral localhost container which builds luarocks
+	echo '##[ $@ ]##'
+	echo '##[ ------------------------------- ]##'
+
+
 bldr-neovim: ## a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
@@ -16,15 +21,8 @@ bldr-neovim: ## a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	echo '##[ ------------------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls /usr/local/share' || true
-	echo '##[ ------------------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls /usr/local/lib' || true
-	echo '##[ ------------------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'tree /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
-
 
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -85,17 +83,12 @@ zie-toolbox: bldr-rust bldr-neovim
 	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
-	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-	# buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim-nightly' || true
-	echo '##[ ------------------------------- ]##'
-	 buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
-	echo '##[ ------------------------------- ]##'
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	#buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	#buildah push ghcr.io/grantmacken/$@:latest
-	#podman images
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	buildah push ghcr.io/grantmacken/$@:latest
+	podman images
 	echo '##[ ------------------------------- ]##'
 
 luarocks:
