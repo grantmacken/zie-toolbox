@@ -71,20 +71,22 @@ zie-toolbox: bldr-rust bldr-neovim
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
 	echo ' - check apk installed binaries'
-	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
 	echo ' check built binary artifacts not from apk' 
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
-	 buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim-nightly' || true
+	# buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim-nightly' || true
 	echo '##[ ------------------------------- ]##'
 	 buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
 	echo '##[ ------------------------------- ]##'

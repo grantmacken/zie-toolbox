@@ -19,7 +19,13 @@ jobs:
       - name: Check melange build
         shell: bash
         run: make bldr-neovim
-
+      - name: Apko build
+        shell: bash
+        run: |
+          podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
+      - name: Wolfi os distrobox build
+        shell: bash
+        run: make
 #     - uses: sigstore/cosign-installer@main
 #     - uses: chainguard-dev/actions/melange-build@main
 #       with:
@@ -33,11 +39,4 @@ jobs:
 #         ls -al .
 #         ls -alR packages || true
 #         cat packages/x86_64/APKINDEX.json | jq '.'
-#     - name: Apko build
-#       shell: bash
-#       run: |
-#         podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
-#     - name: Wolfi os distrobox build
-#       shell: bash
-#       run: make
 #   
