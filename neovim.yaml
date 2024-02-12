@@ -1,5 +1,5 @@
 package:
-  name: neovim
+  name: neovim-nightly
   version: nightly
   epoch: 0
   description: "Nvim development (prerelease) build"

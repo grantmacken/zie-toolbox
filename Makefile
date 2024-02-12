@@ -66,17 +66,23 @@ zie-toolbox: bldr-rust
 	echo ' check built binary artifacts not from apk' 
 	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
 	# buildah run $${CONTAINER} /bin/bash -c 'apk info -vv | sort'
 	 buildah run $${CONTAINER} /bin/bash -c 'apk info --all neovim' || true
+	echo '##[ ------------------------------- ]##'
 	 buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/bin | grep nvim' || true
+	echo '##[ ------------------------------- ]##'
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-
-
-
 	#buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	#buildah push ghcr.io/grantmacken/$@:latest
 	#podman images
 	echo '##[ ------------------------------- ]##'
+
+luarocks:
+	# pip3 install --user hererocks
+	hererocks ~/.local/lua -j2.1.0-beta3 -rlatest
+
+	
 
