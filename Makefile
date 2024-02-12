@@ -12,14 +12,16 @@ default: zie-toolbox  ## build the toolbox
 bldr-neovim: ## a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share' || true
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib' || true
-	buildah run $${CONTAINER} sh -c 'ldd /usr/local/bin/nvim' || true
+	echo '##[ ------------------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls /usr/local/share' || true
+	echo '##[ ------------------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls /usr/local/lib' || true
+	echo '##[ ------------------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'tree /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
