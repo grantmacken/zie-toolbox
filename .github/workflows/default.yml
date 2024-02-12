@@ -36,11 +36,7 @@ jobs:
       - name: Apko build
         shell: bash
         run: |
-          podman run --rm --privileged -v "${PWD}":/work -w /work \
-          cgr.dev/chainguard/melange build neovim.yaml \
-          --arch x86_64 \
-          --signing-key melange.rsa \
-          --keyring-append melange.rsa.pub
+          podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
       - name: Check apko build
         shell: bash
         run: ls -al .
