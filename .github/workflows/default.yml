@@ -16,14 +16,6 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
-      - name: Neovim latest release sha
-        shell: bash
-        run: |
-          NEW=$(curl https://api.github.com/repos/neovim/neovim/releases -s | jq -r '.[0].target_commitish') 
-          OLD=$(grep -oP 'sha: \K.+$' neovim.yaml ) || true
-          echo "old: ${OLD}"   
-          echo "new: ${NEW}"
-          sed -i "s/$${OLD}/$${NEW}/" neovim.yaml
       - uses: sigstore/cosign-installer@main
       - uses: chainguard-dev/actions/melange-build@main
         with:
@@ -35,15 +27,15 @@ jobs:
         run: |
           pwd
           ls -al .
-          ls -al packages || true
+          ls -alR packages || true
           ls -al /github/workspace/packages || true
-      - name: Apko build
+      - name: Apko build then check nvim version
         shell: bash
         run: |
           podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
           podman load --input apko-wolfi.tar
-          podman images
-          
+          podman run --rm  apko-wolfi:latest-amd64 ls /usr/bin || true
+          podman run --rm  apko-wolfi:latest-amd64 nvim --version || true
       - name: Build wolfi distrobox
         shell: bash
         run: make || true
