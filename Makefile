@@ -88,7 +88,6 @@ zie-toolbox: bldr-neovim bldr-luarocks bldr-rust
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/bin/host-spawn
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	# buildah run $${CONTAINER} /bin/bash -c 'which gh' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint' || true
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'|| true
@@ -101,22 +100,35 @@ zie-toolbox: bldr-neovim bldr-luarocks bldr-rust
 	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
-	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	# buildah run $${CONTAINER} /bin/bash -c 'ln -fs /bin/sh /usr/bin/sh'
+	buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
+	buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 	echo ' - check apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
+	echo '-------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version' || true
+	echo ' -------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version' || true
+	echo ' -------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
-	echo ' check built binary artifacts not from apk' 
-	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version' || true
+	echo ' -------------------------------'
+	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK' 
+	echo ' --- from bldr-neovim ' 
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'  
+	echo ' --- from bldr-rust ' 
+	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version'
+	echo ' -------------------------------'
+	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version'
+	echo ' -------------------------------'
+	echo ' --- from bldr-luarocks ' 
+	buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks --version'
+	echo ' -------------------------------'
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
-	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	buildah push ghcr.io/grantmacken/$@:latest
+	echo '##[ ------------------------------- ]##'
+	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	echo '##[ ------------------------------- ]##'
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@ &>/dev/null
+	buildah push ghcr.io/grantmacken/$@:latest &>/dev/null
 	podman images
 	echo '##[ ------------------------------- ]##'
 
