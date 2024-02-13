@@ -21,13 +21,6 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
-      - name: Check melange build
-        shell: bash
-        run: make bldr-neovim
-      - name: Apko build
-        shell: bash
-        run: |
-          podman run --rm --privileged -v "${PWD}":/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
       - name: Wolfi os distrobox build
         shell: bash
         run: make

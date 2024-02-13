@@ -7,16 +7,23 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
-default: zie-toolbox  ## build the toolbox
+default: bldr apko zie-toolbox  ## build the toolbox
 
-bldr:
+apko: apko-wolfi.tar
+	echo '##[ $@ ]##'
+	echo ' - created $<'
+	echo '##[ ------------------------------- ]##'
+
+apko-wolfi.tar: ## install apk wolfi binaries
+	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
+
+bldr: ## a build tools builder for neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
-
 
 bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	echo '##[ $@ ]##'
@@ -37,7 +44,6 @@ bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
-
 bldr-neovim:  ## a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
@@ -47,7 +53,6 @@ bldr-neovim:  ## a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
-
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
@@ -61,7 +66,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: bldr bldr-neovim bldr-luarocks bldr-rust
+zie-toolbox: bldr-neovim bldr-luarocks bldr-rust
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
 	buildah config \
