@@ -9,8 +9,35 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
 
+bldr:
+	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
+	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'apk add readline readline-dev luajit unzip'
+	buildah run $${CONTAINER} sh -c 'which lua'
+	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+	echo '##[ ------------------------------- ]##'
+
+
 bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from localhost/bldr)
+	buildah config --workingdir /home $${CONTAINER}
+	# LUA_BINDIR=<Directory of lua binary> and LUA_BINDIR_SET=yes.
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	echo '##[ ----------include----------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+	echo '##[ -----------lib ------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
+	echo '##[ ------------------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'wget -qO- \
+	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'luarocks'
+	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
 
@@ -86,14 +113,19 @@ zie-toolbox: bldr-rust bldr-neovim
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	echo '##[ ----------lua checks----------------- ]##'
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	echo '##[ ----------include----------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+	echo '##[ -----------lib ------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
 
 luarocks:
-	# pip3 install --user hererocks
-	hererocks ~/.local/lua -j2.1.0-beta3 -rlatest
+	podman run --rm localhost/bldr-luarocks sh -c 'luarocks list'
 
 	
 

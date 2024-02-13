@@ -57,6 +57,7 @@ contents:
     - google-cloud-sdk # Google Cloud Command Line Interface
     - grep    # GNU grep implementation implement -P flag Perl RegEx engine"
     - lazygit # simple terminal UI for git commands
+    - luajit  # OpenResty's branch of LuaJIT @see https://github.com/wolfi-dev/os/blob/main/luajit.yaml
     - ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
     - sed     # GNU stream editor TODO? replace with sd"
     - sudo-rs # A memory safe implementation of sudo and su
