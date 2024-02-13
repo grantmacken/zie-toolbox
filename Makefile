@@ -13,7 +13,7 @@ bldr:
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add readline readline-dev luajit unzip'
+	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
 	buildah run $${CONTAINER} sh -c 'which lua'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -34,7 +34,6 @@ bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
 	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
-	buildah run $${CONTAINER} sh -c 'make & make install'
 	buildah run $${CONTAINER} sh -c 'make & make install'
 	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
@@ -120,6 +119,13 @@ zie-toolbox: bldr-rust bldr-neovim
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua || true
 	echo '##[ -----------lib ------------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua || true
+	buildah run $${CONTAINER} sh -c 'wget -qO- \
+	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+	buildah run $${CONTAINER} sh -c 'cd luarocks-3.9.2 \
+&& ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua \
+&& make & make install'
+	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
