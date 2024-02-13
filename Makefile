@@ -14,7 +14,6 @@ bldr:
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
-	buildah run $${CONTAINER} sh -c 'which lua'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
@@ -39,19 +38,13 @@ bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	echo '##[ ------------------------------- ]##'
 
 
-bldr-neovim: ## a ephemeral localhost container which builds neovim
+bldr-neovim:  ## a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
+	CONTAINER=$$(buildah from localhost/bldr)
 	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
-	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-	buildah run $${CONTAINER} sh -c 'ls .'
-	buildah run $${CONTAINER} sh -c 'cd luarocks-3.9.2 && ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua && make & make install'
-	buildah run $${CONTAINER} sh -c 'which luarocks' || true
-	buildah run $${CONTAINER} sh -c 'luarocks --version' || true
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
@@ -68,7 +61,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: bldr-neovim bldr-rust
+zie-toolbox: bldr bldr-neovim bldr-luarocks bldr-rust
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
 	buildah config \
