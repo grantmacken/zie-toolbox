@@ -23,7 +23,6 @@ bldr-luarocks: ## a ephemeral localhost container which builds luarocks
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
 	buildah config --workingdir /home $${CONTAINER}
-	# LUA_BINDIR=<Directory of lua binary> and LUA_BINDIR_SET=yes.
 	buildah run $${CONTAINER} sh -c 'lua -v'
 	echo '##[ ----------include----------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
@@ -47,6 +46,14 @@ bldr-neovim: ## a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
+	buildah run $${CONTAINER} sh -c 'wget -qO- \
+https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+buildah run $${CONTAINER} sh -c 'make & make install'
+buildah run $${CONTAINER} sh -c 'which luarocks' || true
+buildah run $${CONTAINER} sh -c 'luarocks --version' || true
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
@@ -71,7 +78,6 @@ zie-toolbox: bldr-rust bldr-neovim
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'apk add luajit-dev' &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
@@ -113,17 +119,6 @@ zie-toolbox: bldr-rust bldr-neovim
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	echo '##[ ----------lua checks----------------- ]##'
-	buildah run $${CONTAINER} sh -c 'lua -v'
-	echo '##[ ----------include----------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua || true
-	echo '##[ -----------lib ------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua || true
-	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd luarocks-3.9.2 \
-&& ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua \
-&& make & make install'
-	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
