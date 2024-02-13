@@ -72,6 +72,7 @@ zie-toolbox: bldr-rust bldr-neovim
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'apk add luajit-dev' &>/dev/null
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
@@ -116,16 +117,16 @@ zie-toolbox: bldr-rust bldr-neovim
 	echo '##[ ----------lua checks----------------- ]##'
 	buildah run $${CONTAINER} sh -c 'lua -v'
 	echo '##[ ----------include----------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua || true
 	echo '##[ -----------lib ------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
+	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua || true
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
 
 luarocks:
-	podman run --rm localhost/bldr-luarocks sh -c 'luarocks list'
+	LUA_BINDIR="${XDG_BIN_DIR:-$HOME/.local/bin}" LUA_BINDIR_SET=yes nvim -u NORC -c "source ...
 
 	
 
