@@ -120,10 +120,10 @@ zie-toolbox: bldr-neovim bldr-luarocks bldr-rust
 	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version'
 	echo ' -------------------------------'
 	echo ' --- from bldr-luarocks ' 
-	buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks'
 	echo ' -------------------------------'
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
-	# buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
+	buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	echo '##[ ------------------------------- ]##'
 	buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
 	echo '##[ ------------------------------- ]##'
@@ -133,7 +133,7 @@ zie-toolbox: bldr-neovim bldr-luarocks bldr-rust
 	echo '##[ ------------------------------- ]##'
 
 luarocks:
-	LUA_BINDIR="${XDG_BIN_DIR:-$HOME/.local/bin}" LUA_BINDIR_SET=yes nvim -u NORC -c "source ...
+	LUA_BINDIR="/usr/local/bin" LUA_BINDIR_SET=yes nvim -u NORC -c "source ...
 
 	
 
