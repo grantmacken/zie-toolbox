@@ -49,7 +49,7 @@ bldr-neovim: ## a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls .'
-	buildah run $${CONTAINER} sh z-c 'cd luarocks-3.9.2 && ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua && make & make install'
+	buildah run $${CONTAINER} sh -c 'cd luarocks-3.9.2 && ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua && make & make install'
 	buildah run $${CONTAINER} sh -c 'which luarocks' || true
 	buildah run $${CONTAINER} sh -c 'luarocks --version' || true
 	buildah commit --rm $${CONTAINER} $@
