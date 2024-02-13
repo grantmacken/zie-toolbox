@@ -48,12 +48,12 @@ bldr-neovim: ## a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
 	buildah run $${CONTAINER} sh -c 'wget -qO- \
-https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
-buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
-buildah run $${CONTAINER} sh -c 'make & make install'
-buildah run $${CONTAINER} sh -c 'which luarocks' || true
-buildah run $${CONTAINER} sh -c 'luarocks --version' || true
+	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'which luarocks' || true
+	buildah run $${CONTAINER} sh -c 'luarocks --version' || true
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
