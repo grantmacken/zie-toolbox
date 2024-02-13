@@ -119,9 +119,7 @@ zie-toolbox: bldr-rust bldr-neovim
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua || true
 	echo '##[ -----------lib ------------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua || true
-	buildah run $${CONTAINER} sh -c 'wget -qO- \
-	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd luarocks-3.9.2 \
 && ./configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua \
 && make & make install'
