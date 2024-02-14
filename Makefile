@@ -17,14 +17,14 @@ apko: apko-wolfi.tar
 apko-wolfi.tar: ## install apk wolfi binaries
 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
 
-
+# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
 bldr-wolfi: ## apk bins for wolfi 
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
 	buildah run $${CONTAINER} sh -c 'apk add bash bc bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap libice libsm libx11 libxau libxcb libxdmcp libxext libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want
-	buildah run $${CONTAINER} sh -c 'apk add build-base eza fd gh google-cloud-sdk grep lazygit luajit luajit-dev ripgrep sed tree-sitter zoxide'
+	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit luajit luajit-dev ripgrep sed tree-sitter zoxide'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -77,7 +77,6 @@ bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
 bldr-neovim: bldr-luarocks ## a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
-	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
@@ -231,13 +230,16 @@ wolf:
 
 
 luarocks:
-	LUA_BINDIR="/usr/local/bin" LUA_BINDIR_SET=yes nvim -u NORC -c "source ..."
+	ROCKS_INSTALLATION_PATH=/var/home/gmack/.local/share/nvim/rocks
+	mkdir -p $${ROCKS_INSTALLATION_PATH}
+	luarocks --lua-version=5.1 --tree=$${ROCKS_INSTALLATION_PATH} --server='https://nvim-neorocks.github.io/rocks-binaries/' install rocks.nvim
 
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
 	podman images | grep zie
 
 distrobox: pull
+	vim.fn.stdpath('data')
 	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
 
 logs:
