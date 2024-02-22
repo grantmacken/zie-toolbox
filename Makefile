@@ -24,7 +24,9 @@ bldr-wolfi: ## apk bins for wolfi
 	# add apk stuff that distrobox needs
 	buildah run $${CONTAINER} sh -c 'apk add bash bc bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap libice libsm libx11 libxau libxcb libxdmcp libxext libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want
-	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit luajit luajit-dev ripgrep sed tree-sitter zoxide'
+	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza \
+		fd fzf gh google-cloud-sdk grep lazygit luajit luajit-dev ripgrep \
+		sed tmux tree-sitter zoxide'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -150,7 +152,7 @@ zie-wolfi-toolbox:
 	podman images | grep localhost
 	echo '##[ ------------------------------- ]##'s
 
-zie-toolbox: bldr-wolfi bldr-addons 
+zie-toolbox: bldr-wolfi bldr-addons
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr-wolfi)
 	# CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
@@ -228,11 +230,20 @@ zie-toolbox: bldr-wolfi bldr-addons
 wolf:
 	distrobox create --image localhost/zie-wolfi-toolbox --name zie-wolfi-toolbox
 
-
 luarocks:
 	ROCKS_INSTALLATION_PATH=/var/home/gmack/.local/share/nvim/rocks
 	mkdir -p $${ROCKS_INSTALLATION_PATH}
 	luarocks --lua-version=5.1 --tree=$${ROCKS_INSTALLATION_PATH} --server='https://nvim-neorocks.github.io/rocks-binaries/' install rocks.nvim
+
+rocks-init:
+	cat << EOF | tee 
+	\tline 1
+	$$(printf "\t")ccc
+	line 2
+	EOF
+
+
+
 
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
