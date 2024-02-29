@@ -9,13 +9,12 @@ MAKEFLAGS += --silent
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default:  zie-toolbox  ## build the toolbox
 
-apko: apko-wolfi.tar
-	echo '##[ $@ ]##'
-	echo ' - created $<'
-	echo '##[ ------------------------------- ]##'
-
-apko-wolfi.tar: ## install apk wolfi binaries
-	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
+# apko: apko-wolfi.tar
+# 	echo '##[ $@ ]##'
+# 	echo ' - created $<'
+# 	echo '##[ ------------------------------- ]##'
+# apko-wolfi.tar: ## install apk wolfi binaries
+# 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
 bldr-wolfi: ## apk bins for wolfi 
@@ -76,7 +75,7 @@ bldr: ## a build tools builder for neovim
 # 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 # 	echo '##[ ------------------------------- ]##'
 
-bldr-neovim: # a ephemeral localhost container which builds neovim
+bldr-neovim: bldr # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
