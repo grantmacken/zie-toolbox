@@ -57,26 +57,26 @@ bldr: ## a build tools builder for neovim
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
-bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from localhost/bldr)
-	buildah config --workingdir /home $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'lua -v'
-	echo '##[ ----------include----------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
-	echo '##[ -----------lib ------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
-	echo '##[ ------------------------------- ]##'
-	buildah run $${CONTAINER} sh -c 'wget -qO- \
-	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
-	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
-	buildah run $${CONTAINER} sh -c 'make & make install'
-	buildah run $${CONTAINER} sh -c 'luarocks'
-	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	echo '##[ ------------------------------- ]##'
+# bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
+# 	echo '##[ $@ ]##'
+# 	CONTAINER=$$(buildah from localhost/bldr)
+# 	buildah config --workingdir /home $${CONTAINER}
+# 	buildah run $${CONTAINER} sh -c 'lua -v'
+# 	echo '##[ ----------include----------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+# 	echo '##[ -----------lib ------------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
+# 	echo '##[ ------------------------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'wget -qO- \
+# 	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+# 	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+# 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+# 	buildah run $${CONTAINER} sh -c 'make & make install'
+# 	buildah run $${CONTAINER} sh -c 'luarocks'
+# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+# 	echo '##[ ------------------------------- ]##'
 
-bldr-neovim: bldr-luarocks ## a ephemeral localhost container which builds neovim
+bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
@@ -91,7 +91,12 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah run $${CONTAINER} rustc --version
 	buildah run $${CONTAINER} cargo --version
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
-	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks stylua new-stow &>/dev/null
+	# only install stuff not in  wolfi apk registry
+	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks \
+		stylua \
+		silicon \
+		tuckr \
+		new-stow &>/dev/null
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	buildah commit --rm $${CONTAINER} $@
@@ -126,6 +131,7 @@ zie-wolfi-toolbox:
 	#symlink to exectables on host
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	echo ' - check apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
@@ -227,24 +233,6 @@ zie-toolbox: bldr-wolfi bldr-addons
 	podman images
 	echo '##[ ------------------------------- ]##'
 
-wolf:
-	distrobox create --image localhost/zie-wolfi-toolbox --name zie-wolfi-toolbox
-
-luarocks:
-	ROCKS_INSTALLATION_PATH=/var/home/gmack/.local/share/nvim/rocks
-	mkdir -p $${ROCKS_INSTALLATION_PATH}
-	luarocks --lua-version=5.1 --tree=$${ROCKS_INSTALLATION_PATH} --server='https://nvim-neorocks.github.io/rocks-binaries/' install rocks.nvim
-
-rocks-init:
-	cat << EOF | tee 
-	\tline 1
-	$$(printf "\t")ccc
-	line 2
-	EOF
-
-
-
-
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
 	podman images | grep zie
@@ -272,7 +260,6 @@ quadlet-reset:
 	fi
 	rm $(HOME)/.config/containers/systemd/zie-toolbox.container
 	$(MAKE) quadlet
-
 
 quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	echo 'OK! quadlet added'

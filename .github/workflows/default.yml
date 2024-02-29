@@ -21,7 +21,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
-      - name: Wolfi os distrobox build
+      - name: Build
         shell: bash
         run: make
 #     - uses: sigstore/cosign-installer@main
@@ -30,11 +30,3 @@ jobs:
 #         sign-with-temporary-key: true
 #         empty-workspace: true
 #         config: neovim.yaml
-#     - name: Check melange build
-#       shell: bash
-#       run: |
-#         pwd
-#         ls -al .
-#         ls -alR packages || true
-#         cat packages/x86_64/APKINDEX.json | jq '.'
-#   
