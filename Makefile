@@ -94,8 +94,8 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks \
 		stylua \
 		silicon \
-		tuckr \
 		new-stow &>/dev/null
+	cargo install --git https://github.com/RaphGL/Tuckr.git
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	buildah commit --rm $${CONTAINER} $@
