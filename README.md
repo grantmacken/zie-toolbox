@@ -1,15 +1,12 @@
-# grantmacken/zie-toolbox
+# WIP grantmacken/zie-toolbox
+
+Wolfi based toolbox for immutable operating systems
+
+This is a distrobox toolbox container for code wrangling
+
+## TODO! why what
 
 
-Wolfi based toolbox for an immutable operating systems
-
-This is a distrobox/toolbox  for code wrangling
-
-#  text editor with cli tooling
-
-The latest neovim build is installed
- - fd
- - 
 
 
 

@@ -7,7 +7,12 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
-default:  zie-toolbox  ## build the toolbox
+default: zie-toolbox  ## build the toolbox
+
+## buildr_addons are for the cli tools not available in from the wolfi apk repo
+## NOTE: neovim is built from source although it is available from the wolfi apk repo
+bldr-addons: bldr-neovim 
+
 
 # apko: apko-wolfi.tar
 # 	echo '##[ $@ ]##'
@@ -21,11 +26,13 @@ bldr-wolfi: ## apk bins for wolfi
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
-	buildah run $${CONTAINER} sh -c 'apk add bash bc bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg iproute2 iputils keyutils libcap libice libsm libx11 libxau libxcb libxdmcp libxext libxmu libxt mount ncurses ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
+	buildah run $${CONTAINER} sh -c 'apk add bash bc bzip2 coreutils curl diffutils findmnt findutils git gnupg gpg \
+		iproute2 iputils keyutils libcap libice libsm libx11 libxau libxcb libxdmcp libxext libxmu libxt mount ncurses \
+		ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata \
+		umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want mainly command line tools
-	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza \
-		fd fzf gh google-cloud-sdk grep lazygit luajit ripgrep \
-		sed zoxide'
+	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit luajit \
+		ripgrep sed zoxide'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -46,7 +53,6 @@ bldr-wolfi: ## apk bins for wolfi
 #tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 #zoxide  # A smarter cd command. Supports all major shells
 
-bldr-addons: bldr-neovim bldr-rust
 
 bldr: ## a build tools builder for neovim
 	echo '##[ $@ ]##'
@@ -132,7 +138,7 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
