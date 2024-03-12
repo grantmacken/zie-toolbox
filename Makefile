@@ -94,15 +94,15 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks \
 		stylua \
 		silicon &>/dev/null
-	cargo install --git https://github.com/RaphGL/Tuckr.git
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-wolfi-toolbox:
+zie-toolbox: bldr-wolfi bldr-addons
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr-wolfi)
+	# CONTAINER=$$(buildah from docker-archive:apko-wolfi.tar)
 	buildah config \
     --label com.github.containers.toolbox='true' \
     --label usage='This image is meant to be used with the distrobox command' \
@@ -132,6 +132,12 @@ zie-wolfi-toolbox:
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
+	#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
+	#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 	echo ' - check apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version' || true
 	echo '-------------------------------'
@@ -141,5 +147,39 @@ zie-wolfi-toolbox:
 	echo ' -------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version' || true
 	echo ' -------------------------------'
+	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK' 
+	echo ' --- from bldr-neovim ' 
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'  
+	echo ' --- from bldr-rust ' 
+	buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version'
+	echo ' -------------------------------'
+	buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version'
+	echo ' -------------------------------'
+	# echo ' --- from bldr-luarocks ' 
+	# buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks'
+	echo ' ==============================='
+	echo ' Setup '
+	echo ' --- bash instead of ash ' 
 	buildah run $${CONTAINER} /bin/bash -c "sed -i 's%/bin/ash%/bin/bash%' /etc/passwd"
 	# buildah run $${CONTAINER} /bin/bash -c 'cat /etc/passwd'
+	buildah run $${CONTAINER} /bin/bash -c 'ln /bin/sh /usr/bin/sh'
+	echo ' --- permissions fo su-exec' 
+	buildah run $${CONTAINER} /bin/bash -c 'chmod u+s /sbin/su-exec'
+	echo ' -------------------------------'
+	# buildah run $${CONTAINER} /bin/bash -c 'ls -al /sbin/su-exec'
+	echo ' --- su-exec as sudo' 
+	SRC=files/sudo
+	TARG=/usr/bin/sudo
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@ &>/dev/null
+	buildah push ghcr.io/grantmacken/$@:latest &>/dev/null
+	podman images
+	echo '##[ ------------------------------- ]##'
+
+pull:
+	podman pull ghcr.io/grantmacken/zie-toolbox:latest
+	podman images | grep zie
+
+distrobox: pull
+	vim.fn.stdpath('data')
+	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
