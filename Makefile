@@ -11,8 +11,7 @@ default: zie-toolbox  ## build the toolbox
 
 ## buildr_addons are for the cli tools not available in from the wolfi apk repo
 ## NOTE: neovim is built from source although it is available from the wolfi apk repo
-bldr-addons: bldr-neovim 
-
+bldr-addons: bldr-neovim bldr-rust
 
 # apko: apko-wolfi.tar
 # 	echo '##[ $@ ]##'
@@ -22,7 +21,7 @@ bldr-addons: bldr-neovim
 # 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
-bldr-wolfi: ## apk bins for wolfi 
+bldr-wolfi: ## apk bins from wolfi-dev 
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
@@ -36,7 +35,6 @@ bldr-wolfi: ## apk bins for wolfi
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
-
 
 #build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
 #eza     # A modern, maintained replacement for ls.
@@ -52,7 +50,6 @@ bldr-wolfi: ## apk bins for wolfi
 #sudo-rs # TODO! CONFLICT with shadow memory safe implementation of sudo and su
 #tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 #zoxide  # A smarter cd command. Supports all major shells
-
 
 bldr: ## a build tools builder for neovim
 	echo '##[ $@ ]##'
@@ -98,8 +95,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah run $${CONTAINER} cargo install cargo-binstall &>/dev/null
 	# only install stuff not in  wolfi apk registry
 	buildah run $${CONTAINER} /home/nonroot/.cargo/bin/cargo-binstall --no-confirm --no-symlinks \
-		stylua \
-		silicon &>/dev/null
+		stylua silicon tree-sitter-cli &>/dev/null
 	buildah run $${CONTAINER} rm /home/nonroot/.cargo/bin/cargo-binstall
 	buildah run $${CONTAINER} ls /home/nonroot/.cargo/bin/
 	buildah commit --rm $${CONTAINER} $@
@@ -138,7 +134,7 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
@@ -189,3 +185,90 @@ pull:
 distrobox: pull
 	vim.fn.stdpath('data')
 	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
+
+quadlet-status: 
+	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+
+quadlet-reset: 
+	if systemctl --no-pager --user is-active zie-toolbox.service
+	then 
+	systemctl --no-pager --user stop zie-toolbox.service
+	fi
+	if systemctl --no-pager --user is-enabled zie-toolbox.service
+	then 
+	systemctl --no-pager --user disable zie-toolbox.service
+	fi
+	rm $(HOME)/.config/containers/systemd/zie-toolbox.container
+	$(MAKE) quadlet
+
+
+kitty-session: $(HOME)/.config/kitty/session.conf
+	cat << EOF | tee $@
+	cd $HOME/zie
+	launch /bin/bash -c 'distrobox enter zie-quadlet'
+	EOF
+
+
+quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
+	echo 'OK! quadlet added'
+	systemctl --user daemon-reload
+	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
+	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
+	systemctl --no-pager --user list-unit-files  --state=generated || grep zie
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
+	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
+	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
+	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+	# journalctl --no-pager --user -xeu zie-toolbox.service
+	distrobox ls
+
+
+# TODO check often if up to date
+# https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
+$(HOME)/.config/containers/systemd/zie-toolbox.container:
+	mkdir -p $(dir $@)
+	echo '##[ $(notdir $@) ]]##'
+	cat << EOF | tee $@
+	[Unit]
+	Description=Distrobox Wolfi-OS Toolbox 
+	[Container]
+	Annotation=run.oci.keep_original_groups=1
+	AutoUpdate=registry
+	ContainerName=zie-quadlet
+	Environment=SHELL=%s
+	Environment=HOME=%h
+	Environment=XDG_RUNTIME_DIR=%t
+	Environment=USER=%u
+	Environment=USERNAME=%u
+	Environment=container=podman
+	Exec=--verbose --name %u  --user %U --group %G --home %h --init "0" --pre-init-hooks " " --additional-packages " " -- " "
+	Image=ghcr.io/grantmacken/zie-toolbox:latest
+	HostName=zie-quadlet.%l
+	Network=host
+	PodmanArgs=--entrypoint /usr/bin/entrypoint
+	PodmanArgs=--ipc host
+	PodmanArgs=--no-hosts
+	PodmanArgs=--privileged
+	PodmanArgs=--label manager=distrobox
+	PodmanArgs=--security-opt label=disable
+	PodmanArgs=--security-opt apparmor=unconfined
+	Ulimit=host
+	User=root:root
+	UserNS=keep-id
+	Volume=/:/run/host:rslave
+	Volume=/tmp:/tmp:rslave
+	Volume=%h:%h:rslave
+	Volume=/dev:/dev:rslave
+	Volume=/sys:/sys:rslave
+	Volume=/dev/pts
+	Volume=/dev/null:/dev/ptmx
+	Volume=/sys/fs/selinux
+	Volume=/var/log/journal
+	Volume=/var/home/%u:/var/home/%u:rslave
+	Volume=%t:%t:rslave
+	Volume=/etc/hosts:/etc/hosts:ro
+	Volume=/etc/resolv.conf:/etc/resolv.conf:ro
+	EOF
