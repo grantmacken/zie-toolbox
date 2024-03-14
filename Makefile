@@ -30,8 +30,11 @@ bldr-wolfi: ## apk bins from wolfi-dev
 		ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata \
 		umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want mainly command line tools
-	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit luajit \
-		ripgrep sed zoxide'
+	buildah run $${CONTAINER} sh -c \
+		'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit  ripgrep sed zoxide'
+	# add runtimes 
+	# NOTE: treesitter-cli requires nodejs runtime
+	buildah run $${CONTAINER} sh -c 'luajit nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
