@@ -31,10 +31,10 @@ bldr-wolfi: ## apk bins from wolfi-dev
 		umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want mainly command line tools
 	buildah run $${CONTAINER} sh -c \
-		'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit  ripgrep sed zoxide'
+		'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit ripgrep sed zoxide'
 	# add runtimes 
 	# NOTE: treesitter-cli requires nodejs runtime
-	buildah run $${CONTAINER} sh -c 'luajit nodejs-21'
+	buildah run $${CONTAINER} sh -c 'apk add luajit nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
