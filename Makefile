@@ -85,7 +85,7 @@ bldr-neovim: bldr # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/bldr)
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=RelWithDebInfo; make && make install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
