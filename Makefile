@@ -8,7 +8,6 @@ MAKEFLAGS += --silent
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
-
 ## buildr_addons are for the cli tools not available in from the wolfi apk repo
 ## NOTE: neovim is built from source although it is available from the wolfi apk repo
 bldr-addons: bldr-neovim bldr-rust
@@ -113,6 +112,7 @@ zie-toolbox: bldr-wolfi bldr-addons
     --label usage='This image is meant to be used with the distrobox command' \
     --label summary='a Wolfi based toolbox' \
     --label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
+	buildah config --env LANG C.UTF-8 $${CONTAINER}
 	SRC=https://raw.githubusercontent.com/89luca89/distrobox/main/distrobox-host-exec
 	TARG=/usr/bin/distrobox-host-exec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
@@ -211,7 +211,6 @@ kitty-session: $(HOME)/.config/kitty/session.conf
 	cd $HOME/zie
 	launch /bin/bash -c 'distrobox enter zie-quadlet'
 	EOF
-
 
 quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
 	echo 'OK! quadlet added'
