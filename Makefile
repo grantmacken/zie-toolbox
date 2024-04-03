@@ -24,76 +24,76 @@ bldr-wolfi: ## apk bins from wolfi-dev
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
-	buildah run $${CONTAINER} sh -c 'apk add 
-	bash
-	bzip2
-	coreutils
-	curl
-	diffutils
-	findmnt
-	findutils
-	git
-	gnupg
-	gpg
-	iproute2
-	iputils
-	keyutils
-	libcap
-	libsm
-	libx11
-	libxau
-	libxcb
-	libxdmcp
-	libxext
-	libice
-	libxmu
-	libxt
-	linux-pam
-	mount
-	ncurses
-	ncurses-terminfo
-	net-tools
-	openssh-client
-	pigz
-	posix-libc-utils
-	procps
-	rsync
-	shadow
-	su-exec
-	tcpdump
-	tree
-	tzdata
-	umount
-	unzip
-	util-linux
-	util-linux-misc
-	wget
-	xauth
-	xz
-	zip
+	buildah run $${CONTAINER} sh -c 'apk add \
+	bash \
+	bzip2 \
+	coreutils \
+	curl \
+	diffutils\
+	findmnt\
+	findutils \
+	git \
+	gnupg \
+	gpg \
+	iproute2 \
+	iputils \
+	keyutils \
+	libcap \
+	libsm \
+	libx11 \
+	libxau \
+	libxcb \
+	libxdmcp \
+	libxext \
+	libice \
+	libxmu \
+	libxt \
+	linux-pam \
+	mount \
+	ncurses \
+	ncurses-terminfo \
+	net-tools \
+	openssh-client \
+	pigz \
+	posix-libc-utils \
+	procps \
+	rsync \
+	shadow \
+	su-exec \
+	tcpdump \
+	tree \
+	tzdata \
+	umount \
+	unzip \
+	util-linux \
+	util-linux-misc \
+	wget \
+	xauth \
+	xz \
+	zip \
 	vulkan-loader'
 	buildah run $${CONTAINER} sh -c '
-	build-base
-	cmake
+	build-base \
+	cmake \
 	libxcrypt'
 	# add apk stuff that I want mainly command line tools
-	buildah run $${CONTAINER} sh -c 'apk add
-	atuin
-	eza
-	fd
-	fzf
-	gh
-	google-cloud-sdk
-	grep
-	jq
-	lazygit
-	ripgrep
-	sed
+	buildah run $${CONTAINER} sh -c 'apk add \
+	atuin \
+	eza \
+	fd \
+	fzf \
+	gh \
+	google-cloud-sdk \
+	grep \
+	jq \
+	lazygit \
+	ripgrep \
+	sed \
 	zoxide'
 	# add runtimes
 	# NOTE: treesitter-cli requires nodejs runtime
-	buildah run $${CONTAINER} sh -c 'apk add 
-	luajit
+	buildah run $${CONTAINER} sh -c 'apk add \
+	luajit \
 	nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
