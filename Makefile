@@ -29,8 +29,8 @@ bldr-wolfi: ## apk bins from wolfi-dev
 	bzip2 \
 	coreutils \
 	curl \
-	diffutils\
-	findmnt\
+	diffutils \
+	findmnt \
 	findutils \
 	git \
 	gnupg \
