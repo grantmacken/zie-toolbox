@@ -29,34 +29,36 @@ bldr-wolfi: ## apk bins from wolfi-dev
 		ncurses-terminfo net-tools openssh-client pigz posix-libc-utils procps rsync shadow su-exec tcpdump tree tzdata \
 		umount unzip util-linux util-linux-misc vulkan-loader wget xauth xz zip'
 	# add apk stuff that I want mainly command line tools
-	buildah run $${CONTAINER} sh -c \
-		'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep lazygit ripgrep sed zoxide'
-	# add runtimes 
+	buildah run $${CONTAINER} sh -c 'apk add atuin build-base cmake eza fd fzf gh google-cloud-sdk grep jq lazygit 
+	ripgrep sed zoxide'
+	# add runtimes
 	# NOTE: treesitter-cli requires nodejs runtime
 	buildah run $${CONTAINER} sh -c 'apk add luajit nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
-#build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
-#eza     # A modern, maintained replacement for ls.
-#fd      # A simple, fast and user-friendly alternative to 'find'
-#gh      #  GitHub's official command line tool
-#google-cloud-sdk # Google Cloud Command Line Interface
-#grep    # GNU grep implementation implement -P flag Perl RegEx engine"
-#lazygit # simple terminal UI for git commands
-#luajit  # OpenResty's branch of LuaJIT @see https://github.com/wolfi-dev/os/blob/main/luajit.yaml
-#luajit-dev # headers for luarocks install
-#ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
-#sed     # GNU stream editor TODO? replace with sd"
-#sudo-rs # TODO! CONFLICT with shadow memory safe implementation of sudo and su
-#tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
-#zoxide  # A smarter cd command. Supports all major shells
+# build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
+# eza     # A modern, maintained replacement for ls.
+# fd      # A simple, fast and user-friendly alternative to 'find'
+# gh      #  GitHub's official command line tool
+# google-cloud-sdk # Google Cloud Command Line Interface
+# grep    # GNU grep implementation implement -P flag Perl RegEx engine"
+# lazygit # simple terminal UI for git commands
+# luajit  # OpenResty's branch of LuaJIT @see https://github.com/wolfi-dev/os/blob/main/luajit.yaml
+# luajit-dev # headers for luarocks install
+# ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
+# sed     # GNU stream editor TODO? replace with sd"
+# sudo-rs # TODO! CONFLICT with shadow memory safe implementation of sudo and su
+# tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
+# zoxide  # A smarter cd command. Supports all major shells
 
 bldr: ## a build tools builder for neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev wget tree' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev 
+	libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev
+	wget tree' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -137,6 +139,7 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/firefox'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
