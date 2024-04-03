@@ -72,7 +72,7 @@ bldr-wolfi: ## apk bins from wolfi-dev
 	xz \
 	zip \
 	vulkan-loader'
-	buildah run $${CONTAINER} sh -c '
+	buildah run $${CONTAINER} sh -c 'apk add \
 	build-base \
 	cmake \
 	libxcrypt'
