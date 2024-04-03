@@ -117,10 +117,30 @@ bldr-wolfi: ## apk bins from wolfi-dev
 bldr: ## a build tools builder for neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah run $${CONTAINER} sh -c 'apk add build-base cmake gettext-dev gperf libtermkey libtermkey-dev libuv-dev 
-	libvterm-dev lua-luv lua-luv-dev lua5.1-lpeg lua5.1-mpack luajit-dev msgpack samurai tree-sitter-dev unibilium-dev
-	wget tree' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk add readline-dev luajit unzip'
+	buildah run $${CONTAINER} sh -c 'apk add \
+	build-base \
+	cmake \
+	gettext-dev \
+	gperf \
+	libtermkey \
+	libtermkey-dev \
+	libuv-dev  \
+	libvterm-dev \
+	libxcrypt \
+	lua-luv \
+	lua-luv-dev \
+	lua5.1-lpeg \
+	lua5.1-mpack \
+	luajit \
+	luajit-dev \
+	msgpack \
+	readline-dev \
+	samurai \
+	tree \
+	tree-sitter-dev \
+	unibilium-dev \
+	unzip \
+	wget'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
 
