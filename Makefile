@@ -72,7 +72,7 @@ wolfi: ## apk bins from wolfi-dev
 	xauth \
 	xz \
 	zip \
-	vulkan-loader'
+	vulkan-loader' &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'apk add \
 	# build-base \
 	# cmake \
@@ -87,12 +87,12 @@ wolfi: ## apk bins from wolfi-dev
 	google-cloud-sdk \
 	grep \
 	jq \
-	lazygit \
+	make \
 	ripgrep \
 	sed \
 	uutils \
 	starship \
-	zoxide'
+	zoxide' &>/dev/null
 	# add runtimes
 	# NOTE: treesitter-cli requires nodejs runtime
 	# buildah run $${CONTAINER} sh -c 'apk add \
@@ -250,15 +250,17 @@ zie-toolbox: wolfi bldr-addons
 	echo ' - add bash-preexec'
 	SRC=https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh
 	TARG=/usr/share/bash-preexec
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share'
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup filestarship config file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
 	TARG=/etc/bashrc
-	echo ' - add starship config file'
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	echo ' - add starship config file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/starship.toml
 	TARG=/etc/starship.toml
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /etc'
 	echo ' - symlink to exectables on host'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
@@ -273,25 +275,16 @@ zie-toolbox: wolfi bldr-addons
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
 	#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
 	#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
-	echo ' - check apk installed binaries'
+	echo ' - check some apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
 	echo '-------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version'
 	echo ' -------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version'
 	echo ' -------------------------------'
-	buildah run $${CONTAINER} /bin/bash -c 'which lazygit && lazygit --version'
-	echo ' -------------------------------'
 	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK'
 	echo ' --- from bldr-neovim '
 	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'
-	# echo ' --- from bldr-rust '
-	# buildah run $${CONTAINER} /bin/bash -c 'which nstow && nstow --version'
-	# echo ' -------------------------------'
-	# buildah run $${CONTAINER} /bin/bash -c 'which stylua && stylua --version'
-	# echo ' -------------------------------'
-	# echo ' --- from bldr-luarocks '
-	# buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks'
 	echo ' ==============================='
 	echo ' Setup '
 	echo ' --- bash instead of ash '
