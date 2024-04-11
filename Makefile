@@ -10,7 +10,9 @@ MAKEFLAGS += --silent
 default: zie-toolbox  ## build the toolbox
 ## buildr_addons are for the cli tools not available in from the wolfi apk repo
 ## NOTE: neovim is built from source although it is available from the wolfi apk repo
-bldr-addons: bldr-neovim bldr-rust
+bldr-addons: bldr-neovim
+
+# bldr-rust
 
 # apko: apko-wolfi.tar
 # 	echo '##[ $@ ]##'
@@ -18,6 +20,16 @@ bldr-addons: bldr-neovim bldr-rust
 # 	echo '##[ ------------------------------- ]##'
 # apko-wolfi.tar: ## install apk wolfi binaries
 # 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
+# buildah run $${CONTAINER} sh -c 'apk add \
+# build-base \
+# cmake \
+# libxcrypt'
+# add apk stuff that I want mainly command line tools
+# add runtimes
+# NOTE: treesitter-cli requires nodejs runtime
+# buildah run $${CONTAINER} sh -c 'apk add \
+# luajit \
+# nodejs-21'
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
 wolfi: ## apk bins from wolfi-dev 
@@ -73,11 +85,6 @@ wolfi: ## apk bins from wolfi-dev
 	xz \
 	zip \
 	vulkan-loader' &>/dev/null
-	# buildah run $${CONTAINER} sh -c 'apk add \
-	# build-base \
-	# cmake \
-	# libxcrypt'
-	# add apk stuff that I want mainly command line tools
 	buildah run $${CONTAINER} sh -c 'apk add \
 	atuin \
 	eza \
@@ -93,11 +100,6 @@ wolfi: ## apk bins from wolfi-dev
 	uutils \
 	starship \
 	zoxide' &>/dev/null
-	# add runtimes
-	# NOTE: treesitter-cli requires nodejs runtime
-	# buildah run $${CONTAINER} sh -c 'apk add \
-	# luajit \
-	# nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -116,36 +118,6 @@ wolfi: ## apk bins from wolfi-dev
 # sudo-rs # TODO! CONFLICT with shadow memory safe implementation of sudo and su
 # tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 # zoxide  # A smarter cd command. Supports all major shells
-
-# bldr: ## a build tools builder for neovim
-# 	echo '##[ $@ ]##'
-# 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-# 	buildah run $${CONTAINER} sh -c 'apk add \
-# 	build-base \
-# 	cmake \
-# 	gettext-dev \
-# 	gperf \
-# 	libtermkey \
-# 	libtermkey-dev \
-# 	libuv-dev  \
-# 	libvterm-dev \
-# 	libxcrypt \
-# 	lua-luv \
-# 	lua-luv-dev \
-# 	lua5.1-lpeg \
-# 	lua5.1-mpack \
-# 	luajit \
-# 	luajit-dev \
-# 	msgpack \
-# 	readline-dev \
-# 	samurai \
-# 	tree \
-# 	tree-sitter-dev \
-# 	unibilium-dev \
-# 	unzip \
-# 	wget'
-# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-# 	echo '##[ ------------------------------- ]##'
 
 # bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
 # 	echo '##[ $@ ]##'
@@ -192,12 +164,12 @@ bldr-neovim: # a ephemeral localhost container which builds neovim
 	tree-sitter-dev \
 	unibilium-dev \
 	unzip \
-	wget'
+	wget' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah commit --rm $${CONTAINER} $@
-	echo '##[ ------------------------------- ]##'
+	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+	echo '-------------------------------'
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
@@ -267,9 +239,9 @@ zie-toolbox: wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	echo ' - from: bldr rust'
-	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+	# echo ' - from: bldr rust'
+	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	# buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
