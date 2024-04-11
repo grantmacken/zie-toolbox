@@ -100,9 +100,9 @@ wolfi: ## apk bins from wolfi-dev
 	uutils \
 	starship \
 	zoxide' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'apk info'
+	# buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	echo '##[ ------------------------------- ]##'
+	echo ' ------------------------------- '
 
 # build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
 # eza     # A modern, maintained replacement for ls.
@@ -166,9 +166,14 @@ bldr-neovim: # a ephemeral localhost container which builds neovim
 	unzip \
 	wget' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+	false
 	echo '-------------------------------'
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -184,7 +189,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: wolfi bldr-addons
+zie-toolbox: wolfi bldr-neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/wolfi)
 	echo ' - configuration labels'
@@ -237,21 +242,17 @@ zie-toolbox: wolfi bldr-addons
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/starship.toml
 	TARG=/etc/starship.toml
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} /bin/bash -c 'ls -al /etc'
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /etc | grep starship'
 	echo ' - symlink to exectables on host'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	# echo ' - from: bldr rust'
-	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	# buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+	podman images
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
 	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
-	#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
-	#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 	echo ' - check some apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
 	echo '-------------------------------'
@@ -280,6 +281,13 @@ zie-toolbox: wolfi bldr-addons
 	# buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
+
+
+	# echo ' - from: bldr rust'
+	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+	# buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+	#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
+	#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 #
 # pull:
 # 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
