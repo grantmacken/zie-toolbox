@@ -168,10 +168,14 @@ bldr-neovim: # a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local'
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin' || true
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib/nvim' || true
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share/nvim' || true
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/include' || true
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	false
 	echo '-------------------------------'
