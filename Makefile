@@ -224,10 +224,15 @@ zie-toolbox: wolfi bldr-addons
 	TARG=/usr/share/bash-preexec
 	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share'
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup filestarship config file'
+	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
 	TARG=/etc/bashrc
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	echo ' - add my files to /etc/profile.d file for default settings for all users when starting a login shell'
+	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/profile.d/bash_completion.sh
+	TARG=/etc/profile.d/
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /etc/profile.d/'
 	echo ' - add starship config file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/starship.toml
 	TARG=/etc/starship.toml
