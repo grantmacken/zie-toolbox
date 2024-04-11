@@ -20,10 +20,11 @@ bldr-addons: bldr-neovim bldr-rust
 # 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
-bldr-wolfi: ## apk bins from wolfi-dev 
+wolfi: ## apk bins from wolfi-dev 
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
+	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
 	buildah run $${CONTAINER} sh -c 'apk add \
 	bash \
 	bzip2 \
@@ -72,10 +73,10 @@ bldr-wolfi: ## apk bins from wolfi-dev
 	xz \
 	zip \
 	vulkan-loader'
-	buildah run $${CONTAINER} sh -c 'apk add \
-	build-base \
-	cmake \
-	libxcrypt'
+	# buildah run $${CONTAINER} sh -c 'apk add \
+	# build-base \
+	# cmake \
+	# libxcrypt'
 	# add apk stuff that I want mainly command line tools
 	buildah run $${CONTAINER} sh -c 'apk add \
 	atuin \
@@ -89,12 +90,14 @@ bldr-wolfi: ## apk bins from wolfi-dev
 	lazygit \
 	ripgrep \
 	sed \
+	uutils \
+	starship \
 	zoxide'
 	# add runtimes
 	# NOTE: treesitter-cli requires nodejs runtime
-	buildah run $${CONTAINER} sh -c 'apk add \
-	luajit \
-	nodejs-21'
+	# buildah run $${CONTAINER} sh -c 'apk add \
+	# luajit \
+	# nodejs-21'
 	buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '##[ ------------------------------- ]##'
@@ -114,7 +117,56 @@ bldr-wolfi: ## apk bins from wolfi-dev
 # tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 # zoxide  # A smarter cd command. Supports all major shells
 
-bldr: ## a build tools builder for neovim
+# bldr: ## a build tools builder for neovim
+# 	echo '##[ $@ ]##'
+# 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
+# 	buildah run $${CONTAINER} sh -c 'apk add \
+# 	build-base \
+# 	cmake \
+# 	gettext-dev \
+# 	gperf \
+# 	libtermkey \
+# 	libtermkey-dev \
+# 	libuv-dev  \
+# 	libvterm-dev \
+# 	libxcrypt \
+# 	lua-luv \
+# 	lua-luv-dev \
+# 	lua5.1-lpeg \
+# 	lua5.1-mpack \
+# 	luajit \
+# 	luajit-dev \
+# 	msgpack \
+# 	readline-dev \
+# 	samurai \
+# 	tree \
+# 	tree-sitter-dev \
+# 	unibilium-dev \
+# 	unzip \
+# 	wget'
+# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+# 	echo '##[ ------------------------------- ]##'
+
+# bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
+# 	echo '##[ $@ ]##'
+# 	CONTAINER=$$(buildah from localhost/bldr)
+# 	buildah config --workingdir /home $${CONTAINER}
+# 	buildah run $${CONTAINER} sh -c 'lua -v'
+# 	echo '##[ ----------include----------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+# 	echo '##[ -----------lib ------------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
+# 	echo '##[ ------------------------------- ]##'
+# 	buildah run $${CONTAINER} sh -c 'wget -qO- \
+# 	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
+# 	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
+# 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+# 	buildah run $${CONTAINER} sh -c 'make & make install'
+# 	buildah run $${CONTAINER} sh -c 'luarocks'
+# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+# 	echo '##[ ------------------------------- ]##'
+
+bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah run $${CONTAINER} sh -c 'apk add \
@@ -141,31 +193,6 @@ bldr: ## a build tools builder for neovim
 	unibilium-dev \
 	unzip \
 	wget'
-	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	echo '##[ ------------------------------- ]##'
-
-# bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
-# 	echo '##[ $@ ]##'
-# 	CONTAINER=$$(buildah from localhost/bldr)
-# 	buildah config --workingdir /home $${CONTAINER}
-# 	buildah run $${CONTAINER} sh -c 'lua -v'
-# 	echo '##[ ----------include----------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
-# 	echo '##[ -----------lib ------------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
-# 	echo '##[ ------------------------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'wget -qO- \
-# 	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-# 	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
-# 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
-# 	buildah run $${CONTAINER} sh -c 'make & make install'
-# 	buildah run $${CONTAINER} sh -c 'luarocks'
-# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-# 	echo '##[ ------------------------------- ]##'
-
-bldr-neovim: bldr # a ephemeral localhost container which builds neovim
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from localhost/bldr)
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
@@ -185,9 +212,9 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: bldr-wolfi bldr-addons
+zie-toolbox: wolfi bldr-addons
 	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from localhost/bldr-wolfi)
+	CONTAINER=$$(buildah from localhost/wolfi)
 	echo ' - configuration labels'
 	buildah config \
 	--label com.github.containers.toolbox='true' \
@@ -219,10 +246,18 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'
-	# bluefin-cli files
-	# /etc/bashrc: the systemwide bash per-interactive-shell startup file
-	SRC=https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/files/etc/bashrc
+	# https://github.com/rcaloras/bash-preexec
+	echo ' - add bash-preexec'
+	SRC=https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh
+	TARG=/usr/share/bash-preexec
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup filestarship config file'
+	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
 	TARG=/etc/bashrc
+	echo ' - add starship config file'
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/starship.toml
+	TARG=/etc/starship.toml
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	echo ' - symlink to exectables on host'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
@@ -272,7 +307,7 @@ zie-toolbox: bldr-wolfi bldr-addons
 	TARG=/usr/bin/sudo
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	buildah push ghcr.io/grantmacken/$@:latest
+	# buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
 #
