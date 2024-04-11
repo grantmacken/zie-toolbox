@@ -175,9 +175,7 @@ bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '-------------------------------'
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share/nvim' || true
 	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/include' || true
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	false
 	echo '-------------------------------'
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -255,8 +253,15 @@ zie-toolbox: wolfi bldr-neovim
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	podman images
 	echo ' - from: bldr neovim'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/nvim'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share' '/usr/local/share'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin' '/usr/local/'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/'
+	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share/nvim' '/usr/local/share/'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin' || true
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib/nvim' || true
+	echo '-------------------------------'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share/nvim' || true
+	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'
 	echo ' - check some apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
 	echo '-------------------------------'
