@@ -219,13 +219,17 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah run $${CONTAINER} /bin/bash -c 'which entrypoint'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-export'
 	buildah run $${CONTAINER} /bin/bash -c 'which distrobox-host-exec'
+	# bluefin-cli files
+	# /etc/bashrc: the systemwide bash per-interactive-shell startup file
+	SRC=https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/files/etc/bashrc
+	TARG=/etc/bashrc
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	echo ' - symlink to exectables on host'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/firefox'
 	echo ' - from: bldr rust'
 	buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 	buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
@@ -271,97 +275,52 @@ zie-toolbox: bldr-wolfi bldr-addons
 	buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
-
-pull:
-	podman pull ghcr.io/grantmacken/zie-toolbox:latest
-	podman images | grep zie
-
-distrobox: pull
-	vim.fn.stdpath('data')
-	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
-
-quadlet-status: 
-	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
-	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
-
-quadlet-reset: 
-	if systemctl --no-pager --user is-active zie-toolbox.service
-	then 
-	systemctl --no-pager --user stop zie-toolbox.service
-	fi
-	if systemctl --no-pager --user is-enabled zie-toolbox.service
-	then 
-	systemctl --no-pager --user disable zie-toolbox.service
-	fi
-	rm $(HOME)/.config/containers/systemd/zie-toolbox.container
-	$(MAKE) quadlet
-
-
-kitty-session: $(HOME)/.config/kitty/session.conf
-	cat << EOF | tee $@
-	cd $HOME/zie
-	launch /bin/bash -c 'distrobox enter zie-quadlet'
-	EOF
-
-quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
-	echo 'OK! quadlet added'
-	systemctl --user daemon-reload
-	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
-	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
-	systemctl --no-pager --user list-unit-files  --state=generated || grep zie
-	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
-	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
-	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
-	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
-	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
-	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
-	# journalctl --no-pager --user -xeu zie-toolbox.service
-	distrobox ls
+#
+# pull:
+# 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
+# 	podman images | grep zie
+#
+# distrobox: pull
+# 	vim.fn.stdpath('data')
+# 	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
+#
+# quadlet-status: 
+# 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+# 	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+#
+# quadlet-reset: 
+# 	if systemctl --no-pager --user is-active zie-toolbox.service
+# 	then 
+# 	systemctl --no-pager --user stop zie-toolbox.service
+# 	fi
+# 	if systemctl --no-pager --user is-enabled zie-toolbox.service
+# 	then 
+# 	systemctl --no-pager --user disable zie-toolbox.service
+# 	fi
+# 	rm $(HOME)/.config/containers/systemd/zie-toolbox.container
+# 	$(MAKE) quadlet
 
 
-# TODO check often if up to date
-# https://raw.githubusercontent.com/ublue-os/toolboxes/main/quadlets/wolfi-toolbox/wolfi-distrobox-quadlet.container
-$(HOME)/.config/containers/systemd/zie-toolbox.container:
-	mkdir -p $(dir $@)
-	echo '##[ $(notdir $@) ]]##'
-	cat << EOF | tee $@
-	[Unit]
-	Description=Distrobox Wolfi-OS Toolbox 
-	[Container]
-	Annotation=run.oci.keep_original_groups=1
-	AutoUpdate=registry
-	ContainerName=zie-quadlet
-	Environment=SHELL=%s
-	Environment=HOME=%h
-	Environment=XDG_RUNTIME_DIR=%t
-	Environment=USER=%u
-	Environment=USERNAME=%u
-	Environment=container=podman
-	Exec=--verbose --name %u  --user %U --group %G --home %h --init "0" --pre-init-hooks " " --additional-packages " " -- " "
-	Image=ghcr.io/grantmacken/zie-toolbox:latest
-	HostName=zie-quadlet.%l
-	Network=host
-	PodmanArgs=--entrypoint /usr/bin/entrypoint
-	PodmanArgs=--ipc host
-	PodmanArgs=--no-hosts
-	PodmanArgs=--privileged
-	PodmanArgs=--label manager=distrobox
-	PodmanArgs=--security-opt label=disable
-	PodmanArgs=--security-opt apparmor=unconfined
-	Ulimit=host
-	User=root:root
-	UserNS=keep-id
-	Volume=/:/run/host:rslave
-	Volume=/tmp:/tmp:rslave
-	Volume=%h:%h:rslave
-	Volume=/dev:/dev:rslave
-	Volume=/sys:/sys:rslave
-	Volume=/dev/pts
-	Volume=/dev/null:/dev/ptmx
-	Volume=/sys/fs/selinux
-	Volume=/var/log/journal
-	Volume=/var/home/%u:/var/home/%u:rslave
-	Volume=%t:%t:rslave
-	Volume=/etc/hosts:/etc/hosts:ro
-	Volume=/etc/resolv.conf:/etc/resolv.conf:ro
-	EOF
+# kitty-session: $(HOME)/.config/kitty/session.conf
+# 	cat << EOF | tee $@
+# 	cd $HOME/zie
+# 	launch /bin/bash -c 'distrobox enter zie-quadlet'
+# 	EOF
+
+# quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
+# 	echo 'OK! quadlet added'
+# 	systemctl --user daemon-reload
+# 	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
+# 	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
+# 	systemctl --no-pager --user list-unit-files  --state=generated || grep zie
+# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
+# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
+# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
+# 	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
+# 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
+# 	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
+# 	# journalctl --no-pager --user -xeu zie-toolbox.service
+# 	distrobox ls
+
+
+
