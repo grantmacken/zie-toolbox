@@ -274,7 +274,7 @@ zie-toolbox: wolfi neovim
 	echo '-------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version'
 	echo ' -------------------------------'
-	buildah run $${CONTAINEaR} /bin/bash -c 'which gcloud && gcloud --version'
+	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version'
 	echo ' -------------------------------'
 	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK'
 	echo ' --- from bldr-neovim '
