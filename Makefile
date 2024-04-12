@@ -217,6 +217,7 @@ zie-toolbox: wolfi neovim
 	echo ' - configuration labels'
 	buildah config \
 	--label com.github.containers.toolbox='true' \
+	--label io.containers.autoupdate='registry' \
 	--label usage='This image is meant to be used with the distrobox command' \
 	--label summary='a Wolfi based toolbox' \
 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' $${CONTAINER}
