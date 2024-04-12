@@ -137,6 +137,34 @@ wolfi: ## apk bins from wolfi-dev
 # 	buildah run $${CONTAINER} sh -c 'luarocks'
 # 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 # 	echo '##[ ------------------------------- ]##'
+#
+latest/neovim-nightly.json:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
+
+
+latest/neovim.download: latest/neovim-nightly.json
+	mkdir -p $(dir $@)
+	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
+
+
+neovim: latest/neovim.download
+	jq -r '.tag_name' latest/neovim-nightly.json
+	jq -r '.name' latest/neovim-nightly.json
+	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
+	buildah run $${CONTAINER} sh -c 'apk add wget'
+	echo -n 'download: ' && cat $<
+	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	
+neovim-clean: 
+	rm latest/neovim.download
+
+	# sed -i "s/LUA_LANGUAGE_SERVER=.*/LUA_LANGUAGE_SERVER=\"$${VERSION}\"/" .env
+	# VERSION=$$(grep -oP '(\d+\.){2}\d+' $< | head -1 )
+	# CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
+
 
 bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
@@ -290,7 +318,6 @@ zie-toolbox: wolfi bldr-neovim
 	# buildah push ghcr.io/grantmacken/$@:latest
 	podman images
 	echo '##[ ------------------------------- ]##'
-
 
 	# echo ' - from: bldr rust'
 	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
