@@ -188,13 +188,6 @@ bldr-neovim: # a ephemeral localhost container which builds neovim
 	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin' || true
-	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib/nvim' || true
-	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share/nvim' || true
-	echo '-------------------------------'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
@@ -249,8 +242,9 @@ zie-toolbox: wolfi neovim
 	# https://github.com/rcaloras/bash-preexec
 	echo ' - add bash-preexec'
 	SRC=https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh
-	TARG=/usr/share/bash-preexec
+	TARG=/usr/share/bash-preexec.sh
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'cd /usr/share/ && mv bash-preexec.sh bash-preexec'
 	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share | grep bash-preexec'
 	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
@@ -280,7 +274,7 @@ zie-toolbox: wolfi neovim
 	echo '-------------------------------'
 	buildah run $${CONTAINER} /bin/bash -c 'which gh && gh --version'
 	echo ' -------------------------------'
-	buildah run $${CONTAINER} /bin/bash -c 'which gcloud && gcloud --version'
+	buildah run $${CONTAINEaR} /bin/bash -c 'which gcloud && gcloud --version'
 	echo ' -------------------------------'
 	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK'
 	echo ' --- from bldr-neovim '
