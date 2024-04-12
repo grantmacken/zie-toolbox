@@ -245,7 +245,7 @@ zie-toolbox: wolfi neovim
 	TARG=/usr/share/bash-prexec
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	# buildah run $${CONTAINER} /bin/bash -c 'cd /usr/share/ && mv bash-preexec.sh bash-preexec'
-	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share/bash-preexec'
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share/bash-prexec'
 	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
 	TARG=/etc/bashrc
