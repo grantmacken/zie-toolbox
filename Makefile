@@ -154,17 +154,15 @@ neovim: latest/neovim.download
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 	buildah run $${CONTAINER} sh -c 'apk add wget'
 	echo -n 'download: ' && cat $<
-	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local'
+	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 	
 neovim-clean: 
 	rm latest/neovim.download
-
 	# sed -i "s/LUA_LANGUAGE_SERVER=.*/LUA_LANGUAGE_SERVER=\"$${VERSION}\"/" .env
 	# VERSION=$$(grep -oP '(\d+\.){2}\d+' $< | head -1 )
 	# CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
-
 
 bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
@@ -219,7 +217,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: wolfi bldr-neovim
+zie-toolbox: wolfi neovim
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/wolfi)
 	echo ' - configuration labels'
@@ -281,9 +279,7 @@ zie-toolbox: wolfi bldr-neovim
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	podman images
 	echo ' - from: bldr neovim'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin' '/usr/local/'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/lib/nvim' '/usr/local/lib/'
-	buildah add --from localhost/bldr-neovim $${CONTAINER} '/usr/local/share/nvim' '/usr/local/share/'
+	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin' || true
 	echo '-------------------------------'
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib/nvim' || true

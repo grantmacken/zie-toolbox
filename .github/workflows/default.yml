@@ -23,7 +23,7 @@ jobs:
           password: ${{ github.token }}
       - name: Build
         shell: bash
-        run: make neovim
+        run: make
 #     - uses: sigstore/cosign-installer@main
 #     - uses: chainguard-dev/actions/melange-build@main
 #       with:
