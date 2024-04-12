@@ -142,7 +142,6 @@ latest/neovim-nightly.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
 
-
 latest/neovim.download: latest/neovim-nightly.json
 	mkdir -p $(dir $@)
 	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
@@ -158,11 +157,6 @@ neovim: latest/neovim.download
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
 	
-neovim-clean: 
-	rm latest/neovim.download
-	# sed -i "s/LUA_LANGUAGE_SERVER=.*/LUA_LANGUAGE_SERVER=\"$${VERSION}\"/" .env
-	# VERSION=$$(grep -oP '(\d+\.){2}\d+' $< | head -1 )
-	# CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base)
 
 bldr-neovim: # a ephemeral localhost container which builds neovim
 	echo '##[ $@ ]##'
@@ -255,8 +249,8 @@ zie-toolbox: wolfi neovim
 	echo ' - add bash-preexec'
 	SRC=https://raw.githubusercontent.com/rcaloras/bash-preexec/master/bash-preexec.sh
 	TARG=/usr/share/bash-preexec
-	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share'
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'ls -al /usr/share | grep bash-preexec'
 	echo ' - add /etc/bashrc: the systemwide bash per-interactive-shell startup file'
 	SRC=https://raw.githubusercontent.com/ublue-os/toolboxes/main/toolboxes/bluefin-cli/files/etc/bashrc
 	TARG=/etc/bashrc
@@ -280,12 +274,6 @@ zie-toolbox: wolfi neovim
 	podman images
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/bin' || true
-	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/lib/nvim' || true
-	echo '-------------------------------'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local/share/nvim' || true
-	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'
 	echo ' - check some apk installed binaries'
 	buildah run $${CONTAINER} /bin/bash -c 'which make && make --version'
 	echo '-------------------------------'
@@ -311,61 +299,12 @@ zie-toolbox: wolfi neovim
 	TARG=/usr/bin/sudo
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
-	# buildah push ghcr.io/grantmacken/$@:latest
-	podman images
-	echo '##[ ------------------------------- ]##'
+ifdef GITHUB_ACTIONS
+	buildah push ghcr.io/$(REPO_OWNER)/$@
+endif
 
-	# echo ' - from: bldr rust'
-	# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
-	# buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
-	#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
-	#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
-#
-# pull:
-# 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
-# 	podman images | grep zie
-#
-# distrobox: pull
-# 	vim.fn.stdpath('data')
-# 	distrobox create --image ghcr.io/grantmacken/zie-toolbox:latest --name zie-wolfi
-#
-# quadlet-status: 
-# 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
-# 	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
-#
-# quadlet-reset: 
-# 	if systemctl --no-pager --user is-active zie-toolbox.service
-# 	then 
-# 	systemctl --no-pager --user stop zie-toolbox.service
-# 	fi
-# 	if systemctl --no-pager --user is-enabled zie-toolbox.service
-# 	then 
-# 	systemctl --no-pager --user disable zie-toolbox.service
-# 	fi
-# 	rm $(HOME)/.config/containers/systemd/zie-toolbox.container
-# 	$(MAKE) quadlet
-
-
-# kitty-session: $(HOME)/.config/kitty/session.conf
-# 	cat << EOF | tee $@
-# 	cd $HOME/zie
-# 	launch /bin/bash -c 'distrobox enter zie-quadlet'
-# 	EOF
-
-# quadlet: $(HOME)/.config/containers/systemd/zie-toolbox.container
-# 	echo 'OK! quadlet added'
-# 	systemctl --user daemon-reload
-# 	systemctl --no-pager --user is-enabled zie-toolbox.service || systemctl --no-pager --user enable zie-toolbox.service
-# 	systemctl --no-pager --user is-active zie-toolbox.service  || systemctl --no-pager --user start zie-toolbox.service
-# 	systemctl --no-pager --user list-unit-files  --state=generated || grep zie
-# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^UnitFile.+$$' 
-# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Load.+$$' 
-# 	systemctl --no-pager --user show zie-toolbox.service | grep -oP '^Active.+$$' 
-# 	systemctl --no-pager --user status zie-toolbox.service | grep -oP 'Active.+'
-# 	echo -n ' - is enabled: ' && systemctl --no-pager --user is-enabled zie-toolbox.service || true
-# 	echo -n ' - is active: '&& systemctl --no-pager --user is-active zie-toolbox.service || true
-# 	# journalctl --no-pager --user -xeu zie-toolbox.service
-# 	distrobox ls
-
-
-
+# echo ' - from: bldr rust'
+# buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
+# buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
+#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
+#buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'

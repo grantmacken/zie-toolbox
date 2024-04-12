@@ -2,9 +2,25 @@
 
 Wolfi based toolbox for immutable operating systems
 
-This is a distrobox toolbox container for code wrangling
+A distrobox toolbox container for code wrangling
 
-## TODO! why what
+
+# Container Tools
+
+Updated weekly to the latest version
+
+ - [x] neovim: open terminal and terminal session starts neovim in the toolbox container
+
+ CLI tools
+ 
+ - [x] git
+ - [x] gh
+ - [x] make
+
+
+
+
+
 
 
 
