@@ -301,7 +301,7 @@ zie-toolbox: wolfi neovim
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
-	buildah push ghcr.io/$(REPO_OWNER)/$@
+	buildah push ghcr.io/grantmacken/$@
 endif
 
 # echo ' - from: bldr rust'
