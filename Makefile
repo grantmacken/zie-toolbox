@@ -10,7 +10,7 @@ MAKEFLAGS += --silent
 default: zie-toolbox  ## build the toolbox
 ## buildr_addons are for the cli tools not available in from the wolfi apk repo
 ## NOTE: neovim is built from source although it is available from the wolfi apk repo
-bldr-addons: bldr-neovim
+bldr-addons: bldr-neovim 
 
 # bldr-rust
 
@@ -94,11 +94,12 @@ wolfi: ## apk bins from wolfi-dev
 	google-cloud-sdk \
 	grep \
 	jq \
+	luajit \
 	make \
 	ripgrep \
 	sed \
-	uutils \
 	starship \
+	uutils \
 	zoxide' &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'apk info'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
@@ -119,25 +120,6 @@ wolfi: ## apk bins from wolfi-dev
 # tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 # zoxide  # A smarter cd command. Supports all major shells
 
-# bldr-luarocks: bldr ## a ephemeral localhost container which builds luarocks
-# 	echo '##[ $@ ]##'
-# 	CONTAINER=$$(buildah from localhost/bldr)
-# 	buildah config --workingdir /home $${CONTAINER}
-# 	buildah run $${CONTAINER} sh -c 'lua -v'
-# 	echo '##[ ----------include----------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
-# 	echo '##[ -----------lib ------------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
-# 	echo '##[ ------------------------------- ]##'
-# 	buildah run $${CONTAINER} sh -c 'wget -qO- \
-# 	https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz'  &>/dev/null
-# 	buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}  
-# 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
-# 	buildah run $${CONTAINER} sh -c 'make & make install'
-# 	buildah run $${CONTAINER} sh -c 'luarocks'
-# 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-# 	echo '##[ ------------------------------- ]##'
-#
 latest/luarocks.name:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq  -r '.[0].name' | tee $@
@@ -184,7 +166,7 @@ neovim: latest/neovim.download
 	# unibilium-dev \
 	# unzip \
 
-bldr-luarocks: latest/luarocks.name
+luarocks: latest/luarocks.name
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah config --workingdir /home/nonroot $${CONTAINER}
@@ -214,17 +196,9 @@ bldr-luarocks: latest/luarocks.name
 	buildah run $${CONTAINER} sh -c 'make & make install'
 	buildah run $${CONTAINER} sh -c 'which luarocks'
 	buildah run $${CONTAINER} sh -c 'luarocks'
+	buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
-
-zxzxz:
-	echo -n 'download: ' && cat $<
-	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+'
-	DIR=$$(buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+')
-	# echo /home/nonroot/$${DIR}
-	# buildah config --workingdir /home/nonroot/$${DIR} $${CONTAINER}
-	buildah run $${CONTAINER} sh -c "cd $$DIR && ls ."
 
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -240,7 +214,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: wolfi neovim
+zie-toolbox: wolfi neovim luarocks
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/wolfi)
 	echo ' - configuration labels'
@@ -303,6 +277,8 @@ zie-toolbox: wolfi neovim
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	podman images
+	echo ' - from: bldr luarocks'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/' '/usr/local/'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	echo ' - check some apk installed binaries'
