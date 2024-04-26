@@ -138,13 +138,10 @@ wolfi: ## apk bins from wolfi-dev
 # 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 # 	echo '##[ ------------------------------- ]##'
 #
-latest/luarocks.json:
+latest/luarocks.name:
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' > $@
+	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq  -r '.[0].name' | tee $@
 
-latest/luarocks.download: latest/luarocks.json
-	jq -r '.[0].tarball_url' $< > $@
-#
 latest/neovim-nightly.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
@@ -187,7 +184,7 @@ neovim: latest/neovim.download
 	# unibilium-dev \
 	# unzip \
 
-bldr-luarocks: latest/luarocks.download
+bldr-luarocks: latest/luarocks.name
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	buildah config --workingdir /home/nonroot $${CONTAINER}
@@ -203,6 +200,13 @@ bldr-luarocks: latest/luarocks.download
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
 	echo '##[ -----------lib ------------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
+	URL=https://github.com/luarocks/luarocks/archive/refs/tags/$(shell cat $<).tar.gz
+	echo $$URL
+	# buildah run $${CONTAINER} sh -c "wget -qO- \
+	# https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz"  &>/dev/null
+	# buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}
+
+zxzxz:
 	echo -n 'download: ' && cat $<
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+'
