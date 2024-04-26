@@ -193,6 +193,7 @@ bldr-luarocks: latest/luarocks.download
 	buildah config --workingdir /home/nonroot $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'mkdir /app && apk add \
 	build-base \
+	readline-dev \
 	autoconf \
 	luajit \
 	luajit-dev \
@@ -204,10 +205,9 @@ bldr-luarocks: latest/luarocks.download
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
 	echo -n 'download: ' && cat $<
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
-	DIR=/home/nonroot/$(shell buildah run $${CONTAINER} sh -c 'ls .')
+	buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+'
+	DIR=/home/nonroot/$(shell buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+')
 	echo $$DIR
-	buildah run $${CONTAINER} sh -c 'ls -alR /home/nonroot'
-
 	# buildah config --workingdir $${DIR} $${CONTAINER}
 	# buildah run $${CONTAINER} sh -c './configure \
 	# 	--with-lua=/usr/bin \
