@@ -190,7 +190,7 @@ neovim: latest/neovim.download
 bldr-luarocks: latest/luarocks.download
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah config --workingdir /home $${CONTAINER}
+	buildah config --workingdir /home/nonroot $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'mkdir /app && apk add \
 	build-base \
 	luajit \
@@ -202,7 +202,7 @@ bldr-luarocks: latest/luarocks.download
 	echo '##[ -----------lib ------------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
 	echo -n 'download: ' && cat $<
-	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home' &>/dev/null
+	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al .'
 	buildah config --workingdir /home/$$(ls .) $${CONTAINER}
 	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
