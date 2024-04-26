@@ -25,7 +25,7 @@ jobs:
           password: ${{ github.token }}
       - name: Build
         shell: bash
-        run: make
+        run: make bldr-luarocks
 #     - uses: sigstore/cosign-installer@main
 #     - uses: chainguard-dev/actions/melange-build@main
 #       with:

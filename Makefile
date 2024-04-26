@@ -138,9 +138,20 @@ wolfi: ## apk bins from wolfi-dev
 # 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 # 	echo '##[ ------------------------------- ]##'
 #
+latest/luarocks.json:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' > $@
+
+latest/luarocks.download: latest/luarocks.json
+	jq -r '.[0].tarball_url' $<
+#
 latest/neovim-nightly.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
+
+
+
+
 
 latest/neovim.download: latest/neovim-nightly.json
 	mkdir -p $(dir $@)
@@ -156,38 +167,40 @@ neovim: latest/neovim.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
-	
 
-bldr-neovim: # a ephemeral localhost container which builds neovim
+	# cmake \
+	# gettext-dev \
+	# gperf \
+	# libtermkey \
+	# libtermkey-dev \
+	# libuv-dev  \
+	# libvterm-dev \
+	# libxcrypt \
+	# lua-luv \
+	# lua-luv-dev \
+	# lua5.1-lpeg \
+	# lua5.1-mpack \
+	# luajit \
+	# luajit-dev \
+	# msgpack \
+	# readline-dev \
+	# samurai \
+	# tree \
+	# tree-sitter-dev \
+	# unibilium-dev \
+	# unzip \
+
+bldr-luarocks: latest/luarocks.download
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah run $${CONTAINER} sh -c 'apk add \
+	buildah run $${CONTAINER} sh -c 'mkdir /app && apk add \
 	build-base \
-	cmake \
-	gettext-dev \
-	gperf \
-	libtermkey \
-	libtermkey-dev \
-	libuv-dev  \
-	libvterm-dev \
-	libxcrypt \
-	lua-luv \
-	lua-luv-dev \
-	lua5.1-lpeg \
-	lua5.1-mpack \
 	luajit \
 	luajit-dev \
-	msgpack \
-	readline-dev \
-	samurai \
-	tree \
-	tree-sitter-dev \
-	unibilium-dev \
-	unzip \
 	wget' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'wget -qO- https://github.com/neovim/neovim/archive/refs/tags/nightly.tar.gz | tar xvz'  &>/dev/null
-	buildah run $${CONTAINER} sh -c 'cd neovim-nightly && CMAKE_BUILD_TYPE=Release; make && make install'
-	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
+	echo -n 'download: ' && cat $<
+	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /app' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'ls -alR /app'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
