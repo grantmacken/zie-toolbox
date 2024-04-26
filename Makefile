@@ -192,7 +192,7 @@ luarocks: latest/luarocks.name
 		--with-lua-include=/usr/include/lua'
 	buildah run $${CONTAINER} sh -c 'make & make install'
 	buildah run $${CONTAINER} sh -c 'which luarocks'
-	buildah run $${CONTAINER} sh -c 'luarocks'
+	# buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah run $${CONTAINER} sh -c 'ls /usr/local'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
@@ -275,7 +275,7 @@ zie-toolbox: wolfi neovim luarocks
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	podman images
 	echo ' - from: bldr luarocks'
-	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
+	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/'
 	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/local/etc/luarocks' '/usr/local/etc/'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
