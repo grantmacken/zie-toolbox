@@ -149,10 +149,6 @@ latest/neovim-nightly.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
 
-
-
-
-
 latest/neovim.download: latest/neovim-nightly.json
 	mkdir -p $(dir $@)
 	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
@@ -165,6 +161,7 @@ neovim: latest/neovim.download
 	buildah run $${CONTAINER} sh -c 'apk add wget'
 	echo -n 'download: ' && cat $<
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
+	cd /app/$(ls luarock)
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
 
@@ -198,9 +195,19 @@ bldr-luarocks: latest/luarocks.download
 	luajit \
 	luajit-dev \
 	wget'
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	echo '##[ ----------include----------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+	echo '##[ -----------lib ------------------- ]##'
+	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
 	echo -n 'download: ' && cat $<
-	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /app' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'ls -alR /app'
+	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home' &>/dev/null
+	SRC=/home/$$(ls luarocks*)
+	buildah config --workingdir $$SRC $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'ls -al .'
+	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
