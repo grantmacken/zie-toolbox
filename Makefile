@@ -193,6 +193,7 @@ bldr-luarocks: latest/luarocks.download
 	buildah config --workingdir /home/nonroot $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'mkdir /app && apk add \
 	build-base \
+	autoconf \
 	luajit \
 	luajit-dev \
 	wget'
@@ -205,8 +206,13 @@ bldr-luarocks: latest/luarocks.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
 	DIR=/home/nonroot/$(shell buildah run $${CONTAINER} sh -c 'ls .')
 	buildah config --workingdir $${DIR} $${CONTAINER}
-	buildah run $${CONTAINER} sh -c './configure --with-lua=/usr/bin --with-lua-bin=/usr/bin --with-lua-lib=/usr/lib --with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c './configure \
+		--with-lua=/usr/bin \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua'
 	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'which luarocks'
 	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
