@@ -132,7 +132,6 @@ latest/neovim.download: latest/neovim-nightly.json
 	mkdir -p $(dir $@)
 	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
 
-
 neovim: latest/neovim.download
 	jq -r '.tag_name' latest/neovim-nightly.json
 	jq -r '.name' latest/neovim-nightly.json
@@ -142,7 +141,6 @@ neovim: latest/neovim.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
-
 	# cmake \
 	# gettext-dev \
 	# gperf \
@@ -290,6 +288,8 @@ zie-toolbox: wolfi neovim luarocks
 	echo ' CHECK BUILT BINARY ARTIFACTS NOT FROM APK'
 	echo ' --- from bldr-neovim '
 	buildah run $${CONTAINER} /bin/bash -c 'which nvim && nvim --version'
+	echo ' --- from bldr-luarocks '
+	buildah run $${CONTAINER} /bin/bash -c 'which luarocks && luarocks'
 	echo ' ==============================='
 	echo ' Setup '
 	echo ' --- bash instead of ash '
