@@ -26,9 +26,3 @@ jobs:
       - name: Build
         shell: bash
         run: make
-#     - uses: sigstore/cosign-installer@main
-#     - uses: chainguard-dev/actions/melange-build@main
-#       with:
-#         sign-with-temporary-key: true
-#         empty-workspace: true
-#         config: neovim.yaml

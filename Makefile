@@ -140,7 +140,6 @@ neovim: latest/neovim.download
 	buildah run $${CONTAINER} sh -c 'apk add wget'
 	echo -n 'download: ' && cat $<
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
-	cd /app/$(ls luarock)
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
 
