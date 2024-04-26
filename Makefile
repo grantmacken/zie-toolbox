@@ -278,7 +278,7 @@ zie-toolbox: wolfi neovim luarocks
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/bin/distrobox-host-exec /usr/local/bin/rpm-ostree'
 	podman images
 	echo ' - from: bldr luarocks'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/' '/usr/local/'
+	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	echo ' - check some apk installed binaries'
@@ -313,5 +313,4 @@ endif
 # echo ' - from: bldr rust'
 # buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 # buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
-#buildah add --chmod 755 --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/bin/luarocks' '/usr/local/bin/luarocks'
 #buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
