@@ -143,7 +143,7 @@ latest/luarocks.json:
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' > $@
 
 latest/luarocks.download: latest/luarocks.json
-	jq -r '.[0].tarball_url' $<
+	jq -r '.[0].tarball_url' $< > $@
 #
 latest/neovim-nightly.json:
 	mkdir -p $(dir $@)
@@ -197,7 +197,7 @@ bldr-luarocks: latest/luarocks.download
 	build-base \
 	luajit \
 	luajit-dev \
-	wget' &>/dev/null
+	wget'
 	echo -n 'download: ' && cat $<
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /app' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -alR /app'
