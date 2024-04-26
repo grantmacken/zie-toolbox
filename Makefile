@@ -200,10 +200,12 @@ bldr-luarocks: latest/luarocks.name
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
 	echo '##[ -----------lib ------------------- ]##'
 	buildah run $${CONTAINER} sh -c 'ls /usr/lib' | grep lua
-	URL=https://github.com/luarocks/luarocks/archive/refs/tags/$(shell cat $<).tar.gz
+	VERSION=$(shell cat $<)
+	URL=https://github.com/luarocks/luarocks/archive/refs/tags/$${VERSION}.tar.gz
 	echo $$URL
-	# buildah run $${CONTAINER} sh -c "wget -qO- \
-	# https://github.com/luarocks/luarocks/archive/refs/tags/v3.9.2.tar.gz | tar xvz"  &>/dev/null
+	buildah run $${CONTAINER} sh -c "wget -qO- $${URL} | tar xvz"  &>/dev/null
+	buildah run $${CONTAINER} sh -c 'ls -al .'
+
 	# buildah config --workingdir /home/luarocks-3.9.2 $${CONTAINER}
 
 zxzxz:
