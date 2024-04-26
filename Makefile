@@ -207,8 +207,9 @@ bldr-luarocks: latest/luarocks.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /home/nonroot' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+'
 	DIR=$$(buildah run $${CONTAINER} sh -c 'ls -al /home/nonroot' | grep -oP '.+\Kluarocks.+')
-	echo /home/nonroot$${DIR}
-	# buildah config --workingdir $${DIR} $${CONTAINER}
+	echo /home/nonroot/$${DIR}
+	buildah config --workingdir /home/nonroot/$${DIR} $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'ls .' 
 	# buildah run $${CONTAINER} sh -c './configure \
 	# 	--with-lua=/usr/bin \
 	# 	--with-lua-bin=/usr/bin \
