@@ -210,14 +210,14 @@ bldr-luarocks: latest/luarocks.download
 	echo /home/nonroot/$${DIR}
 	buildah config --workingdir /home/nonroot/$${DIR} $${CONTAINER}
 	buildah run $${CONTAINER} sh -c 'ls .' 
-	# buildah run $${CONTAINER} sh -c './configure \
-	# 	--with-lua=/usr/bin \
-	# 	--with-lua-bin=/usr/bin \
-	# 	--with-lua-lib=/usr/lib \
-	# 	--with-lua-include=/usr/include/lua'
-	# buildah run $${CONTAINER} sh -c 'make & make install'
-	# buildah run $${CONTAINER} sh -c 'which luarocks'
-	# buildah run $${CONTAINER} sh -c 'luarocks'
+	buildah run $${CONTAINER} sh -c './configure \
+		--with-lua=/usr/bin \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'which luarocks'
+	buildah run $${CONTAINER} sh -c 'luarocks'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
