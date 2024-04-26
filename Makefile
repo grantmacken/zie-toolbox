@@ -206,7 +206,16 @@ bldr-luarocks: latest/luarocks.name
 	echo "luarocks URL: $${URL}"
 	buildah run $${CONTAINER} sh -c "wget -qO- $${URL} | tar xvz" &>/dev/null
 	buildah config --workingdir /home/nonroot/luarocks-$${VERSION} $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'ls -al .'
+	buildah run $${CONTAINER} sh -c './configure \
+		--with-lua=/usr/bin \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install'
+	buildah run $${CONTAINER} sh -c 'which luarocks'
+	buildah run $${CONTAINER} sh -c 'luarocks'
+	buildah commit --rm $${CONTAINER} $@ &>/dev/null
+	echo '-------------------------------'
 
 zxzxz:
 	echo -n 'download: ' && cat $<
@@ -216,16 +225,7 @@ zxzxz:
 	# echo /home/nonroot/$${DIR}
 	# buildah config --workingdir /home/nonroot/$${DIR} $${CONTAINER}
 	buildah run $${CONTAINER} sh -c "cd $$DIR && ls ."
-	# buildah run $${CONTAINER} sh -c './configure \
-	# 	--with-lua=/usr/bin \
-	# 	--with-lua-bin=/usr/bin \
-	# 	--with-lua-lib=/usr/lib \
-	# 	--with-lua-include=/usr/include/lua'
-	# buildah run $${CONTAINER} sh -c 'make & make install'
-	# buildah run $${CONTAINER} sh -c 'which luarocks'
-	# buildah run $${CONTAINER} sh -c 'luarocks'
-	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	echo '-------------------------------'
+
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
