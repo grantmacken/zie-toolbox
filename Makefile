@@ -276,6 +276,7 @@ zie-toolbox: wolfi neovim luarocks
 	podman images
 	echo ' - from: bldr luarocks'
 	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/local/' '/usr/local/'
+	buildah add --chmod 755 --from localhost/luarocks $${CONTAINER} '/usr/include/lua' '/usr/include/'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	echo ' - check some apk installed binaries'
