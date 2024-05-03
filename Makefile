@@ -5,6 +5,9 @@ SHELL=/bin/bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
+
+GROUP_C_DEV := "C Development Tools and Libraries"
+FEDORA_VER=40
 # include .env
 # https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
@@ -205,16 +208,10 @@ zie-toolbox: neovim luarocks
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/bin/lua*' '/usr/bin/'
 	buildah run $${CONTAINER} sh -c 'lua -v'
 	buildah run $${CONTAINER} sh -c 'which lua'
-	# echo '##[ ----------bin----------------- ]##'
-	# buildah run $${CONTAINER} sh -c 'ls -al /usr/bin' | grep lua
-	# echo '##[ ----------include----------------- ]##'
-	# buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
-	# echo '##[ -----------lib ------------------- ]##'
-	# buildah run $${CONTAINER} sh -c 'ls -alR /usr/lib' | grep lua
-	# buildah run $${CONTAINER} sh -c 'which luarocks'
 	buildah run $${CONTAINER} sh -c 'luarocks'
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
-	podman push ghcr.io/$(REPO_OWNER)/$@:latest
+	buildah push ghcr.io/grantmacken/$@
 endif
 
 
