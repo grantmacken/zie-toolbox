@@ -141,27 +141,7 @@ neovim: latest/neovim.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
-	# cmake \
-	# gettext-dev \
-	# gperf \
-	# libtermkey \
-	# libtermkey-dev \
-	# libuv-dev  \
-	# libvterm-dev \
-	# libxcrypt \
-	# lua-luv \
-	# lua-luv-dev \
-	# lua5.1-lpeg \
-	# lua5.1-mpack \
-	# luajit \
-	# luajit-dev \
-	# msgpack \
-	# readline-dev \
-	# samurai \
-	# tree \
-	# tree-sitter-dev \
-	# unibilium-dev \
-	# unzip \
+
 
 luarocks: latest/luarocks.name
 	echo '##[ $@ ]##'
@@ -192,10 +172,52 @@ luarocks: latest/luarocks.name
 		--with-lua-include=/usr/include/lua'
 	buildah run $${CONTAINER} sh -c 'make & make install'
 	buildah run $${CONTAINER} sh -c 'which luarocks'
-	# buildah run $${CONTAINER} sh -c 'luarocks'
-	buildah run $${CONTAINER} sh -c 'ls -alR /usr/local'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
+
+zie-toolbox: neovim luarocks
+	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
+	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
+	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
+	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'which make' || true
+	buildah run $${CONTAINER} sh -c 'which bash' || true
+	buildah run $${CONTAINER} sh -c 'dnf -y install \
+		gh \
+		bat \
+		eza \
+		fzf \
+		fd-find \
+		jq \
+		flatpak-spawn \
+		ripgrep \
+		zoxide' \
+		&>/dev/null
+	echo ' - from: bldr neovim'
+	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
+	echo ' - from: bldr luarocks'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/etc' '/usr/local/etc'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/lib' '/usr/local/lib'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/include/lua' '/usr/include/lua'
+	buildah add --from localhost/luarocks $${CONTAINER} '/usr/bin/lua*' '/usr/bin/'
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	buildah run $${CONTAINER} sh -c 'which lua'
+	# echo '##[ ----------bin----------------- ]##'
+	# buildah run $${CONTAINER} sh -c 'ls -al /usr/bin' | grep lua
+	# echo '##[ ----------include----------------- ]##'
+	# buildah run $${CONTAINER} sh -c 'ls -al /usr/include' | grep lua
+	# echo '##[ -----------lib ------------------- ]##'
+	# buildah run $${CONTAINER} sh -c 'ls -alR /usr/lib' | grep lua
+	# buildah run $${CONTAINER} sh -c 'which luarocks'
+	buildah run $${CONTAINER} sh -c 'luarocks'
+ifdef GITHUB_ACTIONS
+	podman push ghcr.io/$(REPO_OWNER)/$@:latest
+endif
+
+
 
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -211,7 +233,7 @@ bldr-rust: ## a ephemeral localhost container which builds rust executables
 	buildah commit --rm $${CONTAINER} $@
 	echo '##[ ------------------------------- ]##'
 
-zie-toolbox: wolfi neovim luarocks
+wolfi-toolbox: wolfi neovim luarocks
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from localhost/wolfi)
 	echo ' - configuration labels'
@@ -314,3 +336,6 @@ endif
 # buildah add --from localhost/bldr-rust $${CONTAINER} '/home/nonroot/.cargo/bin' '/usr/local/bin'
 # buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 #buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
+
+pull:
+	podman pull registry.fedoraproject.org/fedora-toolbox:40
