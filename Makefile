@@ -172,8 +172,8 @@ luarocks: latest/luarocks.name
 		--with-lua=/usr/bin \
 		--with-lua-bin=/usr/bin \
 		--with-lua-lib=/usr/lib \
-		--with-lua-include=/usr/include/lua'
-	buildah run $${CONTAINER} sh -c 'make & make install'
+		--with-lua-include=/usr/include/lua' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which luarocks'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
@@ -194,8 +194,7 @@ zie-toolbox: neovim luarocks
 		jq \
 		flatpak-spawn \
 		ripgrep \
-		zoxide' \
-		&>/dev/null
+		zoxide' &>/dev/null
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
@@ -213,8 +212,6 @@ zie-toolbox: neovim luarocks
 ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/$@
 endif
-
-
 
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
@@ -325,6 +322,7 @@ wolfi-toolbox: wolfi neovim luarocks
 	TARG=/usr/bin/sudo
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	podman images
 ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/$@
 endif
@@ -334,5 +332,8 @@ endif
 # buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 #buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 
-pull:
-	podman pull registry.fedoraproject.org/fedora-toolbox:40
+run:
+	# podman pull registry.fedoraproject.org/fedora-toolbox:40
+	podman pull ghcr.io/grantmacken/zie-toolbox:latest
+	toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
+	toolbox enter tbx
