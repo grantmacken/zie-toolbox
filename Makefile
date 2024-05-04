@@ -22,31 +22,12 @@ wolfi: ## apk bins from wolfi-dev
 	starship \
 	uutils'
 	# buildah run $${CONTAINER} sh -c 'apk info'
-	buildah run $${CONTAINER} sh -c 'which google-cloud-sdk'
-	buildah run $${CONTAINER} sh -c 'which starship'
+	buildah run $${CONTAINER} sh -c 'apk info google-cloud-sdk'
+	buildah run $${CONTAINER} sh -c 'apk info starship'
+	buildah run $${CONTAINER} sh -c 'apk info uutils'
+	buildah run $${CONTAINER} sh -c 'apk info atuin'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo ' ------------------------------- '
-
-# build-base  # needed for nvim package builds - contains  binutils gcc glibc-dev make pkgconf wolfi-baselayout 
-# eza     # A modern, maintained replacement for ls.
-# fd      # A simple, fast and user-friendly alternative to 'find'
-# gh      #  GitHub's official command line tool
-# google-cloud-sdk # Google Cloud Command Line Interface
-# grep    # GNU grep implementation implement -P flag Perl RegEx engine"
-# lazygit # simple terminal UI for git commands
-# luajit  # OpenResty's branch of LuaJIT @see https://github.com/wolfi-dev/os/blob/main/luajit.yaml
-# luajit-dev # headers for luarocks install
-# ripgrep # ripgrep recursively searches directories for a regex pattern while respecting your gitignore"
-# sed     # GNU stream editor TODO? replace with sd"
-# sudo-rs # TODO! CONFLICT with shadow memory safe implementation of sudo and su
-# tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
-# zoxide  # A smarter cd command. Supports all major shells
-
-
-latest/host-spawn:
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name' | tee $@
-
 
 latest/luarocks.name:
 	mkdir -p $(dir $@)
