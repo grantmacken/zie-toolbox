@@ -9,33 +9,10 @@ MAKEFLAGS += --silent
 GROUP_C_DEV := "C Development Tools and Libraries"
 FEDORA_VER=40
 # include .env
-# https://github.com/ublue-os/toolboxes/tree/main/toolboxes
 default: zie-toolbox  ## build the toolbox
-## buildr_addons are for the cli tools not available in from the wolfi apk repo
-## NOTE: neovim is built from source although it is available from the wolfi apk repo
-bldr-addons: bldr-neovim 
-
-# bldr-rust
-
-# apko: apko-wolfi.tar
-# 	echo '##[ $@ ]##'
-# 	echo ' - created $<'
-# 	echo '##[ ------------------------------- ]##'
-# apko-wolfi.tar: ## install apk wolfi binaries
-# 	podman run --rm --privileged -v $(CURDIR):/work -w /work cgr.dev/chainguard/apko build apko.yaml apko-wolfi:latest apko-wolfi.tar
-# buildah run $${CONTAINER} sh -c 'apk add \
-# build-base \
-# cmake \
-# libxcrypt'
-# add apk stuff that I want mainly command line tools
-# add runtimes
-# NOTE: treesitter-cli requires nodejs runtime
-# buildah run $${CONTAINER} sh -c 'apk add \
-# luajit \
-# nodejs-21'
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
-wolfi: ## apk bins from wolfi-dev 
+wolfi: ## apk bins from wolfi-dev
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
 	# add apk stuff that distrobox needs
@@ -123,6 +100,12 @@ wolfi: ## apk bins from wolfi-dev
 # tree-sitter # for nvim treesitter  - Incremental parsing system for programming tools
 # zoxide  # A smarter cd command. Supports all major shells
 
+
+latest/host-spawn:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name' | tee $@
+
+
 latest/luarocks.name:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq  -r '.[0].name' | tee $@
@@ -144,7 +127,6 @@ neovim: latest/neovim.download
 	cat $< | buildah run $${CONTAINER} sh -c 'cat - | wget -q -O- -i- | tar xvz -C /usr/local' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
 	buildah commit --rm $${CONTAINER} $@
-
 
 luarocks: latest/luarocks.name
 	echo '##[ $@ ]##'
@@ -186,14 +168,15 @@ zie-toolbox: neovim luarocks
 	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'which bash' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install \
-		gh \
 		bat \
 		eza \
-		fzf \
 		fd-find \
-		jq \
 		flatpak-spawn \
+		fzf \
+		gh \
+		jq \
 		ripgrep \
+		wl-clipboard \
 		zoxide' &>/dev/null
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
@@ -208,11 +191,22 @@ zie-toolbox: neovim luarocks
 	buildah run $${CONTAINER} sh -c 'lua -v'
 	buildah run $${CONTAINER} sh -c 'which lua'
 	buildah run $${CONTAINER} sh -c 'luarocks'
+	HOST_SPAWN_VERSION=$(shell wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name')
+	echo " - put into container: host-spawn: $${HOST_SPAWN_VERSION}"
+	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
+	TARG=/usr/local/bin/host-spawn
+	echo ' - symlink to exectables on host using host-spawn'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/$@
 endif
-
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
@@ -332,8 +326,10 @@ endif
 # buildah add --chmod 755 --from localhost/bldr-neovim $${CONTAINER} '/usr/local/bin/nvim' '/usr/local/bin/nvim'
 #buildah add --from localhost/bldr-luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 
+pull:
+	podman pull ghcr.io/grantmacken/zie-toolbox:latest
+
 run:
 	# podman pull registry.fedoraproject.org/fedora-toolbox:40
-	podman pull ghcr.io/grantmacken/zie-toolbox:latest
 	toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
 	toolbox enter tbx
