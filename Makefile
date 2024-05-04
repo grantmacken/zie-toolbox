@@ -15,73 +15,16 @@ default: zie-toolbox  ## build the toolbox
 wolfi: ## apk bins from wolfi-dev
 	echo '##[ $@ ]##'
 	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	# add apk stuff that distrobox needs
-	# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/wolfi-toolbox/packages.wolfi
-	buildah run $${CONTAINER} sh -c 'apk add \
-	bash \
-	bzip2 \
-	coreutils \
-	curl \
-	diffutils \
-	findmnt \
-	findutils \
-	git \
-	gnupg \
-	gpg \
-	iproute2 \
-	iputils \
-	keyutils \
-	libcap \
-	libsm \
-	libx11 \
-	libxau \
-	libxcb \
-	libxdmcp \
-	libxext \
-	libice \
-	libxmu \
-	libxt \
-	linux-pam \
-	mount \
-	ncurses \
-	ncurses-terminfo \
-	net-tools \
-	openssh-client \
-	pigz \
-	posix-libc-utils \
-	procps \
-	rsync \
-	shadow \
-	su-exec \
-	tcpdump \
-	tree \
-	tzdata \
-	umount \
-	unzip \
-	util-linux \
-	util-linux-misc \
-	wget \
-	xauth \
-	xz \
-	zip \
-	vulkan-loader' &>/dev/null
+	# add apk binaries that my toolbox needs (not yet available via dnf)
 	buildah run $${CONTAINER} sh -c 'apk add \
 	atuin \
-	eza \
-	fd \
-	fzf \
-	gh \
 	google-cloud-sdk \
-	grep \
-	jq \
-	luajit \
-	make \
-	ripgrep \
-	sed \
 	starship \
-	uutils \
-	zoxide' &>/dev/null
+	uutils' &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'apk info'
+	buildah run $${CONTAINER} sh -c 'which atuin'
+	buildah run $${CONTAINER} sh -c 'which google-cloud-sdk'
+	buildah run $${CONTAINER} sh -c 'which starship'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo ' ------------------------------- '
 
@@ -160,13 +103,12 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
-zie-toolbox: neovim luarocks
+zie-toolbox: neovim luarocks wolfi
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which make' || true
-	buildah run $${CONTAINER} sh -c 'which bash' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install \
 		bat \
 		eza \
@@ -195,13 +137,13 @@ zie-toolbox: neovim luarocks
 	echo " - put into container: host-spawn: $${HOST_SPAWN_VERSION}"
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/local/bin/host-spawn
-	echo ' - symlink to exectables on host using host-spawn'
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	echo ' - add symlinks to exectables on host using host-spawn'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
-	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
