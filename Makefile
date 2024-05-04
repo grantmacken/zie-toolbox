@@ -20,9 +20,8 @@ wolfi: ## apk bins from wolfi-dev
 	atuin \
 	google-cloud-sdk \
 	starship \
-	uutils' &>/dev/null
+	uutils'
 	# buildah run $${CONTAINER} sh -c 'apk info'
-	buildah run $${CONTAINER} sh -c 'which atuin'
 	buildah run $${CONTAINER} sh -c 'which google-cloud-sdk'
 	buildah run $${CONTAINER} sh -c 'which starship'
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
