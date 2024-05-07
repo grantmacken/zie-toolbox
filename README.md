@@ -29,14 +29,18 @@ As Neorocks depends on a local installation of both lua and luarocks so these ar
 I have added some CLI tools which I find useful into the toolbox container.
 Although not required by Neovim they can be used by Neovim e.g. ripgrep as a faster grep
 
- - gh
+ - eza    A modern, maintained replacement for ls.
+ - fd     A simple, fast and user-friendly alternative to 'find'
+ - gh     GitHub's official command line tool
+ - google-cloud-sdk  Google Cloud Command Line Interface
+ - grep    GNU grep implementation implement -P flag Perl RegEx engine"
+ - ripgrep  Recursively searches directories for a regex pattern while respecting your gitignore
+ - luajit  OpenResty's branch of [Lua](JIThttps://github.com/wolfi-dev/os/blob/main/luajit.yaml)
  - bat
- - eza
  - fzf
- - fd-find
  - jq
  - flatpak-spawn
- - ripgrep
+ - host-spawn
  - wl-clipboard
  - zoxide
 

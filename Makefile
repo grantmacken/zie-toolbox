@@ -6,8 +6,9 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 
+FEDORA_VER := 40
 GROUP_C_DEV := "C Development Tools and Libraries"
-FEDORA_VER=40
+INSTALL  := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
 # include .env
 default: zie-toolbox  ## build the toolbox
 
@@ -89,17 +90,7 @@ zie-toolbox: neovim luarocks wolfi
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which make' || true
-	buildah run $${CONTAINER} sh -c 'dnf -y install \
-		bat \
-		eza \
-		fd-find \
-		flatpak-spawn \
-		fzf \
-		gh \
-		jq \
-		ripgrep \
-		wl-clipboard \
-		zoxide' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'dnf -y install $(INSTALL)' &>/dev/null
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
@@ -129,6 +120,22 @@ zie-toolbox: neovim luarocks wolfi
 ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/$@
 endif
+
+installed.json:
+	mkdir -p tmp
+	echo 'Name,Version,Summary' > tmp/installed.tsv
+	dnf info installed $(INSTALL) | grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' |
+	paste - - - |
+	sed '1 i Name\tVersion\tSummary' |
+	yq -p=tsv -o=json
+	# >> tmp/installed.csv
+	# cat tmp/installed.tsv
+	# yq tmp/installed.csv -p=csv -o=json
+	# paste -d, - - -  | awk '{line=line ", " $$0} NR%3==0{print substr(line,2); line=""}'
+	# dnf info installed fzf jq | grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | 
+	# awk '{line=line " " $$0} NR%3==0{print substr(line,2); line=""}' 
+	# dnf info installed fzf jq | grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | sed 'N;N; s/\n/ /g'
+
 
 bldr-rust: ## a ephemeral localhost container which builds rust executables
 	echo '##[ $@ ]##'
