@@ -30,6 +30,23 @@ wolfi: ## apk bins from wolfi-dev
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo ' ------------------------------- '
 
+latest/cosign.name:
+	mkdir -p $(dir $@)
+	echo -n ' - latest cosign release version: '
+	wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' |
+	jq  -r '.name' | tee $@
+
+cosign: latest/cosign.name
+	echo '##[ $@ ]##'
+	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
+	buildah config --workingdir /home/nonroot $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'apk add git'
+	buildah run $${CONTAINER} sh -c 'wget "https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64"'
+	buildah run $${CONTAINER} sh -c 'mv cosign-linux-amd64 /usr/local/bin/cosign'
+	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
+	buildah commit --rm $${CONTAINER} $@
+
+
 latest/luarocks.name:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq  -r '.[0].name' | tee $@
@@ -84,16 +101,21 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
-zie-toolbox: neovim luarocks wolfi
+zie-toolbox: neovim luarocks
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install $(INSTALL)' &>/dev/null
+	echo ' - add cosign from sigstore release'
+	SRC=https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64
+	TARG=/usr/local/bin/cosign
+	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} sh -c 'which cosign'
 	echo ' - from: bldr neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
-	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version' || true
+	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	echo ' - from: bldr luarocks'
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
@@ -109,6 +131,7 @@ zie-toolbox: neovim luarocks wolfi
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/local/bin/host-spawn
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
+	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	echo ' - add symlinks to exectables on host using host-spawn'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
