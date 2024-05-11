@@ -30,22 +30,11 @@ wolfi: ## apk bins from wolfi-dev
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo ' ------------------------------- '
 
-latest/cosign.name:
+latest/cosign.version:
 	mkdir -p $(dir $@)
 	echo -n ' - latest cosign release version: '
 	wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' |
 	jq  -r '.name' | tee $@
-
-cosign: latest/cosign.name
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	buildah config --workingdir /home/nonroot $${CONTAINER}
-	buildah run $${CONTAINER} sh -c 'apk add git'
-	buildah run $${CONTAINER} sh -c 'wget "https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64"'
-	buildah run $${CONTAINER} sh -c 'mv cosign-linux-amd64 /usr/local/bin/cosign'
-	buildah run $${CONTAINER} sh -c 'ls -al /usr/local' || true
-	buildah commit --rm $${CONTAINER} $@
-
 
 latest/luarocks.name:
 	mkdir -p $(dir $@)
@@ -108,12 +97,13 @@ zie-toolbox: neovim luarocks
 	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install $(INSTALL)' &>/dev/null
-	echo ' - add cosign from sigstore release'
-	SRC=https://github.com/sigstore/cosign/releases/download/v2.0.0/cosign-linux-amd64
+	COSIGN_VERSION=$(shell cat latest/cosign.version)
+	echo " - add cosign from sigstore release version: $${COSIGN_VERSION}"
+	SRC=https://github.com/sigstore/cosign/releases/download/$${COSIGN_VERSION}/cosign-linux-amd64
 	TARG=/usr/local/bin/cosign
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
-	buildah run $${CONTAINER} sh -c 'which cosign'
-	echo ' - from: bldr neovim'
+	buildah run $${CONTAINER} sh -c '  echo -n " - check: " &&  which cosign'
+	echo ' - from container localhost/neovim add neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	echo ' - from: bldr luarocks'
@@ -127,7 +117,7 @@ zie-toolbox: neovim luarocks
 	buildah run $${CONTAINER} sh -c 'which lua'
 	buildah run $${CONTAINER} sh -c 'luarocks'
 	HOST_SPAWN_VERSION=$(shell wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name')
-	echo " - put into container: host-spawn: $${HOST_SPAWN_VERSION}"
+	echo " - from src add host-spawn: $${HOST_SPAWN_VERSION}"
 	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
 	TARG=/usr/local/bin/host-spawn
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
