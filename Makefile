@@ -106,10 +106,10 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah run $${CONTAINER} sh -c '  echo -n " - check: " &&  which cosign'
 	##[ NEOVIM ]##
 	echo ' - from container localhost/neovim add neovim'
-	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'
+	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
 	##[ LUAROCKS ]##
-	echo ' - from: bldr luarocks'
+	echo ' - from container localhost/luarocks add luarocks'
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
 	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/etc' '/usr/local/etc'
@@ -132,6 +132,7 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/brew'
 	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
