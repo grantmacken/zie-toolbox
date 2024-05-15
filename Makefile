@@ -8,7 +8,7 @@ MAKEFLAGS += --silent
 
 FEDORA_VER := 40
 GROUP_C_DEV := "C Development Tools and Libraries"
-INSTALL  := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
+INSTALL := make bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
 # include .env
 default: zie-toolbox  ## build the toolbox
 
@@ -94,8 +94,8 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
-	buildah run $${CONTAINER} sh -c 'dnf -y group install $(GROUP_C_DEV)' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'which make' || true
+	# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
+	# buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install $(INSTALL)' &>/dev/null
 	##[ COSIGN ]##
 	COSIGN_VERSION=$(shell cat latest/cosign.version)
@@ -133,6 +133,8 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/brew'
+	# with brew I have installed gleam
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/gleam'
 	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 ifdef GITHUB_ACTIONS
