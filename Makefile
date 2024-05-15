@@ -91,6 +91,7 @@ luarocks: latest/luarocks.name
 	echo '-------------------------------'
 
 zie-toolbox: neovim luarocks latest/cosign.version
+	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
