@@ -2,12 +2,12 @@ name: Vols
 on:
   push:
     branches:
-    - main
+    - vols
     paths-ignore:
     - '**/README.md'
 jobs:
   build:
-    name: Build Image
+    name: vols branch
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
