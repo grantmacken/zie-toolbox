@@ -1,0 +1,16 @@
+name: Vols
+on:
+  push:
+    branches:
+    - main
+    paths-ignore:
+    - '**/README.md'
+jobs:
+  build:
+    name: Build Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        shell: bash
+        run: make vols

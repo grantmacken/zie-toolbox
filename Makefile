@@ -90,6 +90,13 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
+
+vols:
+	buildah pull  ghcr.io/grantmacken/zie-toolbox:latest
+	podman image inspect ghcr.io/grantmacken/zie-toolbox
+	# CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-toolbox:latest)
+
+
 zie-toolbox: neovim luarocks latest/cosign.version
 	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
