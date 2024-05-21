@@ -95,8 +95,12 @@ luarocks: latest/luarocks.name
 vols:
 	buildah pull  ghcr.io/grantmacken/zie-toolbox:latest
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-toolbox)
+	podman ps --all
 	buildah commit --rm $${CONTAINER} $@
 	podman image inspect localhost/$@
+	podman ps --all
+	# podman init [options] container
+
 
 
 
