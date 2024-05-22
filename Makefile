@@ -94,10 +94,10 @@ luarocks: latest/luarocks.name
 # An overlay filesystem is created, which allows changes to the volume to be committed as a new layer on top of the image.
 vols:
 	buildah pull  ghcr.io/grantmacken/zie-toolbox:latest
-	podman volume create --driver image --opt image=ghcr.io/grantmacken/zie-toolbox  data
+	podman volume create --driver image --opt image=fedora:latest  data
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-toolbox)
 	buildah commit --rm $${CONTAINER} $@
-	podman image inspect localhost/$@
+	# podman image inspect localhost/$@
 	echo '---------------------------------------------'
 	podman create --name $@ localhost/$@
 	podman init $@
