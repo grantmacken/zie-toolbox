@@ -97,10 +97,18 @@ vols:
 	# podman volume create --driver image --opt image=fedora:latest  data
 	podman volume create data
 	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-toolbox)
+	# additional config /etc/xdg/nvim 
+	# and data dirs /usr/local/share' && /usr/share
+	buildah run $${CONTAINER} sh -c 'mkdir -p /etc/xdg/nvim && mkdir -p /usr/local/share' &>/dev/null
+	buildah config --env XDG_CONFIG_DIRS='/etc/xdg'  $${CONTAINER}
+	buildah config --env XDG_DATA_DIRS='/usr/share  /usr/local/share' $${CONTAINER}
+	# buildah config --env NVIM_APPNAME='' $${CONTAINER}
+	# add to porfile.d
+	# ls -al /etc/profile.d
 	buildah commit --rm $${CONTAINER} $@
 	# podman image inspect localhost/$@
 	echo '---------------------------------------------'
-	podman create --name $@ localhost/$@
+	podman create --name $@ --mount type=volume,source=data,destination=/path/in/container,rw=true localhost/$@
 	podman init $@
 	podman container inspect $@
 	
