@@ -13,4 +13,4 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         shell: bash
-        run: make vols
+        run: make

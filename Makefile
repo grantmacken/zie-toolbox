@@ -9,8 +9,87 @@ MAKEFLAGS += --silent
 FEDORA_VER := 40
 GROUP_C_DEV := "C Development Tools and Libraries"
 INSTALL := make bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
+
+XDG_CONFIG_DIRS := /etc/xdg
+XDG_DATA_DIRS   := /usr/local/share:/usr/share
+XDG_CONFIG_HOME := /etc/xdg
+XDG_CACHE_HOME  := /var/cache
+XDG_DATA_HOME   := /usr/local/share
+XDG_STATE_HOME  := /var/lib
+NVIM_LOG_FILE   := /var/lib/nvim/log
+
+ROCKS_PATH   :=  $(XDG_DATA_HOME)/nvim/rocks
+ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
+LUA_VERSION  := 5.1
+ROCKS_INSTALL := rocks.nvim rocks-git.nvim rocks-config.nvim
+# luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install $(ROCKS_INSTALL)
+
+BUILD_CONTAINER := zie-toolbox-working-container
 # include .env
-default: zie-toolbox  ## build the toolbox
+default: nzie  ## build the toolbox
+
+# --clean		Mimics a fresh install of Nvim:
+# --noplugin	Skip loading plugins.  Resets the 'loadplugins' option.
+# --cmd {command}	{command} will be executed after the first file has been read
+#  If the "command" contains spaces, it must be enclosed in double quotes
+
+nzie:
+	echo '##[[ $@ ]]##'
+	 buildah rm --all
+	# podman volume exists nvim_data || podman volume create nvim_data
+	# podman volume exists nvim_config || podman volume create nvim_config
+	# podman pull ghcr.io/grantmacken/zie-toolbox:latest
+	buildah from ghcr.io/grantmacken/zie-toolbox
+	buildah containers
+	buildah run $(BUILD_CONTAINER) sh -c 'mkdir -p /etc/xdg/nvim && mkdir -p /usr/local/share' &>/dev/null
+	# buildah config --env XDG_CONFIG_DIRS=$(XDG_CONFIG_DIRS) --env XDG_DATA_DIRS=$(XDG_DATA_DIRS) $(BUILD_CONTAINER)
+	buildah config --env NVIM_LOG_FILE=$(NVIM_LOG_FILE) --env XDG_STATE_HOME=$(XDG_STATE_HOME) $(BUILD_CONTAINER)
+	buildah config --env XDG_CONFIG_HOME=$(XDG_CONFIG_HOME) --env XDG_STATE_HOME=$(XDG_STATE_HOME) $(BUILD_CONTAINER)
+	buildah config --env XDG_DATA_HOME=$(XDG_DATA_HOME) --env XDG_CACHE_HOME=$(XDG_CACHE_HOME) $(BUILD_CONTAINER)
+	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"config\"))" -c "q"'
+	echo && echo '-------------------------------'
+	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"data\"))" -c "q"'
+	echo && echo '===================================='
+	buildah add $(BUILD_CONTAINER) './files/etc/xdg/nvim' '/etc/xdg/nvim'
+	buildah run $(BUILD_CONTAINER) sh -c 'ls -alR /etc/xdg/nvim'
+	echo && echo '------------------------------'
+	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
+	buildah run $(BUILD_CONTAINER) sh -c 'luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install $(ROCKS_INSTALL)'
+	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "Rocks install kanagawa.nvim" -c "q"'
+	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "Rocks install mini.nvim" -c "q"'
+	buildah commit --rm $(BUILD_CONTAINER) $@ &>/dev/null
+	echo '-------------------------------'
+
+sasas:
+	# buildah config  --cmd '' --entrypoint '[ "nvim", '--headless" "-c"]'  $(BUILD_CONTAINER)
+	# buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(package.path)" -c "q"'
+	# echo && echo '-------------------------------'
+	# buildah run $(BUILD_CONTAINER) sh -c "nvim --headless -c 'echo $$NVIM_LOG_FILE' -c 'q'"
+	# buildah run $(BUILD_CONTAINER) sh -c 'nvim -u  -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
+	# LOG_DIR=$$(buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"log\"))" -c "q"')
+	# echo $$LOG_DIR
+	# buildah run $(BUILD_CONTAINER) sh -c "ls -al  $${LOG_DIR}"
+	# buildah run $(BUILD_CONTAINER) sh -c 'nvim  -c "lua vim.print(vim.fn.stdpath(\"log\"))" -c "q"'
+	# buildah run $(BUILD_CONTAINER) sh -c 'cat $(NVIM_LOG_FILE)'
+
+
+# check:
+#	# LOG_DIR=$$(buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"log\"))" -c "q"')
+	# echo $$LOG_DIR
+	# buildah run $(BUILD_CONTAINER) sh -c "ls -al  $${LOG_DIR}"
+	# buildah run $(BUILD_CONTAINER) sh -c 'nvim  -c "lua vim.print(vim.fn.stdpath(\"log\"))" -c "q"'
+	# buildah run $(BUILD_CONTAINER) sh -c 'cat $(NVIM_LOG_FILE)'
+
+# 	# nvim +q -l check.lua
+# 	chck=$$(nvim  -V --headless -c 'lua vim.print(package.path)' -c 'q')
+#  buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"run\"))" -c "q"'
+# echo && echo '-------------------------------'
+# buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"log\"))" -c "q"'
+# echo && echo '-------------------------------'
+# buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua vim.print(vim.fn.stdpath(\"state\"))" -c "q"'
+# echo && echo '------------------------------'
+# buildah run $(BUILD_CONTAINER) sh -c 'nvim -V1 -v'$$chck > ./startup.log
+
 
 # https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
 wolfi: ## apk bins from wolfi-dev
@@ -90,31 +169,31 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
-#The image driver uses an image as the backing store of for the volume. 
+# The image driver uses an image as the backing store of for the volume. 
 # An overlay filesystem is created, which allows changes to the volume to be committed as a new layer on top of the image.
-vols:
-	buildah pull  ghcr.io/grantmacken/zie-toolbox:latest
-	# podman volume create --driver image --opt image=fedora:latest  data
-	podman volume create data
-	CONTAINER=$$(buildah from ghcr.io/grantmacken/zie-toolbox)
-	# additional config /etc/xdg/nvim 
-	# and data dirs /usr/local/share' && /usr/share
-	buildah run $${CONTAINER} sh -c 'mkdir -p /etc/xdg/nvim && mkdir -p /usr/local/share' &>/dev/null
-	buildah config --env XDG_CONFIG_DIRS='/etc/xdg'  $${CONTAINER}
-	buildah config --env XDG_DATA_DIRS='/usr/share  /usr/local/share' $${CONTAINER}
+
+
+xxx:
+	# podman image inspect localhost/$@
+	# podman pull ghcr.io/grantmacken/zie-toolbox:latest
+	## additional config /etc/xdg/nvim
+	# # and data dirs /usr/local/share' && /usr/share
+	# buildah run $${CONTAINER} sh -c 'mkdir -p /etc/xdg/nvim && mkdir -p /usr/local/share' &>/dev/null
+	# buildah config --env XDG_CONFIG_DIRS=/etc/xdg $${CONTAINER}
+	# buildah config --env XDG_DATA_DIRS=/usr/local/share $${CONTAINER}
+	# Other config: {dir}/nvim/init.vim (or init.lua) where {dir} is any directory in $$XDG_CONFIG_DIRS.
 	# buildah config --env NVIM_APPNAME='' $${CONTAINER}
 	# add to porfile.d
 	# ls -al /etc/profile.d
-	buildah commit --rm $${CONTAINER} $@
-	# podman image inspect localhost/$@
 	echo '---------------------------------------------'
-	podman create --name $@ --mount type=volume,source=data,destination=/path/in/container,rw=true localhost/$@
+	podman create \
+	--name $@ \
+	--mount type=volume,source=nvim_data,destination=/usr/local/share,rw=true \
+	localhost/$@
 	podman init $@
 	podman container inspect $@
 	
 	# podman init [options] container
-
-
 
 
 zie-toolbox: neovim luarocks latest/cosign.version
@@ -155,7 +234,7 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah add --chmod 755 $${CONTAINER} $${SRC} $${TARG}
 	buildah run $${CONTAINER} /bin/bash -c 'which host-spawn'
 	echo ' - add symlinks to exectables on host using host-spawn'
-	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
+	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/ho/st-spawn /usr/local/bin/flatpak'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $${CONTAINER} /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
