@@ -159,24 +159,24 @@ zie-toolbox: neovim luarocks latest/cosign.version
 		--env XDG_DATA_HOME=$(XDG_DATA_HOME) \
 		--env XDG_STATE_HOME=$(XDG_STATE_HOME) \
 		--env TERM=xterm-256color \
-		$$(CONTAINER)
-	buildah run $$(CONTAINER) sh -c \
+		$${CONTAINER}
+	buildah run $${CONTAINER} sh -c \
 		'mkdir -v -p \
 		$(XDG_CACHE_HOME)/nvim \
 		$(XDG_CONFIG_HOME)/nvim \
 		$(XDG_DATA_HOME)/nvim \
 		$(XDG_STATE_HOME)/nvim'
-		buildah add $$(CONTAINER) './files/etc/xdg/nvim' '/etc/xdg/nvim'
-		buildah run $$(CONTAINER) sh -c 'ls -alR /etc/xdg/nvim'
+		buildah add $${CONTAINER} './files/etc/xdg/nvim' '/etc/xdg/nvim'
+		buildah run $${CONTAINER} sh -c 'ls -alR /etc/xdg/nvim'
 		echo && echo '------------------------------'
-		buildah run $$(CONTAINER) sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
-		buildah run $$(CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
-		buildah run $$(CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
-		buildah run $$(CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
-		buildah run $$(CONTAINER) sh -c '$(ROCKS) "Rocks install oil.nvim"'
-		buildah run $$(CONTAINER) sh -c '$(ROCKS) "Rocks install toggleterm.nvim"'
-		buildah run $$(CONTAINER) sh -c '$(ROCKS) "Rocks install mini.nvim"'
-		buildah run $$(CONTAINER) sh -c '$(ROCKS) "Rocks install flash.nvim"'
+		buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
+		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
+		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
+		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
+		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install oil.nvim"'
+		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install toggleterm.nvim"'
+		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install mini.nvim"'
+		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install flash.nvim"'
 		buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 # ifdef GITHUB_ACTIONS
 # 	buildah push ghcr.io/grantmacken/$@
