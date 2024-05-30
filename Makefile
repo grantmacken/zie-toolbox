@@ -8,7 +8,6 @@ MAKEFLAGS += --silent
 
 FEDORA_VER := 40
 GROUP_C_DEV := "C Development Tools and Libraries"
-INSTALL := make bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
 XDG_CONFIG_DIRS := /etc/xdg
 XDG_DATA_DIRS   := /usr/local/share:/usr/share
 XDG_CONFIG_HOME := /etc/xdg
@@ -22,30 +21,15 @@ ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
 LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
+CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
+DEV_INSTALL := make luajit luajit-dev
+DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
+
 # luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
 # nvimRocksInstall = buildah run $1 sh -c 'nvim --headless -c "Rocks install $2" -c "15sleep" -c "qall!"'
 
-
 # include .env
 default: zie-toolbox  ## build the toolbox
-
-# https://github.com/ublue-os/toolboxes/blob/main/toolboxes/bluefin-cli/packages.bluefin-cli
-wolfi: ## apk bins from wolfi-dev
-	echo '##[ $@ ]##'
-	CONTAINER=$$(buildah from cgr.dev/chainguard/wolfi-base:latest)
-	# add apk binaries that my toolbox needs (not yet available via dnf)
-	buildah run $${CONTAINER} sh -c 'apk add \
-	atuin \
-	google-cloud-sdk \
-	starship \
-	uutils'
-	# buildah run $${CONTAINER} sh -c 'apk info'
-	buildah run $${CONTAINER} sh -c 'apk info google-cloud-sdk'
-	buildah run $${CONTAINER} sh -c 'apk info starship'
-	buildah run $${CONTAINER} sh -c 'apk info uutils'
-	buildah run $${CONTAINER} sh -c 'apk info atuin'
-	buildah commit --rm $${CONTAINER} $@ &>/dev/null
-	echo ' ------------------------------- '
 
 latest/cosign.version:
 	mkdir -p $(dir $@)
@@ -107,14 +91,42 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
-zie-toolbox: neovim luarocks latest/cosign.version
+zie-toolbox: neovim latest/cosign.version latest/luarocks.name
 	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
 	# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'which make' || true
-	buildah run $${CONTAINER} sh -c 'dnf -y install $(INSTALL)' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	buildah run $${CONTAINER} sh -c 'which lua'
+
+sddd:
+	##[ LUAROCKS ]##
+	VERSION=$(shell cat latest/luarocks.name | cut -c 2-)
+	echo "luarocks version: $${VERSION}"
+	URL=https://github.com/luarocks/luarocks/archive/refs/tags/v$${VERSION}.tar.gz
+	echo "luarocks URL: $${URL}"
+	buildah run $${CONTAINER} sh -c "cd /tmp && wget -qO- $${URL} | tar xvz" &>/dev/null
+	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
+	buildah run $${CONTAINER} sh -c './configure \
+		--with-lua=/usr/bin \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
+	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
+	# echo ' - from container localhost/luarocks add luarocks'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/etc' '/usr/local/etc'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/lib' '/usr/local/lib'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/include/lua' '/usr/include/lua'
+	# buildah add --from localhost/luarocks $${CONTAINER} '/usr/bin/lua*' '/usr/bin/'
+	buildah run $${CONTAINER} sh -c 'luarocks'
+
+sdsdsd:
 	##[ COSIGN ]##
 	COSIGN_VERSION=$(shell cat latest/cosign.version)
 	echo " - add cosign from sigstore release version: $${COSIGN_VERSION}"
@@ -126,17 +138,6 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	echo ' - from container localhost/neovim add neovim'
 	buildah add --from localhost/neovim $${CONTAINER} '/usr/local/nvim-linux64' '/usr/local/'  &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which nvim && nvim --version'
-	##[ LUAROCKS ]##
-	echo ' - from container localhost/luarocks add luarocks'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/bin' '/usr/local/bin'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/share/lua' '/usr/local/share/lua'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/etc' '/usr/local/etc'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/local/lib' '/usr/local/lib'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/include/lua' '/usr/include/lua'
-	buildah add --from localhost/luarocks $${CONTAINER} '/usr/bin/lua*' '/usr/bin/'
-	buildah run $${CONTAINER} sh -c 'lua -v'
-	buildah run $${CONTAINER} sh -c 'which lua'
-	buildah run $${CONTAINER} sh -c 'luarocks'
 	##[ HOST SPAWN ]##
 	HOST_SPAWN_VERSION=$(shell wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name')
 	echo " - from src add host-spawn: $${HOST_SPAWN_VERSION}"
