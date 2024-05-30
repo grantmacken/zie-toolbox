@@ -91,18 +91,22 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
+# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
+# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
+# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
+
 zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
-	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
-	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
-	# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
-	# buildah run $${CONTAINER} sh -c 'which make' || true
-	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)'
+	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'ln -s /usr/bin/luajit /usr/bin/lua'
 	buildah run $${CONTAINER} sh -c 'lua -v' || true
 	buildah run $${CONTAINER} sh -c 'which lua' || true
 	buildah run $${CONTAINER} sh -c 'which luajit' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree /usr/lib' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree /usr/bin' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree /usr/include/lua' || true
 
 sddd:
 	##[ LUAROCKS ]##
