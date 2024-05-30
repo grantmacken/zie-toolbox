@@ -126,7 +126,8 @@ zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 		--with-lua-lib=/usr/lib \
 		--with-lua-include=/usr/include/lua'
 	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
-	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
+	buildah config --workingdir / $${CONTAINER}
+	buildah run $${CONTAINER} sh -c 'rm /tmp/*' &>/dev/null
 
 
 sddd:
