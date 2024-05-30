@@ -166,56 +166,25 @@ zie-toolbox: neovim luarocks latest/cosign.version
 		$(XDG_CONFIG_HOME)/nvim \
 		$(XDG_DATA_HOME)/nvim \
 		$(XDG_STATE_HOME)/nvim'
-		buildah add $${CONTAINER} './files/etc/xdg/nvim' '/etc/xdg/nvim'
-		buildah run $${CONTAINER} sh -c 'ls -alR /etc/xdg/nvim'
-		echo && echo '------------------------------'
-		buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
-		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
-		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
-		buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
-		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install oil.nvim"'
-		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install toggleterm.nvim"'
-		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install mini.nvim"'
-		buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install flash.nvim"'
-		buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
+	buildah add $${CONTAINER} './files/etc/xdg/nvim' '/etc/xdg/nvim'
+	buildah run $${CONTAINER} sh -c 'ls -alR /etc/xdg/nvim'
+	echo && echo '------------------------------'
+	buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
+	buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
+	buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
+	buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
+	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install oil.nvim" -c "15sleep" -c "qall!"'
+	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install toggleterm.nvim"'
+	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install mini.nvim"'
+	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install flash.nvim"'
+	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
+	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
+	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
+	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim'
+	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 # ifdef GITHUB_ACTIONS
 # 	buildah push ghcr.io/grantmacken/$@
 # endif
-
-continue: zie-toolbox
-	echo '##[[ $@ ]]##'
-	 buildah rm --all
-	# podman volume exists nvim_data || podman volume create nvim_data
-	# podman volume exists nvim_config || podman volume create nvim_config
-	# podman pull ghcr.io/grantmacken/zie-toolbox:latest
-	buildah from ghcr.io/grantmacken/zie-toolbox
-	buildah containers
-	# buildah run $(BUILD_CONTAINER) sh -c 'mkdir -p /etc/xdg/nvim && mkdir -p /usr/local/share' &>/dev/null
-	# buildah config --env XDG_CONFIG_DIRS=$(XDG_CONFIG_DIRS) --env XDG_DATA_DIRS=$(XDG_DATA_DIRS) $(BUILD_CONTAINER)
-	buildah config \
-		--env NVIM_LOG_FILE=$(NVIM_LOG_FILE) \
-		--env XDG_CACHE_HOME=$(XDG_CACHE_HOME) \
-		--env XDG_CONFIG_HOME=$(XDG_CONFIG_HOME) \
-		--env XDG_DATA_HOME=$(XDG_DATA_HOME) \
-		--env XDG_STATE_HOME=$(XDG_STATE_HOME) \
-		--env TERM=xterm-256color \
-		$(BUILD_CONTAINER)
-	buildah run $(BUILD_CONTAINER) sh -c \
-		'mkdir -v -p \
-		$(XDG_CACHE_HOME)/nvim \
-		$(XDG_CONFIG_HOME)/nvim \
-		$(XDG_DATA_HOME)/nvim \
-		$(XDG_STATE_HOME)/nvim'
-	buildah add $(BUILD_CONTAINER) './files/etc/xdg/nvim' '/etc/xdg/nvim'
-	buildah run $(BUILD_CONTAINER) sh -c 'ls -alR /etc/xdg/nvim'
-	echo && echo '------------------------------'
-	buildah run $(BUILD_CONTAINER) sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
-	buildah run $(BUILD_CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
-	buildah run $(BUILD_CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
-	buildah run $(BUILD_CONTAINER) sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
-	buildah run $(BUILD_CONTAINER) sh -c 'timeout 20 nvim --headless -c "Rocks install mini.nvim"'
-	buildah commit $(BUILD_CONTAINER) $@ &>/dev/null
-	echo '-------------------------------'
 
 
 installed.json:
