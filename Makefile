@@ -112,8 +112,8 @@ zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah run $${CONTAINER} sh -c 'ln -s /usr/bin/luajit /usr/bin/lua'
 	buildah run $${CONTAINER} sh -c 'lua -v'
 	buildah run $${CONTAINER} sh -c 'which lua'
-	buildah run $${CONTAINER} sh -c 'exa --tree /usr/lib' || true
-	buildah run $${CONTAINER} sh -c 'exa --tree /usr/bin' || true
+	# buildah run $${CONTAINER} sh -c 'exa --tree /usr/lib' || true
+	# buildah run $${CONTAINER} sh -c 'exa --tree /usr/bin' || true
 	buildah run $${CONTAINER} sh -c 'exa --tree /usr/include/lua' || true
 	VERSION=$(shell cat latest/luarocks.name | cut -c 2-)
 	echo "luarocks version: $${VERSION}"
@@ -125,12 +125,11 @@ zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 		--with-lua-bin=$(LUA_BINDIR)\
 		--with-lua-interpreter=luajit \
 		--force-config \
-		--disable-incdir-check
+		--disable-incdir-check'
 
 
 sddd:
 	##[ LUAROCKS ]##
-
 	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
 	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
 	# echo ' - from container localhost/luarocks add luarocks'
