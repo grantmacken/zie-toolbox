@@ -23,12 +23,11 @@ LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := make luajit
-# luajit-devel libtermcap-devel ncurses-devel libevent-devel readline-devel
-DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
+DEV_INSTALL := make luajit luajit-devel libtermcap-devel ncurses-devel libevent-devel readline-devel
+dnf_install :=  $(cli_install) $(dev_install)
 
-# luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
-# nvimRocksInstall = buildah run $1 sh -c 'nvim --headless -c "Rocks install $2" -c "15sleep" -c "qall!"'
+# luarocksinstall = buildah run $1 $(luarocks_install) $1
+# nvimrocksinstall = buildah run $1 sh -c 'nvim --headless -c "rocks install $2" -c "15sleep" -c "qall!"'
 
 # include .env
 default: zie-toolbox  ## build the toolbox
@@ -122,10 +121,12 @@ zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah run $${CONTAINER} sh -c "cd /tmp && wget -qO- $${URL} | tar xvz" &>/dev/null
 	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
 	buildah run $${CONTAINER} sh -c './configure \
-		--with-lua-bin=$(LUA_BINDIR)\
-		--with-lua-interpreter=luajit \
-		--force-config \
-		--disable-incdir-check'
+		--with-lua=/usr/bin \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua'
+	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
+	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
 
 
 sddd:
