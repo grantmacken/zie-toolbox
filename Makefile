@@ -22,7 +22,7 @@ ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
 LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install
 
-luarocksInstall = $(shell buildah run $1 luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install $1)
+luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
 nvimRocksInstall = $(shell buildah run $1 sh -c 'nvim --headless -c "Rocks install $2" -c "15sleep" -c "qall!"')
 
 
@@ -174,6 +174,8 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	echo && echo '------------------------------'
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
 	$(call luarocksInstall,$${CONTAINER},rocks.nvim)
+	$(call nvimrocksInstall,$${CONTAINER},oil.nvim)
+
 	# 	buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-git.nvim'
 	# buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks-config.nvim'
 	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install oil.nvim" -c "15sleep" -c "qall!"'
