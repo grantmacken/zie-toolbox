@@ -98,9 +98,10 @@ zie-toolbox: neovim latest/cosign.version latest/luarocks.name
 	# buildah run $${CONTAINER} sh -c 'dnf group info $(GROUP_C_DEV)' || true
 	# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'which make' || true
-	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)' &>/dev/null
-	buildah run $${CONTAINER} sh -c 'lua -v'
-	buildah run $${CONTAINER} sh -c 'which lua'
+	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)'
+	buildah run $${CONTAINER} sh -c 'lua -v' || true
+	buildah run $${CONTAINER} sh -c 'which lua' || true
+	buildah run $${CONTAINER} sh -c 'which luajit' || true
 
 sddd:
 	##[ LUAROCKS ]##
