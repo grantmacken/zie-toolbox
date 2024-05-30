@@ -91,7 +91,7 @@ luarocks: latest/luarocks.name
 	buildah commit --rm $${CONTAINER} $@ &>/dev/null
 	echo '-------------------------------'
 
-zie-toolbox: neovim latest/cosign.version latest/luarocks.name
+zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
 	# buildah run $${CONTAINER} sh -c 'dnf group list --hidden'
@@ -99,6 +99,7 @@ zie-toolbox: neovim latest/cosign.version latest/luarocks.name
 	# buildah run $${CONTAINER} sh -c 'dnf -y group install make &>/dev/null
 	# buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)'
+	buildah run $${CONTAINER} sh -c 'ln -s /usr/bin/luajit /usr/bin/lua'
 	buildah run $${CONTAINER} sh -c 'lua -v' || true
 	buildah run $${CONTAINER} sh -c 'which lua' || true
 	buildah run $${CONTAINER} sh -c 'which luajit' || true
