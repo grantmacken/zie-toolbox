@@ -16,13 +16,15 @@ XDG_DATA_HOME   := /usr/local/share
 XDG_STATE_HOME  := /var/lib
 NVIM_LOG_FILE   := /var/lib/nvim/log
 
+LUA_BINDIR   := /usr/bin
 ROCKS_PATH   :=  $(XDG_DATA_HOME)/nvim/rocks
 ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
 LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := make luajit luajit-devel
+DEV_INSTALL := make luajit
+# luajit-devel libtermcap-devel ncurses-devel libevent-devel readline-devel
 DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
 
 # luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
@@ -82,6 +84,13 @@ luarocks: latest/luarocks.name
 	buildah run $${CONTAINER} sh -c "wget -qO- $${URL} | tar xvz" &>/dev/null
 	buildah config --workingdir /home/nonroot/luarocks-$${VERSION} $${CONTAINER}
 	buildah run $${CONTAINER} sh -c './configure \
+		--lua-version=$(LUA_VERSION)  \
+		--with-lua-bin=/usr/bin \
+		--with-lua-lib=/usr/lib \
+		--with-lua-include=/usr/include/lua' &>/dev/null
+
+xxxx:
+	buildah run $${CONTAINER} sh -c './configure \
 		--with-lua=/usr/bin \
 		--with-lua-bin=/usr/bin \
 		--with-lua-lib=/usr/lib \
@@ -101,15 +110,11 @@ zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)' &>/dev/null
 	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'ln -s /usr/bin/luajit /usr/bin/lua'
-	buildah run $${CONTAINER} sh -c 'lua -v' || true
-	buildah run $${CONTAINER} sh -c 'which lua' || true
-	buildah run $${CONTAINER} sh -c 'which luajit' || true
+	buildah run $${CONTAINER} sh -c 'lua -v'
+	buildah run $${CONTAINER} sh -c 'which lua'
 	buildah run $${CONTAINER} sh -c 'exa --tree /usr/lib' || true
 	buildah run $${CONTAINER} sh -c 'exa --tree /usr/bin' || true
 	buildah run $${CONTAINER} sh -c 'exa --tree /usr/include/lua' || true
-
-sddd:
-	##[ LUAROCKS ]##
 	VERSION=$(shell cat latest/luarocks.name | cut -c 2-)
 	echo "luarocks version: $${VERSION}"
 	URL=https://github.com/luarocks/luarocks/archive/refs/tags/v$${VERSION}.tar.gz
@@ -117,10 +122,15 @@ sddd:
 	buildah run $${CONTAINER} sh -c "cd /tmp && wget -qO- $${URL} | tar xvz" &>/dev/null
 	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
 	buildah run $${CONTAINER} sh -c './configure \
-		--with-lua=/usr/bin \
-		--with-lua-bin=/usr/bin \
-		--with-lua-lib=/usr/lib \
-		--with-lua-include=/usr/include/lua' &>/dev/null
+		--with-lua-bin=$(LUA_BINDIR)\
+		--with-lua-interpreter=luajit \
+		--force-config \
+		--disable-incdir-check
+
+
+sddd:
+	##[ LUAROCKS ]##
+
 	buildah run $${CONTAINER} sh -c 'make & make install' &>/dev/null
 	buildah config --workingdir /tmp/luarocks-$${VERSION} $${CONTAINER}
 	# echo ' - from container localhost/luarocks add luarocks'
