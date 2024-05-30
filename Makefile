@@ -186,10 +186,10 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	#  bash.so  c.so  lua.so  markdown_inline.so  markdown.so  python.so  query.so  vimdoc.so  vim.so
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-toml dev" -c "10sleep" -c "q"'
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-gleam dev" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
-	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
-	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
-	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim'
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_STATE_HOME)/nvim' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site' || true
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim' || true
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 # ifdef GITHUB_ACTIONS
 # 	buildah push ghcr.io/grantmacken/$@
