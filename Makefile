@@ -21,7 +21,7 @@ ROCKS_PATH   :=  $(XDG_DATA_HOME)/nvim/rocks
 ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
 LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install
-ROCKS_INSTALL := timeout 15 nvim --headless -c 
+ROCKS := timeout 15 nvim --headless -c
 
 # include .env
 default: zie-toolbox  ## build the toolbox
