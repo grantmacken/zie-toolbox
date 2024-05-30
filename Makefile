@@ -20,7 +20,7 @@ NVIM_LOG_FILE   := /var/lib/nvim/log
 ROCKS_PATH   :=  $(XDG_DATA_HOME)/nvim/rocks
 ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
 LUA_VERSION  := 5.1
-LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server='$(ROCKS_SERVER)' install
+LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
 # luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
 # nvimRocksInstall = buildah run $1 sh -c 'nvim --headless -c "Rocks install $2" -c "15sleep" -c "qall!"'
@@ -172,24 +172,22 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah add $${CONTAINER} './files/etc/xdg/nvim' '/etc/xdg/nvim'
 	buildah run $${CONTAINER} sh -c 'ls -alR /etc/xdg/nvim'
 	echo && echo '------------------------------'
-	buildah run $${CONTAINER} sh -c '$(LUAROCKS_INSTALL) rocks.nvim'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
-	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install rocks-config.nvim" -c "10sleep" -c "q"'
-	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install rocks-git.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install oil.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install fzf-lua " -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install flash.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install kanagawa.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install toggleterm.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install gitsigns.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install mini.nvim" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install conform.nvim" -c "10sleep" -c "q"'
+	buildah run $${CONTAINER} sh -c "$(LUAROCKS_INSTALL) rocks.nvim"
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "lua =vim.g.rocks_nvim.rocks_path" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install oil.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install fzf-lua " -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install flash.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install kanagawa.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install toggleterm.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install gitsigns.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install mini.nvim" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install conform.nvim" -c "10sleep" -c "q"'
 	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install overseer.nvim" -c "10sleep" -c "q"'
 	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install overseer.nvim" -c "10sleep" -c "q"'
 	# treesitter so libs preinstalled /usr/local/lib/nvim/parsers 
 	#  bash.so  c.so  lua.so  markdown_inline.so  markdown.so  python.so  query.so  vimdoc.so  vim.so
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-toml dev" -c "10sleep" -c "q"'
-	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-gleam dev" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-toml dev" -c "10sleep" -c "q"'
+	# buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install tree-sitter-gleam dev" -c "10sleep" -c "q"'
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
