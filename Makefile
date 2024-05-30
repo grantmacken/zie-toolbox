@@ -22,7 +22,7 @@ LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := make luajit luajit-dev
+DEV_INSTALL := make luajit luajit-devel
 DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
 
 # luarocksInstall = buildah run $1 $(LUAROCKS_INSTALL) $1
