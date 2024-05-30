@@ -179,10 +179,10 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install toggleterm.nvim"'
 	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install mini.nvim"'
 	# buildah run $${CONTAINER} sh -c '$(ROCKS) "Rocks install flash.nvim"'
-	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
-	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
-	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
-	buildah run $(BUILD_CONTAINER) sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim'
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
+	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim'
 	buildah commit --rm $${CONTAINER} ghcr.io/grantmacken/$@
 # ifdef GITHUB_ACTIONS
 # 	buildah push ghcr.io/grantmacken/$@
