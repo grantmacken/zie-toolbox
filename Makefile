@@ -181,6 +181,7 @@ zie-toolbox: neovim luarocks latest/cosign.version
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install flash.nvim" -c "10sleep" -c "q"'
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install kanagawa.nvim" -c "10sleep" -c "q"'
 	buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install toggleterm.nvim" -c "10sleep" -c "q"'
+	# treesitter binaries
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_CACHE_HOME)/nvim'
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_STATE_HOME)/nvim'
 	buildah run $${CONTAINER} sh -c 'exa --tree $(XDG_DATA_HOME)/nvim/site'
