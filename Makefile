@@ -23,7 +23,8 @@ LUA_VERSION  := 5.1
 LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := make luajit luajit-devel libtermcap-devel ncurses-devel libevent-devel readline-devel
+DEV_INSTALL := make luajit luajit-devel
+# libtermcap-devel ncurses-devel libevent-devel readline-devel
 DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
 
 # luarocksinstall = buildah run $1 $(luarocks_install) $1
@@ -106,7 +107,7 @@ xxxx:
 zie-toolbox: latest/cosign.version latest/luarocks.name neovim
 	buildah pull registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER)
 	CONTAINER=$$(buildah from registry.fedoraproject.org/fedora-toolbox:$(FEDORA_VER))
-	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)' &>/dev/null
+	buildah run $${CONTAINER} sh -c 'dnf -y install $(DNF_INSTALL)'
 	buildah run $${CONTAINER} sh -c 'which make' || true
 	buildah run $${CONTAINER} sh -c 'ln -s /usr/bin/luajit /usr/bin/lua'
 	buildah run $${CONTAINER} sh -c 'lua -v'
