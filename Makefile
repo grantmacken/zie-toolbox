@@ -24,7 +24,7 @@ LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) -
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq kitty-terminfo ripgrep wl-clipboard yq zoxide
 DEV_INSTALL := make luajit luajit-devel libtermcap-devel ncurses-devel libevent-devel readline-devel
-dnf_install :=  $(cli_install) $(dev_install)
+DNF_INSTALL :=  $(CLI_INSTALL) $(DEV_INSTALL)
 
 # luarocksinstall = buildah run $1 $(luarocks_install) $1
 # nvimrocksinstall = buildah run $1 sh -c 'nvim --headless -c "rocks install $2" -c "15sleep" -c "qall!"'
