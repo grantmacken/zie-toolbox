@@ -20,15 +20,9 @@ NVIM_URL := https://github.com/neovim/neovim/releases/download/nightly/nvim-linu
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
 DEV_INSTALL := kitty-terminfo make ncurses-devel openssl-devel perl-core libevent-devel readline-devel
-#TODO rebar3
-# libtermcap-devel ncurses-devel libevent-devel readline-devel
-# [system agents] [DEPENDENCIES]
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
-# luarocksinstall = buildah run $1 $(luarocks_install) $1
-# nvimrocksinstall = buildah run $1 sh -c 'nvim --headless -c "rocks install $2" -c "15sleep" -c "qall!"'
-
 # include .env
-default: init
+default: init  dependencies
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -44,9 +38,6 @@ latest/neovim.download: latest/neovim-nightly.json
 	mkdir -p $(dir $@)
 	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
 
-pull:
-	buildah pull $(FEDORA_TOOLBOX):latest
-
 init: info/buildah.info
 info/buildah.info:
 	echo '##[ $@ ]##'
@@ -57,6 +48,8 @@ info/buildah.info:
 
 dependencies: info/dependencies.info
 info/dependencies.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
 	for item in $(DEPENDENCIES)
 	do
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $${item} &>/dev/null || dnf -y install $${item}"
