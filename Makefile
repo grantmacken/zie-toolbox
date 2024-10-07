@@ -9,21 +9,12 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX := registry.fedoraproject.org/fedora-toolbox
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-NVIM_URL := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
-
-# LUA_BINDIR   := /usr/bin
-# ROCKS_PATH   :=  $(XDG_DATA_HOME)/nvim/rocks
-# ROCKS_SERVER := https://nvim-neorocks.github.io/rocks-binaries/
-# LUA_VERSION  := 5.1
-# LUAROCKS_INSTALL := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER) install
-# LUAROCKS_CMD := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER)
-
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
 DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
 CORE := init dependencies neovim luajit luarocks
-BEAM := erlang
+BEAM := erlang rebar3
 
 default: $(CORE) $(BEAM)
 
@@ -68,7 +59,7 @@ info/neovim.info: latest/neovim.json
 	echo "url: $${URL}"
 	echo "waiting for download ... "
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && sudo make install'
 	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## https://github.com/openresty/luajit2
@@ -115,6 +106,8 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 
+## BEAM
+
 latest/erlang.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -158,16 +151,12 @@ info/elixir.info: latest/elixir.json
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-
 
 rebar3: info/rebar3.info
 info/rebar3.info:
 	buildah run $(WORKING_CONTAINER) curl -Ls --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
 	buildah run $(WORKING_CONTAINER) chmod +x /usr/local/bin/rebar3
 	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
-
-
 
 
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
