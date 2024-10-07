@@ -13,10 +13,11 @@ CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl
 DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
-CORE := init dependencies neovim luajit luarocks
+CORE := init dependencies neovim
+## luajit luarocks
 BEAM := erlang rebar3
 
-default: $(CORE) $(BEAM)
+default: $(CORE)
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -58,8 +59,8 @@ info/neovim.info: latest/neovim.json
 	echo "name: $${NAME}"
 	echo "url: $${URL}"
 	echo "waiting for download ... "
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && sudo make install'
+	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --no-same-owner --strip-components=1 -C /tmp"
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## https://github.com/openresty/luajit2
