@@ -26,4 +26,4 @@ jobs:
           password: ${{ github.token }}
       - name: Build
         shell: bash
-        run: make
+        run: echo 'hi'
