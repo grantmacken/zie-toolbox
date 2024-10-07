@@ -2,6 +2,7 @@ wolfi/*.tar
 wolfi/sbom*
 build
 tmp
+info
 latest
 
 
