@@ -22,14 +22,14 @@ CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl
 DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
-default: init  dependencies neovim luajit luarocks
+CORE := init dependencies neovim luajit luarocks
+BEAM := erlang
+
+default: $(CORE) $(BEAM)
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
 	rm -rf info
-
-latest: latest/cosign.version latest/luarocks.version latest/neovim.download
-
 
 init: info/buildah.info
 info/buildah.info:
@@ -52,20 +52,24 @@ grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
 ## NEOVIM
+latest/neovim.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
+
 neovim: info/neovim.info
 info/neovim.info: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	# buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
 	echo "url: $${URL}"
 	echo "waiting for download ... "
-	# buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(WORKING_CONTAINER) sh -c 'dnf install gettext-devel intltool -y'
+	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
-	 nvim -v | tee $@
+	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## https://github.com/openresty/luajit2
 latest/luajit.json:
@@ -73,7 +77,6 @@ latest/luajit.json:
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
 	jq '.[0]' > $@
-
 
 luajit: info/luajit.info
 info/luajit.info: latest/luajit.json
@@ -85,10 +88,11 @@ info/luajit.info: latest/luajit.json
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | tee $@
 
 latest/luarocks.json:
 	echo '##[ $@ ]##'
@@ -100,7 +104,6 @@ luarocks: info/luarocks.info
 info/luarocks.info: latest/luarocks.json
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah run $(WORKING_CONTAINER) sh -c 'ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
@@ -164,10 +167,7 @@ info/rebar3.info:
 	buildah run $(WORKING_CONTAINER) chmod +x /usr/local/bin/rebar3
 	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
 
-latest/neovim.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
+
 
 
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
