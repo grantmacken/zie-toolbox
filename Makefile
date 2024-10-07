@@ -50,7 +50,6 @@ reset:
 	buildah rm $(WORKING_CONTAINER) || true
 	rm -rf info
 
-
 latest: latest/cosign.version latest/luarocks.version latest/neovim.download
 
 latest/neovim-nightly.json:
@@ -69,7 +68,7 @@ init: info/buildah.info
 info/buildah.info:
 	mkdir -p info
 	podman images | grep -oP '$(FEDORA_TOOLBOX)' || buildah pull $(FEDORA_TOOLBOX):latest | tee  $@
-	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX):$(FEDORA_VER) | tee -a $@
+	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX):latest | tee -a $@
 	echo
 
 dependencies: info/dependencies.info
@@ -237,51 +236,6 @@ check:
 	buildah run $(WORKING_CONTAINER) which gleam
 	buildah run $(WORKING_CONTAINER) gleam --help
 
-
-
-#################
-### HOME
-################
-
-mini: info/mini.info
-info/mini.info:
-	[ -d $(START_PATH)/mini.lua ] || git clone --filter=blob:none $(MINI_URL) $(START_PATH)/mini.lua
-	cat $(START_PATH)/mini.lua/README.md | tee $@
-
-conf:
-	echo '##[ $@ ]##'
-	mkdir -p $(XDG_CONFIG_HOME)/$(NVIM_APPNAME)/
-	cp -rf files/config/nvim/* $(XDG_CONFIG_HOME)/$(NVIM_APPNAME)/
-	exa --tree $(XDG_CONFIG_HOME)/$(NVIM_APPNAME)
-	buildah config \
---env NVIM_APPNAME=$(NVIM_APPNAME) \
---env TERM=xterm-256color \
---env LANG=C.UTF-8 $(WORKING_CONTAINER)
-
-nv:
-	buildah config \
---env XDG_CONFIG_DIRS=$(XDG_CONFIG_DIRS) \
---env XDG_DATA_DIRS=$(XDG_DATA_DIRS) \
---env XDG_CACHE_HOME=$(XDG_CACHE_HOME) \
---env XDG_CONFIG_HOME=$(XDG_CONFIG_HOME) \
---env XDG_DATA_HOME=$(XDG_DATA_HOME) \
---env XDG_STATE_HOME=$(XDG_STATE_HOME) \
---env NVIM_APPNAME=$(NVIM_APPNAME) \
---env NVIM_LOG_FILE=$(NVIM_LOG_FILE) \
---env TERM=xterm-256color \
---env LANG=C.UTF-8 $(WORKING_CONTAINER)
-	# buildah add $(WORKING_CONTAINER)  './files/etc/xdg/nvim' '$(XDG_CONFIG_HOME)/nvim'
-	# buildah run $(WORKING_CONTAINER) sh -c 'exa --tree $(XDG_CONFIG_HOME)/nvim'
-	# buildah run $(WORKING_CONTAINER) sh -c 'exa $(START_PATH)'
-	buildah run $(WORKING_CONTAINER) printenv
-	buildah commit $(WORKING_CONTAINER) $@
-	podman images | grep $@
-
-
-packadd:
-	#buildah run $(WORKING_CONTAINER) nvim --headless -c 'packadd mini.nvim | helptags ALL' -c '1sleep' -c 'q'
-	buildah run $(WORKING_CONTAINER) exa $(START_PATH)
-
 eco:
 	buildah run $(WORKING_CONTAINER) nvim --headless -c 'echo "hi"' -c '5sleep' -c 'q'
 
@@ -360,10 +314,6 @@ search:
 # buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install gitsigns.nvim" -c "10sleep" -c "q"'
 # buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install mini.nvim" -c "10sleep" -c "q"'
 # buildah run $${CONTAINER} sh -c 'nvim --headless -c "Rocks install conform.nvim" -c "10sleep" -c "q"#
-
-
-
-
 
 ###################################################################
 #buildah run $(WORKING_CONTAINER)  sh -c 'dnf clean all'
