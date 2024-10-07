@@ -18,12 +18,6 @@ I have tried to limit contained CLI tools to stuff for code editing and have **e
 
 Ihe image contains the latest release version of Neovim.
 
-For a Neovim plugin manager I have chosen [nvim-neorocks](https://github.com/nvim-neorocks/rocks.nvim) which announces itself as
-
-    A modern approach to Neovim plugin management!
-
-As Neorocks depends on a local installation of both lua and luarocks so these are included in the container.
-
 ## Some useful CLI tools
 
 I have added some CLI tools which I find useful into the toolbox container.
@@ -53,7 +47,6 @@ podman pull ghcr.io/grantmacken/zie-toolbox:latest
 toolbox create --image ghcr.io/grantmacken/zie-toolbox:latest tbx
 toolbox enter tbx
 ```
-
 
 ## Building the toolbox:
 
