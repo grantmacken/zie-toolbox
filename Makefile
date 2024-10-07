@@ -15,13 +15,14 @@ DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
 CORE := init dependencies neovim
 ## luajit luarocks
-BEAM := erlang rebar3
+BEAM := erlang rebar3 elixir gleam
 
-default: $(CORE)
+default: $(CORE) $(BEAM)
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
 	rm -rf info
+	rm -rf latest
 
 init: info/buildah.info
 info/buildah.info:
@@ -134,6 +135,12 @@ info/erlang.info: latest/erlang.json
 	echo -n 'OTP Release: ' >> $@
 	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
 
+rebar3: info/rebar3.info
+info/rebar3.info:
+	buildah run $(WORKING_CONTAINER) curl -Ls --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+	buildah run $(WORKING_CONTAINER) chmod +x /usr/local/bin/rebar3
+	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
+
 latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -153,11 +160,37 @@ info/elixir.info: latest/elixir.json
 	buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
 
-rebar3: info/rebar3.info
-info/rebar3.info:
-	buildah run $(WORKING_CONTAINER) curl -Ls --output /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
-	buildah run $(WORKING_CONTAINER) chmod +x /usr/local/bin/rebar3
-	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
+
+
+latest/gleam.download:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
+	jq  -r '.assets[].browser_download_url' |
+	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
+
+gleam: info/gleam.info
+info/gleam.info: latest/gleam.download
+	mkdir -p $(dir $@)
+	DOWNLOAD_URL=$$(cat $<)
+	echo "download url: $${DOWNLOAD_URL}"
+	buildah run $(WORKING_CONTAINER)  sh -c "curl -Ls $${DOWNLOAD_URL} | \
+tar xzf - --one-top-level="gleam" --strip-components 1 --directory /usr/local/bin"
+	buildah run $(WORKING_CONTAINER) gleam --version > $@
+	buildah run $(WORKING_CONTAINER) gleam --help >> $@atest/gleam.download:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
+	jq  -r '.assets[].browser_download_url' |
+	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
+
+gleam: info/gleam.info
+info/gleam.info: latest/gleam.download
+	mkdir -p $(dir $@)
+	DOWNLOAD_URL=$$(cat $<)
+	echo "download url: $${DOWNLOAD_URL}"
+	buildah run $(WORKING_CONTAINER)  sh -c "curl -Ls $${DOWNLOAD_URL} | \
+tar xzf - --one-top-level="gleam" --strip-components 1 --directory /usr/local/bin"
+	buildah run $(WORKING_CONTAINER) gleam --version > $@
+	buildah run $(WORKING_CONTAINER) gleam --help >> $@
 
 
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
@@ -206,19 +239,5 @@ check:
 
 ### Gleam
 
-latest/gleam.download:
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
-	jq  -r '.assets[].browser_download_url' |
-	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
 
-gleam: info/gleam.info
-info/gleam.info: latest/gleam.download
-	mkdir -p $(dir $@)
-	DOWNLOAD_URL=$$(cat $<)
-	echo "download url: $${DOWNLOAD_URL}"
-	buildah run $(WORKING_CONTAINER)  sh -c "curl -Ls $${DOWNLOAD_URL} | \
-tar xzf - --one-top-level="gleam" --strip-components 1 --directory /usr/local/bin"
-	buildah run $(WORKING_CONTAINER) gleam --version > $@
-	buildah run $(WORKING_CONTAINER) gleam --help >> $@
 
