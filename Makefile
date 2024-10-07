@@ -19,10 +19,10 @@ NVIM_URL := https://github.com/neovim/neovim/releases/download/nightly/nvim-linu
 # LUAROCKS_CMD := luarocks --lua-version=$(LUA_VERSION) --tree $(ROCKS_PATH) --server $(ROCKS_SERVER)
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := kitty-terminfo make ncurses-devel openssl-devel perl-core libevent-devel readline-devel
+DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
-default: init  dependencies
+default: init  dependencies neovim luajit luarocks
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -51,6 +51,22 @@ info/dependencies.info:
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
+## NEOVIM
+neovim: info/neovim.info
+info/neovim.info: latest/neovim.json
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	# buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
+	URL=$$(jq -r '.tarball_url' $<)
+	echo "name: $${NAME}"
+	echo "url: $${URL}"
+	echo "waiting for download ... "
+	# buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
+	buildah run $(WORKING_CONTAINER) sh -c 'dnf install gettext-devel intltool -y'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
+	 nvim -v | tee $@
+
 ## https://github.com/openresty/luajit2
 latest/luajit.json:
 	echo '##[ $@ ]##'
@@ -74,12 +90,11 @@ info/luajit.info: latest/luajit.json
 	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 
-latest/luarocks.json: 
+latest/luarocks.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
 	jq  '.[0]' > $@
-
 
 luarocks: info/luarocks.info
 info/luarocks.info: latest/luarocks.json
@@ -154,14 +169,6 @@ latest/neovim.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
 
-neovim: info/neovim.info
-info/neovim.info: latest/neovim.json
-	echo -n 'release tag: ' && jq -r '.tag_name' $<
-	echo -n 'release name: ' && jq -r '.name' $<
-	URL=$$(jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1)
-	echo "URL: $${URL}"
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /usr/local"
-	nvim -v | tee $@
 
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
 
