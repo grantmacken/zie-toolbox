@@ -30,13 +30,6 @@ reset:
 
 latest: latest/cosign.version latest/luarocks.version latest/neovim.download
 
-latest/neovim-nightly.json:
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
-
-latest/neovim.download: latest/neovim-nightly.json
-	mkdir -p $(dir $@)
-	jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1 | tee $@
 
 init: info/buildah.info
 info/buildah.info:
@@ -156,13 +149,18 @@ info/rebar3.info:
 	buildah run $(WORKING_CONTAINER) chmod +x /usr/local/bin/rebar3
 	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
 
+latest/neovim.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
+
 neovim: info/neovim.info
-info/neovim.info: latest/neovim.download
-	echo -n 'release tag: ' && jq -r '.tag_name' latest/neovim-nightly.json
-	echo -n 'release name: ' && jq -r '.name' latest/neovim-nightly.json
-	DOWNLOAD_URL=$$(cat $<)
-	echo "download url: $${DOWNLOAD_URL}"
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${DOWNLOAD_URL} -q -O- | tar xz --strip-components=1 -C /usr/local"
+info/neovim.info: latest/neovim.json
+	echo -n 'release tag: ' && jq -r '.tag_name' $<
+	echo -n 'release name: ' && jq -r '.name' $<
+	URL=$$(jq -r '.assets[].browser_download_url' $< | grep nvim-linux64.tar.gz  | head -1)
+	echo "URL: $${URL}"
+	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /usr/local"
 	nvim -v | tee $@
 
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
