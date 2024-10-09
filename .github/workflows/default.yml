@@ -28,7 +28,7 @@ jobs:
       #     registry: ghcr.io
       #     username: ${{ github.repository_owner }}
       #     password: ${{ github.token }}
-      # - name: Init
+      - name: Init
         run: |
           cat /etc/os-release
           buildah pull $FEDORA_TOOLBOX
