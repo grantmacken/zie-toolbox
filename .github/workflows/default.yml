@@ -18,8 +18,6 @@ jobs:
       contents: read
       packages: write
       id-token: write
-    container:
-      image: registry.fedoraproject.org/fedora-toolbox:latest
     steps:
       # - uses: actions/checkout@v4
       # - uses: docker/login-action@v3
@@ -31,3 +29,5 @@ jobs:
         shell: bash
         run: |
           cat /etc/os-release
+          buildah pull registry.fedoraproject.org/fedora-toolbox:latest
+          buildah containers
