@@ -38,6 +38,10 @@ jobs:
           buildah containers
           for item in bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
           do
-          buildah run $WORKING_CONTAINER sh -c "dnf -y info installed ${item} &>/dev/null || dnf -y install $${item}"
+          buildah run $WORKING_CONTAINER sh -c "dnf -y info installed ${item} &>/dev/null || dnf -y install ${item}"
+          done
+          for item in kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
+          do
+          buildah run $WORKING_CONTAINER sh -c "dnf -y info installed ${item} &>/dev/null || dnf -y install ${item}"
           done
 
