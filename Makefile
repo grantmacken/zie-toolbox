@@ -13,7 +13,7 @@ CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl
 DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
 DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
-CORE := init dependencies neovim
+CORE := init dependencies host-spawn neovim
 ## luajit luarocks
 BEAM := erlang rebar3 elixir gleam
 
@@ -160,23 +160,7 @@ info/elixir.info: latest/elixir.json
 	buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
 
-
-
 latest/gleam.download:
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
-	jq  -r '.assets[].browser_download_url' |
-	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
-
-gleam: info/gleam.info
-info/gleam.info: latest/gleam.download
-	mkdir -p $(dir $@)
-	DOWNLOAD_URL=$$(cat $<)
-	echo "download url: $${DOWNLOAD_URL}"
-	buildah run $(WORKING_CONTAINER)  sh -c "curl -Ls $${DOWNLOAD_URL} | \
-tar xzf - --one-top-level="gleam" --strip-components 1 --directory /usr/local/bin"
-	buildah run $(WORKING_CONTAINER) gleam --version > $@
-	buildah run $(WORKING_CONTAINER) gleam --help >> $@atest/gleam.download:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
 	jq  -r '.assets[].browser_download_url' |
@@ -192,7 +176,6 @@ tar xzf - --one-top-level="gleam" --strip-components 1 --directory /usr/local/bi
 	buildah run $(WORKING_CONTAINER) gleam --version > $@
 	buildah run $(WORKING_CONTAINER) gleam --help >> $@
 
-
 cosign_version = wget -q -O - 'https://api.github.com/repos/sigstore/cosign/releases/latest' | jq  -r '.name'
 
 cosign: info/cosign.info
@@ -206,16 +189,20 @@ info/cosign.info:
 	buildah run $(WORKING_CONTAINER) sh -c '  echo -n " - check: " &&  which cosign'
 	buildah run $(WORKING_CONTAINER) cosign | tee $@
 
-host_spawn_version = wget -q -O - 'https://api.github.com/repos/1player/host-spawn/tags' | jq  -r '.[0].name'
+latest/host-spawn.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
 
 host-spawn: info/host-spawn.info
-info/host-spawn.info:
+info/host-spawn.info: latest/host-spawn.json
 	echo '##[ $@ ]##'
-	HOST_SPAWN_VERSION=$$($(call host_spawn_version))
-	echo " - from src add host-spawn: $${HOST_SPAWN_VERSION}"
-	SRC=https://github.com/1player/host-spawn/releases/download/$${HOST_SPAWN_VERSION}/host-spawn-x86_64
+	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
+	echo "$$SRC"
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG}
+	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /usr/local/bin/'
+	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
