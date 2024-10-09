@@ -29,10 +29,10 @@ jobs:
       #     username: ${{ github.repository_owner }}
       #     password: ${{ github.token }}
       # - name: Init
-      #   run: |
-      #     cat /etc/os-release
-      #     buildah pull $FEDORA_TOOLBOX
-      #     buildah from  $FEDORA_TOOLBOX
+        run: |
+          cat /etc/os-release
+          buildah pull $FEDORA_TOOLBOX
+          buildah from  $FEDORA_TOOLBOX
       # - name: Deps
       #   run: |
       #     for item in bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
@@ -52,5 +52,6 @@ jobs:
           # echo "url: ${URL}"
           SRC=$(jq  -r '.assets[].browser_download_url' neovim.json | grep -oP '.+nvim-linux64.tar.gz$')
           TARG=/usr/local
-          echo "name: ${SRC}"
+          echo "src: ${SRC}"
+          buildah add --chmod 755 $WORKING_CONTAINER $SRC $TAR
 
