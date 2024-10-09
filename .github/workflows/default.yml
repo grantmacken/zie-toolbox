@@ -22,38 +22,15 @@ jobs:
       packages: write
       id-token: write
     steps:
-      # - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       # - uses: docker/login-action@v3
       #   with:
       #     registry: ghcr.io
       #     username: ${{ github.repository_owner }}
       #     password: ${{ github.token }}
-      - name: Init
-        run: |
-          cat /etc/os-release
-          buildah pull $FEDORA_TOOLBOX
-          buildah from  $FEDORA_TOOLBOX
-      # - name: Deps
-      #   run: |
-      #     for item in bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-      #     do
-      #     buildah run $WORKING_CONTAINER sh -c "dnf -y info installed ${item} &>/dev/null || dnf -y install ${item}"
-      #     done
-      #     for item in kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
-      #     do
-      #     buildah run $WORKING_CONTAINER sh -c "dnf -y info installed ${item} &>/dev/null || dnf -y install ${item}"
-      #     done
-      - name: Neovim
-        run: |
-          wget -q -O - https://api.github.com/repos/neovim/neovim/releases/tags/nightly > neovim.json
-          # NAME=$(jq -r '.name' neovim.json  | sed 's/v//')
-          # URL=$(jq -r '.tarball_url' neovim.json
-          # echo "name: ${NAME}"
-          # echo "url: ${URL}"
-          SRC=$(jq  -r '.assets[].browser_download_url' neovim.json | grep -oP '.+nvim-linux64.tar.gz$')
-          TARG=/usr/local
-          echo "src: ${SRC}"
-          buildah add --chmod 755 $WORKING_CONTAINER $SRC $TAR
-          buildah run $WORKING_CONTAINER ls -alr /usr/local
+      - name: build
+        run: make
+
+
 
 
