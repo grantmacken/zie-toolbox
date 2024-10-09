@@ -45,11 +45,11 @@ jobs:
       #     done
       - name: Neovim
         run: |
-          wget -q -O neovim.json https://api.github.com/repos/neovim/neovim/releases/tags/nightly
-          NAME=$(jq -r '.name' neovim.json  | sed 's/v//')
-          URL=$(jq -r '.tarball_url' neovim.json
-          echo "name: ${NAME}"
-          echo "url: ${URL}"
+          wget -q -O - https://api.github.com/repos/neovim/neovim/releases/tags/nightly > neovim.json
+          # NAME=$(jq -r '.name' neovim.json  | sed 's/v//')
+          # URL=$(jq -r '.tarball_url' neovim.json
+          # echo "name: ${NAME}"
+          # echo "url: ${URL}"
           SRC=$(jq  -r '.assets[].browser_download_url' neovim.json | grep -oP '.+nvim-linux64.tar.gz$')
           TARG=/usr/local
           echo "name: ${SRC}"
