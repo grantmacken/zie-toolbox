@@ -30,4 +30,5 @@ jobs:
         run: |
           cat /etc/os-release
           buildah pull registry.fedoraproject.org/fedora-toolbox:latest
+          buildah from registry.fedoraproject.org/fedora-toolbox:latest
           buildah containers
