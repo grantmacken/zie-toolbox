@@ -54,6 +54,6 @@ jobs:
           TARG=/usr/local
           echo "src: ${SRC}"
           buildah add --chmod 755 $WORKING_CONTAINER $SRC $TAR
-          buildah run tree /usr/local
+          buildah run $WORKING_CONTAINER ls -alr /usr/local
 
 
