@@ -7,6 +7,9 @@ on:
     - main
     paths-ignore:
     - '**/README.md'
+env:
+  FEDORA_TOOLBOX: registry.fedoraproject.org/fedora-toolbox:latest
+  WORKING_CONTAINER: fedora-toolbox-working-container
 jobs:
   build:
     name: Build Image
@@ -29,6 +32,6 @@ jobs:
         shell: bash
         run: |
           cat /etc/os-release
-          buildah pull registry.fedoraproject.org/fedora-toolbox:latest
-          buildah from registry.fedoraproject.org/fedora-toolbox:latest
-          buildah containers
+          buildah pull $FEDORA_TOOLBOX
+          buildah from  $FEDORA_TOOLBOX
+        buildah containers
