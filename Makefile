@@ -12,14 +12,14 @@ FEDORA_TOOLBOX := registry.fedoraproject.org/fedora-toolbox
 WORKING_CONTAINER := fedora-toolbox-working-container
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool 
-DEPENDENCIES :=  $(CLI_INSTALL) $(DEV_INSTALL)
+DEV_INSTALL :=  kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
+DEPENDENCIES := $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
 CORE := init neovim
 ## luajit luarocks dependencies host-spawn
 BEAM := erlang rebar3 elixir gleam
 
-default: neovim
+default: dev_install neovim luajit luarocks host-spawn
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -35,6 +35,19 @@ info/buildah.info:
 	podman images | grep -oP '$(FEDORA_TOOLBOX)' || buildah pull $(FEDORA_TOOLBOX):latest | tee  $@
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX):latest | tee -a $@
 	echo
+
+dev_install: info/dev_install.info
+info/dev_install.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(DEV_INSTALL)
+	do
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $${item} &>/dev/null || dnf -y install $${item}"
+	done
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+
 
 dependencies: info/dependencies.info
 info/dependencies.info:
@@ -102,12 +115,15 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
+
+xxxx:
 	echo ' - add symlinks to exectables on host using host-spawn'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+
 ## https://github.com/openresty/luajit2
 latest/luajit.json:
 	echo '##[ $@ ]##'
@@ -157,7 +173,8 @@ info/luarocks.info: latest/luarocks.json
 latest/erlang.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/erlang/otp/releases/latest > $@
+	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
+	jq  '[ .[] | select(.name | startswith("OTP 27")) ] | first | .assets[] | select( .name | startswith("otp_src"))' > $@
 
 erlang: info/erlang.info
 info/erlang.info: latest/erlang.json
