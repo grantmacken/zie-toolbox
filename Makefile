@@ -19,7 +19,7 @@ CORE := init neovim
 ## luajit luarocks dependencies host-spawn
 BEAM := erlang rebar3 elixir gleam
 
-default: init dev_install neovim  host-spawn
+default: init dev_install luajit neovim  host-spawn
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -77,7 +77,7 @@ neovim: info/neovim.info
 info/neovim.info: files/usr/local/bin/nvim
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local /usr/local
+	buildah add  $(WORKING_CONTAINER) files/usr/local /usr/local
 	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 alt-neovim:
@@ -112,8 +112,6 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
-
-xxxx:
 	echo ' - add symlinks to exectables on host using host-spawn'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
