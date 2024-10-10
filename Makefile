@@ -8,17 +8,19 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 
-FEDORA_TOOLBOX := registry.fedoraproject.org/fedora-toolbox
+FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox
 WORKING_CONTAINER := fedora-toolbox-working-container
+
+WOLFI_IMAGE     := cgr.dev/chainguard/wolfi-base:latest
+WOLFI_CONTAINER := wolfi-base-working-container
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
 DEV_INSTALL :=  kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 DEPENDENCIES := $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
 CORE := neovim host-spawn
-## luajit luarocks dependencies host-spawn
-BEAM := erlang rebar3 elixir gleam
-
+## rebar3 elixir gleam
+BEAM := erlang 
 default: init dev_install $(CORE) $(BEAM)
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -27,12 +29,20 @@ reset:
 	rm -rfv files
 	rm -rfv tmp
 
-init: info/buildah.info
+init: info/buildah.info info/wolfi.info
+
 info/buildah.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	podman images | grep -oP '$(FEDORA_TOOLBOX)' || buildah pull $(FEDORA_TOOLBOX):latest | tee  $@
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX):latest | tee -a $@
+	echo
+
+info/wolfi.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	podman images | grep -oP '$(WOLFI_IMAGE)' || buildah pull $(WOLFI_IMAGE) | tee $@
+	buildah containers | grep -oP $(WOLFI_CONTAINER) || buildah from $(WOLFI_IMAGE) | tee -a $@
 	echo
 
 dev_install: info/dev_install.info
@@ -170,7 +180,7 @@ latest/erlang.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq  '[ .[] | select(.name | startswith("OTP 27")) ] | first | .assets[] | select( .name | startswith("otp_src"))' > $@
+	jq  '[ .[] | select(.name | startswith("OTP 27")) ] | first' > $@
 
 erlang: info/erlang.info
 info/erlang.info: latest/erlang.json
