@@ -19,7 +19,7 @@ CORE := init neovim
 ## luajit luarocks dependencies host-spawn
 BEAM := erlang rebar3 elixir gleam
 
-default: init dev_install neovim luajit luarocks host-spawn
+default: init dev_install neovim  host-spawn
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
