@@ -15,12 +15,11 @@ CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl
 DEV_INSTALL :=  kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 DEPENDENCIES := $(CLI_INSTALL) $(DEV_INSTALL)
 # include .env
-CORE := init neovim
+CORE := neovim host-spawn
 ## luajit luarocks dependencies host-spawn
 BEAM := erlang rebar3 elixir gleam
 
-default: init dev_install luajit neovim  host-spawn
-
+default: init $(CORE) $(BEAM)
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
 	rm -rfv info
