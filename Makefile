@@ -48,7 +48,6 @@ info/dev_install.info:
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
-
 dependencies: info/dependencies.info
 info/dependencies.info:
 	echo '##[ $@ ]##'
@@ -73,14 +72,12 @@ files/usr/local/bin/nvim: latest/neovim.json
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $$SRC"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/usr/local
-	touch files/usr/local/bin/nvim
 
 neovim: info/neovim.info
 info/neovim.info: files/usr/local/bin/nvim
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local /usr/local
-	buildah run $(WORKING_CONTAINER) sh -c 'tree /usr/local'
 	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 alt-neovim:
@@ -141,6 +138,8 @@ info/luajit.info: latest/luajit.json
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
+
+dss:
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
