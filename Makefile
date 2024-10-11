@@ -271,5 +271,7 @@ check:
 
 ### Gleam
 
-
+erl:
+	echo '##[ $@ ]##'
+	podman run --entrypoint /bin/sh cgr.dev/chainguard/erlang -c 'ls -alR /usr/lib'
 
