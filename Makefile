@@ -194,9 +194,9 @@ info/erlang.info: latest/erlang.json
 	echo "waiting for download ... "
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c "exa /tmp"
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && ./configure \
+	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'ERL_TOP=/tmp; cd /tmp && ./configure \
 --without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et'
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && make && make install'
+	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'ERL_TOP=/tmp; cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) sh -c 'erl -version' > $@
 	echo -n 'OTP Release: ' >> $@
