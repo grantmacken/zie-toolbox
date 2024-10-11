@@ -1,16 +1,12 @@
 name: Build
 on:
-  workflow_dispatch:
   # schedule:
   #   - cron: '0 1 * * 1'  #  1am every monday
   push:
     branches:
-    - xmain
+    - main
     paths-ignore:
     - '**/README.md'
-env:
-  FEDORA_TOOLBOX: registry.fedoraproject.org/fedora-toolbox:latest
-  WORKING_CONTAINER: fedora-toolbox-working-container
 jobs:
   build:
     name: Build Image
@@ -22,26 +18,16 @@ jobs:
       contents: read
       packages: write
       id-token: write
+    container:
+      image: registry.fedoraproject.org/fedora-silverblue:latest
     steps:
-      - uses: actions/checkout@v4
+      # - uses: actions/checkout@v4
       # - uses: docker/login-action@v3
       #   with:
       #     registry: ghcr.io
       #     username: ${{ github.repository_owner }}
       #     password: ${{ github.token }}
-      - name: init
+      - name: Build
+        shell: bash
         run: |
-          sudo apt-get -y -qq update
-          sudo apt-get -y install bats btrfs-progs git go-md2man golang libapparmor-dev libglib2.0-dev libgpgme11-dev libseccomp-dev libselinux1-dev make skopeo libbtrfs-dev
-          git clone https://github.com/containers/buildah
-          cd buildah
-          export GOPATH=$(pwd)
-          make runc all SECURITYTAGS="apparmor seccomp"
-          sudo make install install.runc
-          buildah --help
-      # - name: build
-      #   run: make
-
-
-
-
+          cat /etc/os-release
