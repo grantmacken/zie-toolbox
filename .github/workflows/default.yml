@@ -31,3 +31,5 @@ jobs:
         shell: bash
         run: |
           cat /etc/os-release
+          toolbox create
+          toolbox list
