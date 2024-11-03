@@ -19,12 +19,13 @@ jobs:
       packages: write
       id-token: write
     steps:
-      # - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Toolbox Build
+        shell: bash
+        run: make
+
       # - uses: docker/login-action@v3
       #   with:
       #     registry: ghcr.io
       #     username: ${{ github.repository_owner }}
       #     password: ${{ github.token }}
-      - name: Toolbox Build
-        shell: bash
-        run: make
