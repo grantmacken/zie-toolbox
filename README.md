@@ -40,6 +40,9 @@ Although not required by Neovim they can be used by Neovim e.g. ripgrep as a fas
 
 Note: this list will be extended
 
+<!--
+
+
 ## Enter the toolbox
 
 ```
@@ -53,7 +56,6 @@ toolbox enter tbx
 TODO!
 
 
-<!--
 
 Wolfi based toolbox for immutable operating systems
 
