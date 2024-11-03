@@ -90,7 +90,7 @@ info/neovim.info: latest/neovim.json
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $${SRC}"
 	mkdir -p files/usr/local
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C 	files/usr/local
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/usr/local
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local usr/local
 	buildah run $(WORKING_CONTAINER) ls -al $${TARG}
 	# buildah run $(WORKING_CONTAINER) sh -c "wget $${SRC} -q -O- | tar xz \
