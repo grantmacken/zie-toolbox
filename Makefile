@@ -51,7 +51,7 @@ cli: info/cli.info
 info/cli.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-for item in $(CLI_INSTALL)
+	for item in $(CLI_INSTALL)
 	do
 	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
 	buildah run $(WORKING_CONTAINER) dnf install \
