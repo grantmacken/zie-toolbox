@@ -86,15 +86,19 @@ neovim: info/neovim.info
 info/neovim.info: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $${SRC}"
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${SRC} -q -O- | tar xz \
-		--touch \
-		--no-overwrite-dir \
-		--same-owner \
-		--strip-components=1 \
-		-C /usr/local"
-	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
+	TARG=/tmp
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG}
+	buildah run $(WORKING_CONTAINER) ls -al $${TARG}
+	# buildah run $(WORKING_CONTAINER) sh -c "wget $${SRC} -q -O- | tar xz \
+	# 	--touch \
+	# 	--no-overwrite-dir \
+	# 	--same-owner \
+	# 	--strip-components=1 \
+	# 	-C /usr/local"
+	# buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## HOST-SPAWN
 
