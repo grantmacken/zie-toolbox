@@ -30,20 +30,12 @@ reset:
 	rm -rfv files
 	rm -rfv tmp
 
-init: info/buildah.info info/wolfi.info
 
 commit:
 	podman stop tbx || true
 	toolbox rm tbx || true
 	buildah commit $(WORKING_CONTAINER) tbx
 	toolbox create --image localhost/tbx tbx
-
-reset:
-	buildah rm $(WORKING_CONTAINER) || true
-	rm -rfv info
-	rm -rfv latest
-	rm -rfv files
-	rm -rfv tmp
 
 ###############################################
 
@@ -61,7 +53,6 @@ info/cli.info:
 	mkdir -p $(dir $@)
 for item in $(CLI_INSTALL)
 	do
-	# buildah run $(WORKING_CONTAINER) dnf info installed $${item}
 	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
 	buildah run $(WORKING_CONTAINER) dnf install \
 		--allowerasing \
