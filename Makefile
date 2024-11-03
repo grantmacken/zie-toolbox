@@ -91,15 +91,9 @@ info/neovim.info: latest/neovim.json
 	echo "source: $${SRC}"
 	mkdir -p files/usr/local
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/usr/local
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local usr/local
-	buildah run $(WORKING_CONTAINER) ls -al $${TARG}
-	# buildah run $(WORKING_CONTAINER) sh -c "wget $${SRC} -q -O- | tar xz \
-	# 	--touch \
-	# 	--no-overwrite-dir \
-	# 	--same-owner \
-	# 	--strip-components=1 \
-	# 	-C /usr/local"
-	# buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local /usr/local
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local
+	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## HOST-SPAWN
 
