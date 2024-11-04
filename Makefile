@@ -11,18 +11,21 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := gcc gcc-c++ ncurses-devel perl-File-Copy
+CLI_INSTALL  := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
+BUILD_INSTALL := make cmake autoconf perl-File-Copy intltool
+DEV_INSTALL  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 
-default: init cli neovim host-spawn dev luajit luarocks
+default: init cli neovim host-spawn luajit luarocks
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
 endif
 
-dev-gleam: erlang
+dev-gleam: dnf
+
+# erlang
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -49,7 +52,8 @@ info/working.info:
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX) | tee -a $@
 	echo
 
-cli: info/cli.info
+dnf: cli-tools build-tools devel
+cli-tools: info/cli.info
 info/cli.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -76,7 +80,45 @@ info/cli.info:
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI_INSTALL) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
-	buildah run $(WORKING_CONTAINER) dnf clean all
+
+build-tools: info/build-tools.info
+info/build-tools.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(BUILD_INSTALL)
+	do
+	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item}
+	done
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(BUILD_INSTALL) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+
+devel: info/devel.info
+info/devel.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(DEV_INSTALL)
+	do
+	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item}
+	done
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+
 
 
 
@@ -125,25 +167,6 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
 
-dev: info/dev.info
-info/dev.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	for item in $(DEV_INSTALL)
-	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}
-	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
-	buildah run $(WORKING_CONTAINER) dnf clean all
 
 ## https://github.com/openresty/luajit2
 latest/luajit.json:
@@ -227,3 +250,11 @@ info/erlang.info: latest/erlang.json
 	buildah run $(WORKING_CONTAINER) sh -c 'erl -version' > $@
 	echo -n 'OTP Release: ' >> $@
 	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
+
+rebar3: info/rebar3.info
+info/rebar3.info:
+	echo '##[ $@ ]##'
+	echo "waiting for download ... "
+	buildah add --chmod 755 $(WORKING_CONTAINER) https://s3.amazonaws.com/rebar3/rebar3 /usr/local/bin/rebar3
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
+	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
