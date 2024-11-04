@@ -11,24 +11,19 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-WOLFI_IMAGE     := cgr.dev/chainguard/wolfi-base:latest
-WOLFI_CONTAINER := wolfi-base-working-container
-
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
 DEV_INSTALL := gcc gcc-c++
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
-# include .env
-CORE := neovim host-spawn
-## rebar3 elixir gleam
-BEAM := erlang
 
 default: init cli neovim host-spawn dev luajit luarocks
-	buildah containers
+ifdef GITHUB_ACTIONS
+	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
+	buildah push ghcr.io/ghcr.io/grantmacken/tbx
+endif
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
-	buildah rm $(WOLFI_CONTAINER) || true
 	rm -rfv info
 	rm -rfv latest
 	rm -rfv files
@@ -51,67 +46,6 @@ info/working.info:
 	podman images | grep -oP '$(FEDORA_TOOLBOX)' || buildah pull $(FEDORA_TOOLBOX) | tee  $@
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX) | tee -a $@
 	echo
-
-info/wolfi.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	podman images | grep -oP '$(WOLFI_IMAGE)' || buildah pull $(WOLFI_IMAGE) | tee  $@
-	buildah containers | grep -oP $(WOLFI_CONTAINER) || buildah from $(WOLFI_IMAGE) | tee -a $@
-	echo
-
-## https://github.com/openresty/luajit2
-latest/luajit.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
-	jq '.[0]' > $@
-
-luajit: info/luajit.info
-info/luajit.info: latest/luajit.json
-	echo '##[ $@ ]##'
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
-	mkdir -p files/luajit
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luajit /tmp
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
-	buildah run $(WORKING_CONTAINER) sh -c 'lua -v' | tee $@
-
-
-latest/luarocks.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
-	jq  '.[0]' > $@
-
-luarocks: info/luarocks.info
-info/luarocks.info: latest/luarocks.json
-	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
-	echo "waiting for download ... "
-	mkdir -p files/luarocks
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
-		--lua-version=5.1 \
-		--with-lua-bin=/usr/local/bin \
-		--with-lua-lib=/usr/local/lib/lua\
-		--with-lua-include=/usr/local/include/luajit-2.1'
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install '
-	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
-	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
-
 
 cli: info/cli.info
 info/cli.info:
@@ -142,25 +76,6 @@ grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 	buildah run $(WORKING_CONTAINER) dnf clean all
 
-dev: info/dev.info
-info/dev.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	for item in $(DEV_INSTALL)
-	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}
-	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
-	buildah run $(WORKING_CONTAINER) dnf clean all
 
 
 ## NEOVIM
@@ -207,3 +122,77 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+
+dev: info/dev.info
+info/dev.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(DEV_INSTALL)
+	do
+	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item}
+	done
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+	buildah run $(WORKING_CONTAINER) dnf clean all
+
+## https://github.com/openresty/luajit2
+latest/luajit.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
+	jq '.[0]' > $@
+
+luajit: info/luajit.info
+info/luajit.info: latest/luajit.json
+	echo '##[ $@ ]##'
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
+	URL=$$(jq -r '.tarball_url' $<)
+	echo "name: $${NAME}"
+	echo "url: $${URL}"
+	mkdir -p files/luajit
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
+	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luajit /tmp
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
+	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
+	buildah run $(WORKING_CONTAINER) sh -c 'lua -v' | tee $@
+
+
+latest/luarocks.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
+	jq  '.[0]' > $@
+
+luarocks: info/luarocks.info
+info/luarocks.info: latest/luarocks.json
+	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
+	URL=$$(jq -r '.tarball_url' $<)
+	echo "name: $${NAME}"
+	echo "url: $${URL}"
+	echo "waiting for download ... "
+	mkdir -p files/luarocks
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
+	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+		--lua-version=5.1 \
+		--with-lua-bin=/usr/local/bin \
+		--with-lua-lib=/usr/local/lib/lua\
+		--with-lua-include=/usr/local/include/luajit-2.1'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
+	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
+
