@@ -12,7 +12,7 @@ FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
 CLI_INSTALL := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-DEV_INSTALL := gcc gcc-c++
+DEV_INSTALL := gcc gcc-c++ ncurses-devel perl-File-Copy
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 
@@ -21,6 +21,8 @@ ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
 endif
+
+dev-gleam: erlang
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -167,7 +169,6 @@ info/luajit.info: latest/luajit.json
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(WORKING_CONTAINER) sh -c 'lua -v' | tee $@
 
-
 latest/luarocks.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -196,3 +197,33 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 
+
+############################################################
+### dev gleam
+
+latest/erlang.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
+	jq  '[ .[] | select(.name | startswith("OTP 27")) ] | first' > $@
+
+erlang: info/erlang.info
+info/erlang.info: latest/erlang.json
+	echo '##[ $@ ]##'
+	jq -r '.tarball_url' $<
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
+	URL=$$(jq -r '.tarball_url' $<)
+	echo "name: $${NAME}"
+	echo "url: $${URL}"
+	echo "waiting for download ... "
+	DOWNLOAD=files/$(basename $(notdir $@))
+	mkdir -p $$DOWNLOAD
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
+	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah add --chmod 755 $(WORKING_CONTAINER) $$DOWNLOAD /tmp
+	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && ./configure \
+--without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et'
+	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && make && make install'
+	buildah run $(WORKING_CONTAINER) sh -c 'erl -version' > $@
+	echo -n 'OTP Release: ' >> $@
+	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
