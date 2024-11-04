@@ -18,7 +18,7 @@ DEV_INSTALL := gcc gcc-c++
 
 default: init cli neovim host-spawn dev luajit luarocks
 ifdef GITHUB_ACTIONS
-	buildah commit $(WORKING_CONTAINER) ghcr.io/ghcr.io/grantmacken/tbx
+	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
 endif
 
