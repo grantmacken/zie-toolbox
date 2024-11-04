@@ -11,13 +11,16 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-CLI_INSTALL  := bat eza fd-find flatpak-spawn fswatch fzf gh jq rclone ripgrep wl-clipboard yq zoxide
-BUILD_INSTALL := make cmake autoconf perl-File-Copy intltool
-DEV_INSTALL  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make rclone ripgrep wl-clipboard yq zoxide
+
+DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+
+BUILD_INSTALL := cmake autoconf perl-File-Copy intltool
+DEV_INSTALL   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 
-default: init dnf neovim host-spawn luajit luarocks
+default: init cli neovim host-spawn luarocks
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
@@ -103,24 +106,6 @@ info/build-tools.info:
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
-devel: info/devel.info
-info/devel.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	for item in $(DEV_INSTALL)
-	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}
-	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEV_INSTALL) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
 
 ## NEOVIM
 latest/neovim.json:
@@ -167,6 +152,26 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
 
+luarocks:info/deps.info info/luajit.info info/luarocks.info
+
+info/deps.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(DEPS)
+	do
+	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item}
+	done
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEPS) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+
 ## https://github.com/openresty/luajit2
 latest/luajit.json:
 	echo '##[ $@ ]##'
@@ -174,7 +179,7 @@ latest/luajit.json:
 	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
 	jq '.[0]' > $@
 
-luajit: info/luajit.info
+
 info/luajit.info: latest/luajit.json
 	echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
@@ -197,7 +202,6 @@ latest/luarocks.json:
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
 	jq  '.[0]' > $@
 
-luarocks: info/luarocks.info
 info/luarocks.info: latest/luarocks.json
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
