@@ -26,7 +26,4 @@ jobs:
           password: ${{ github.token }}
       - uses: actions/checkout@v4
       - name: Toolbox Build
-        run: |
-          make init dev-gleam
-
-
+        run: make
