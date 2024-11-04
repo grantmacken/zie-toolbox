@@ -77,15 +77,10 @@ info/luajit.info: latest/luajit.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luajit /tmp
-	buildah run $(WORKING_CONTAINER) sh -c "ls /tmp"
-
-lssss:
-	buildah run $(WORKING_CONTAINER) sh -c ""
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	buildah run $(WORKING_CONTAINER) sh -c 'lua -v' | tee $@
 
 
@@ -106,8 +101,7 @@ info/luarocks.info: latest/luarocks.json
 	echo "waiting for download ... "
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
-
-ssss:
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
