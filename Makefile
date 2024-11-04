@@ -25,7 +25,9 @@ endif
 
 dev-gleam: dnf
 
-# erlang
+clean-build-tools: 
+	buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
+
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
