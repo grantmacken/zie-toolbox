@@ -23,9 +23,10 @@ ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/tbx
 endif
 
-dev-gleam: dnf
+dev-gleam: dnf erlang rebar3
+	# buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
 
-clean-build-tools: 
+clean-build-tools:
 	buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
 
 
