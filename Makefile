@@ -19,7 +19,6 @@ DEV_INSTALL  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-dev
 
 default: init dnf neovim host-spawn luajit luarocks
 ifdef GITHUB_ACTIONS
-	buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
 endif
