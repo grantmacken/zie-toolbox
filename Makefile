@@ -34,7 +34,6 @@ reset:
 	rm -rfv files
 	rm -rfv tmp
 
-
 commit:
 	podman stop tbx || true
 	toolbox rm -f tbx || true
@@ -74,8 +73,14 @@ info/luajit.info: latest/luajit.json
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
 	echo "url: $${URL}"
+	mkdir -p files/luajit
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
 	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luajit /tmp
+	buildah run $(WORKING_CONTAINER) sh -c "ls /tmp"
+
+lssss:
+	buildah run $(WORKING_CONTAINER) sh -c ""
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
@@ -99,6 +104,10 @@ info/luarocks.info: latest/luarocks.json
 	echo "name: $${NAME}"
 	echo "url: $${URL}"
 	echo "waiting for download ... "
+	mkdir -p files/luarocks
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
+
+ssss:
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
