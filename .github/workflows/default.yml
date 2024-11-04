@@ -27,6 +27,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Toolbox Build
         run: |
-          make dev-gleam
+          make init dev-gleam
 
 
