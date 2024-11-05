@@ -285,10 +285,10 @@ info/erlang.info: latest/erlang.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
 	buildah run $(TBX) sh -c "rm -rf /tmp/*"
 	buildah add --chmod 755 $(TBX) $$DOWNLOAD /tmp
-	buildah run $(TBX)  /bin/bash -c "export ERL_TOP=/tmp"
-	buildah run $(TBX)  /bin/bash -c "cd $$ERL_TOP && ./configure \
+	buildah run $(TBX)  /bin/bash -c "cd /tmp && ./configure \
 --without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et"
-	buildah run $(TBX)  /bin/bash -c "cd $$ERL_TOP  && make -j$$(nproc) && sudo make -j$$(nproc) install"
+	buildah run $(TBX)  /bin/bash -c "cd /tmp  && make -j$$(nproc)"
+	buildah run $(TBX)  /bin/bash -c "cd /tmp && sudo make -j$$(nproc) install"
 	buildah run $(TBX) sh -c 'erl -version' > $@
 	echo -n 'OTP Release: ' >> $@
 	buildah run $(TBX) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
