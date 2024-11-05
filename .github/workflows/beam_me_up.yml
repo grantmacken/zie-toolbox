@@ -9,7 +9,7 @@ on:
     - '**/README.md'
 jobs:
   build:
-    name: Build Image
+    name: Beam Me Up
     runs-on: ubuntu-latest
     timeout-minutes: 20
     continue-on-error: false
@@ -26,5 +26,4 @@ jobs:
           password: ${{ github.token }}
       - uses: actions/checkout@v4
       - name: Beam Me Up Toolbox Build
-        run: |
-          echo ''
+        run: make beam_me_up

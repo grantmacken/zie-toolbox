@@ -15,8 +15,6 @@ CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make rclone ripgrep wl-cl
 
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-BUILD_INSTALL := cmake autoconf perl-File-Copy intltool
-DEV_INSTALL   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 
@@ -26,12 +24,8 @@ ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/tbx
 endif
 
-dev-gleam: dnf erlang rebar3 elixir gleam
-	# buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
-
 clean-build-tools:
 	buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
-
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -50,7 +44,6 @@ commit:
 ###############################################
 
 init: info/working.info
-
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -58,7 +51,6 @@ info/working.info:
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX) | tee -a $@
 	echo
 
-dnf: cli-tools build-tools devel
 cli-tools: info/cli.info
 info/cli.info:
 	echo '##[ $@ ]##'
@@ -87,24 +79,6 @@ info/cli.info:
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
-build-tools: info/build-tools.info
-info/build-tools.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	for item in $(BUILD_INSTALL)
-	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}
-	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(BUILD_INSTALL) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
 
 
 ## NEOVIM
@@ -226,6 +200,39 @@ info/luarocks.info: latest/luarocks.json
 ############################################################
 ### dev gleam
 
+TBX := tbx-working-container
+ # requirement for building  erlang rebar3 elixir
+BUILD_TOOLS := cmake autoconf perl-File-Copy intltool
+
+beam_me_up: from-tbx build-tools erlang rebar3 elixir gleam
+
+from-tbx: info/tbx.info
+info/tbx.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	podman images | grep -oP 'ghcr.io/grantmacken/tbx' || buildah pull ghcr.io/grantmacken/tbx | tee  $@
+	buildah from ghcr.io/grantmacken/tbx | tee -a $@
+	echo
+
+build-tools: info/build-tools.info
+info/build-tools.info:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	for item in $(BUILD_INSTALL)
+	do
+	buildah run $(TBX) rpm -ql $${item} &>/dev/null ||
+	buildah run $(TBX) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item}
+	done
+	buildah run $(TBX) sh -c "dnf -y info installed $(BUILD_TOOLS) | \
+grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+paste - - - " | tee $@
+
 latest/erlang.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -244,22 +251,22 @@ info/erlang.info: latest/erlang.json
 	DOWNLOAD=files/$(basename $(notdir $@))
 	mkdir -p $$DOWNLOAD
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) $$DOWNLOAD /tmp
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && ./configure \
+	buildah run $(TBX) sh -c "rm -rf /tmp/*"
+	buildah add --chmod 755 $(TBX) $$DOWNLOAD /tmp
+	buildah run $(TBX)  /bin/bash -c 'cd /tmp && ./configure \
 --without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et'
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) sh -c 'erl -version' > $@
+	buildah run $(TBX)  /bin/bash -c 'cd /tmp && make && make install'
+	buildah run $(TBX) sh -c 'erl -version' > $@
 	echo -n 'OTP Release: ' >> $@
-	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
+	buildah run $(TBX) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
 
 rebar3: info/rebar3.info
 info/rebar3.info:
 	echo '##[ $@ ]##'
 	echo "waiting for download ... "
 	buildah add --chmod 755 $(WORKING_CONTAINER) https://s3.amazonaws.com/rebar3/rebar3 /usr/local/bin/rebar3
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
-	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
+	buildah run $(TBX) ls -al /usr/local/bin/
+	buildah run $(TBX) rebar3 help | tee $@
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -269,7 +276,7 @@ latest/elixir.json:
 elixir: info/elixir.info
 info/elixir.info: latest/elixir.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah run $(TBX) sh -c "rm -rf /tmp/*"
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
@@ -278,11 +285,11 @@ info/elixir.info: latest/elixir.json
 	DOWNLOAD=files/$(basename $(notdir $@))
 	mkdir -p $$DOWNLOAD
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) $$DOWNLOAD /tmp
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
-	buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
+	buildah run $(TBX) sh -c "rm -rf /tmp/*"
+	buildah add --chmod 755 $(TBX) $$DOWNLOAD /tmp
+	buildah run $(TBX) sh -c 'cd /tmp && make && make install'
+	buildah run $(TBX) sh -c 'elixir --version' | tee $@
+	buildah run $(TBX) sh -c 'mix --version' | tee -a $@
 
 latest/gleam.download:
 	mkdir -p $(dir $@)
@@ -297,7 +304,7 @@ info/gleam.info: latest/gleam.download
 	DOWNLOAD_URL=$$(cat $<)
 	echo "download url: $${DOWNLOAD_URL}"
 	wget $${URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam /usr/local/bin/gleam
-	buildah run $(WORKING_CONTAINER) gleam --version > $@
-	buildah run $(WORKING_CONTAINER) gleam --help >> $@
+	buildah add --chmod 755 $(TBX) files/gleam /usr/local/bin/gleam
+	buildah run $(TBX) gleam --version > $@
+	buildah run $(TBX) gleam --help >> $@
 
