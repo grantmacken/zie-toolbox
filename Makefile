@@ -20,7 +20,7 @@ DEV_INSTALL   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-de
 # gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
 # kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
 
-default: init cli neovim host-spawn luarocks
+default: init cli-tools neovim host-spawn luarocks
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
