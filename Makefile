@@ -225,7 +225,6 @@ BEAM := erlang erlang-rebar3 elixir
 # cmake autoconf perl-File-Copy intltool
 
 beam_me_up: from-tbx beam gleam
-
 # rebar3 elixir gleam
 ifdef GITHUB_ACTIONS
 	buildah commit $(TBX) ghcr.io/grantmacken/tbx_gleam
@@ -254,7 +253,7 @@ info/beam.info:
 		-y \
 		$${item}
 	done
-	buildah run $(TBX) sh -c "dnf -y info installed $(BUILD_TOOLS) | \
+	buildah run $(TBX) sh -c "dnf -y info installed $(BEAM) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
@@ -270,7 +269,7 @@ info/gleam.info: latest/gleam.download
 	mkdir -p files
 	DOWNLOAD_URL=$$(cat $<)
 	echo "download url: $${DOWNLOAD_URL}"
-	wget $${URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
+	wget $${DOWNLOAD_URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
 	buildah add --chmod 755 $(TBX) files/gleam /usr/local/bin/gleam
 	buildah run $(TBX) gleam --version > $@
 	buildah run $(TBX) gleam --help >> $@
