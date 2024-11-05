@@ -218,7 +218,7 @@ build-tools: info/build-tools.info
 info/build-tools.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	for item in $(BUILD_INSTALL)
+	for item in $(BUILD_TOOLS)
 	do
 	buildah run $(TBX) rpm -ql $${item} &>/dev/null ||
 	buildah run $(TBX) dnf install \
