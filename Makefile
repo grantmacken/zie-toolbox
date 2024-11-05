@@ -202,9 +202,35 @@ info/luarocks.info: latest/luarocks.json
 
 TBX := tbx-working-container
  # requirement for building  erlang rebar3 elixir
-BUILD_TOOLS := cmake autoconf perl-File-Copy intltool
+BEAM_DEPS := ca-certificates \
+glibc \
+ld-linux \
+libgcc \
+libstdc++ \
+libxcrypt \
+ncurses \
+unixODBC \
 
-beam_me_up: from-tbx build-tools erlang rebar3 elixir gleam
+# DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+# https://github.com/erlang/docker-erlang-otp/blob/42839b88d99b77249ae634452f6dc972594805bc/27/slim/Dockerfile
+BUILD_TOOLS := lksctp-tools-devel autoconf perl-File-Copy intltool
+
+
+# libcrypt1
+# libxcrypt
+# glibc-locale-posix
+# zlib
+
+
+# cmake autoconf perl-File-Copy intltool
+
+beam_me_up: from-tbx beam-build-deps erlang 
+
+# rebar3 elixir gleam
+ifdef GITHUB_ACTIONS
+	buildah commit $(TBX) ghcr.io/grantmacken/tbx_gleam
+	buildah push ghcr.io/grantmacken/tbx_gleam
+endif
 
 from-tbx: info/tbx.info
 info/tbx.info:
@@ -212,9 +238,15 @@ info/tbx.info:
 	mkdir -p $(dir $@)
 	podman images | grep -oP 'ghcr.io/grantmacken/tbx' || buildah pull ghcr.io/grantmacken/tbx | tee  $@
 	buildah from ghcr.io/grantmacken/tbx | tee -a $@
-	echo
 
-build-tools: info/build-tools.info
+
+beam:
+	# podman images | grep -oP 'cgr.dev/chainguard/erlang' || buildah pull cgr.dev/chainguard/erlang:latest-dev
+	# podman pull cgr.dev/chainguard/erlang:latest-dev
+	podman run --entrypoint '[ "/bin/bash", "-c"]' cgr.dev/chainguard/erlang:latest-dev 'ls -al /usr/bin'
+
+
+beam-build-deps: info/build-tools.info
 info/build-tools.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -253,9 +285,10 @@ info/erlang.info: latest/erlang.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
 	buildah run $(TBX) sh -c "rm -rf /tmp/*"
 	buildah add --chmod 755 $(TBX) $$DOWNLOAD /tmp
-	buildah run $(TBX)  /bin/bash -c 'cd /tmp && ./configure \
---without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et'
-	buildah run $(TBX)  /bin/bash -c 'cd /tmp && make && make install'
+	buildah run $(TBX)  /bin/bash -c "export ERL_TOP=/tmp"
+	buildah run $(TBX)  /bin/bash -c "cd $$ERL_TOP && ./configure \
+--without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et"
+	buildah run $(TBX)  /bin/bash -c "cd $$ERL_TOP  && make -j$$(nproc) && sudo make -j$$(nproc) install"
 	buildah run $(TBX) sh -c 'erl -version' > $@
 	echo -n 'OTP Release: ' >> $@
 	buildah run $(TBX) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
