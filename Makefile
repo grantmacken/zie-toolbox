@@ -15,14 +15,9 @@ CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make rclone ripgrep wl-cl
  # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-REMOVE := vim-minimal default-editor \
-gcc-c++ \
-gettext-devel \
-libevent-devel \
-openssl-devel \
-readline-devel
+REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools neovim host-spawn luarocks clean
+default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
@@ -38,6 +33,15 @@ reset:
 	rm -rfv info
 	rm -rfv latest
 	rm -rfv files
+
+
+.PHONY: help
+help: ## show this help
+	@cat $(MAKEFILE_LIST) |
+	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
+	sort |
+	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 
 # commit:
 # 	podman stop tbx || true
@@ -200,8 +204,8 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 
-l
 ####################################################
+
 pull:
 	podman pull ghcr.io/grantmacken/tbx:latest
 
