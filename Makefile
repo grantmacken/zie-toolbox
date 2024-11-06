@@ -226,6 +226,11 @@ BEAM := erlang erlang-rebar3 elixir
 
 beam_me_up: from-tbx beam gleam
 # rebar3 elixir gleam
+	buildah run $(TBX) which erl
+	buildah run $(TBX) which rebar3
+	buildah run $(TBX) which elixir
+	buildah run $(TBX) which hex
+	buildah run $(TBX) which gleam
 ifdef GITHUB_ACTIONS
 	buildah commit $(TBX) ghcr.io/grantmacken/tbx_gleam
 	buildah push ghcr.io/grantmacken/tbx_gleam
@@ -271,5 +276,5 @@ info/gleam.info: latest/gleam.download
 	echo "download url: $${DOWNLOAD_URL}"
 	wget $${DOWNLOAD_URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
 	buildah add --chmod 755 $(TBX) files/gleam /usr/local/bin/gleam
-	buildah run $(TBX) gleam --version > $@
-	buildah run $(TBX) gleam --help >> $@
+	buildah run $(TBX) gleam --version | tee $@
+	buildah run $(TBX) gleam --help  | tee -a $@
