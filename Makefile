@@ -12,40 +12,38 @@ FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
 CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make rclone ripgrep wl-clipboard yq zoxide
-
+ # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-BUILD_INSTALL := cmake autoconf perl-File-Copy intltool
-DEV_INSTALL   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-# gcc-c++ glibc-devel make ncurses-devel openssl-devel autoconf -y
-# kitty-terminfo make cmake ncurses-devel openssl-devel perl-core libevent-devel readline-devel gettext-devel intltool
+REMOVE := vim-minimal default-editor \
+gcc-c++ \
+gettext-devel \
+libevent-devel \
+openssl-devel \
+readline-devel
 
-default: init cli-tools neovim host-spawn luarocks
+default: init cli-tools neovim host-spawn luarocks clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
 	buildah push ghcr.io/grantmacken/tbx
 endif
 
-dev-gleam: dnf erlang rebar3 elixir gleam
-	# buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
-
-clean-build-tools:
-	buildah run $(WORKING_CONTAINER) dnf remove cmake autoconf perl-File-Copy intltool
-
+clean:
+	buildah run $(WORKING_CONTAINER) dnf leaves
+	buildah run $(WORKING_CONTAINER) dnf autoremove
+	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
 	rm -rfv info
 	rm -rfv latest
 	rm -rfv files
-	rm -rfv tmp
 
-commit:
-	podman stop tbx || true
-	toolbox rm -f tbx || true
-	buildah commit $(WORKING_CONTAINER) tbx
-	toolbox create --image localhost/tbx tbx
-	toolbox init-container tbx
+# commit:
+# 	podman stop tbx || true
+# 	toolbox rm -f tbx || true
+# 	buildah commit $(WORKING_CONTAINER) tbx
+# 	toolbox create --image localhost/tbx tbx
 
 ###############################################
 
@@ -86,26 +84,6 @@ info/cli.info:
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI_INSTALL) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
-
-build-tools: info/build-tools.info
-info/build-tools.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	for item in $(BUILD_INSTALL)
-	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}
-	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(BUILD_INSTALL) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
-
 
 ## NEOVIM
 latest/neovim.json:
@@ -179,7 +157,6 @@ latest/luajit.json:
 	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
 	jq '.[0]' > $@
 
-
 info/luajit.info: latest/luajit.json
 	echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
@@ -223,81 +200,11 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 
-############################################################
-### dev gleam
+l
+####################################################
+pull:
+	podman pull ghcr.io/grantmacken/tbx:latest
 
-latest/erlang.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq  '[ .[] | select(.name | startswith("OTP 27")) ] | first' > $@
-
-erlang: info/erlang.info
-info/erlang.info: latest/erlang.json
-	echo '##[ $@ ]##'
-	jq -r '.tarball_url' $<
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
-	echo "waiting for download ... "
-	DOWNLOAD=files/$(basename $(notdir $@))
-	mkdir -p $$DOWNLOAD
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) $$DOWNLOAD /tmp
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && ./configure \
---without-javac --without-odbc --without-wx --without-debugger --without-observer --without-cdv --without-et'
-	buildah run $(WORKING_CONTAINER)  /bin/bash -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) sh -c 'erl -version' > $@
-	echo -n 'OTP Release: ' >> $@
-	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." >>  $@
-
-rebar3: info/rebar3.info
-info/rebar3.info:
-	echo '##[ $@ ]##'
-	echo "waiting for download ... "
-	buildah add --chmod 755 $(WORKING_CONTAINER) https://s3.amazonaws.com/rebar3/rebar3 /usr/local/bin/rebar3
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
-	buildah run $(WORKING_CONTAINER) rebar3 help | tee $@
-
-latest/elixir.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/elixir-lang/elixir/releases/latest > $@
-
-elixir: info/elixir.info
-info/elixir.info: latest/elixir.json
-	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
-	echo "waiting for download ... "
-	DOWNLOAD=files/$(basename $(notdir $@))
-	mkdir -p $$DOWNLOAD
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C $$DOWNLOAD
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) $$DOWNLOAD /tmp
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
-	buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
-	buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
-
-latest/gleam.download:
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
-	jq  -r '.assets[].browser_download_url' |
-	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
-
-gleam: info/gleam.info
-info/gleam.info: latest/gleam.download
-	mkdir -p $(dir $@)
-	mkdir -p files
-	DOWNLOAD_URL=$$(cat $<)
-	echo "download url: $${DOWNLOAD_URL}"
-	wget $${URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam /usr/local/bin/gleam
-	buildah run $(WORKING_CONTAINER) gleam --version > $@
-	buildah run $(WORKING_CONTAINER) gleam --help >> $@
-
+worktree:
+	# automatically creates a new branch whose name is the final component of <path>
+	git worktree add ../beam_me_up
