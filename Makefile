@@ -19,8 +19,8 @@ REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  ope
 
 default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
 ifdef GITHUB_ACTIONS
-	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/tbx
-	buildah push ghcr.io/grantmacken/tbx
+	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
+	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
 
 clean:
