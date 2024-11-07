@@ -11,13 +11,19 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make rclone ripgrep wl-clipboard yq zoxide
+CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make ripgrep wl-clipboard yq zoxide
  # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
 REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
+	echo 'final checks'
+	which nvim
+	which host-spawn
+	which lua
+	which luarocks
+	which bat #cli tools
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -34,14 +40,12 @@ reset:
 	rm -rfv latest
 	rm -rfv files
 
-
 .PHONY: help
 help: ## show this help
 	@cat $(MAKEFILE_LIST) |
 	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
 
 # commit:
 # 	podman stop tbx || true
@@ -60,12 +64,11 @@ info/working.info:
 	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX) | tee -a $@
 	echo
 
-dnf: cli-tools build-tools devel
 cli-tools: info/cli.info
 info/cli.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	for item in $(CLI_INSTALL)
+	for item in $(CLI)
 	do
 	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
 	buildah run $(WORKING_CONTAINER) dnf install \
@@ -85,7 +88,7 @@ info/cli.info:
 	fi
 	buildah run $(WORKING_CONTAINER) whereis $${item}
 	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI_INSTALL) | \
+	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 

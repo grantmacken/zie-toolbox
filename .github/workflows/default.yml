@@ -1,7 +1,7 @@
-name: Build
+name: Build zie-toolbox image
 on:
-  # schedule:
-  #   - cron: '0 1 * * 1'  #  1am every monday
+  schedule:
+    - cron: '0 1 * * 1'  #  1am every monday
   push:
     branches:
     - main
