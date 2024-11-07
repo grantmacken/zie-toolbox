@@ -9,6 +9,7 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 
 TBX := zie-toolbox-working-container
+BEAM := erlang erlang-rebar3 elixir
 
 beam_me_up: from-tbx beam gleam
 	# rebar3 elixir gleam:w
