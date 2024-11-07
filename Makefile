@@ -18,16 +18,18 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
-	echo 'final checks'
-	which nvim
-	which host-spawn
-	which lua
-	which luarocks
-	which bat #cli tools
+
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
+
+# echo 'final checks'
+# which nvim
+# which host-spawn
+# which lua
+# which luarocks
+# which bat #cli tools
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf leaves
@@ -77,7 +79,7 @@ info/cli.info:
 		--skip-broken \
 		--no-allow-downgrade \
 		-y \
-		$${item}
+		$${item} &>/dev/null
 	if [ "$${item}" == 'fd-find' ]
 	then
 	item=fd
@@ -151,7 +153,7 @@ info/deps.info:
 		--skip-broken \
 		--no-allow-downgrade \
 		-y \
-		$${item}
+		$${item} &>/dev/null
 	done
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEPS) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
