@@ -80,15 +80,6 @@ info/cli.info:
 		--no-allow-downgrade \
 		-y \
 		$${item} &>/dev/null
-	if [ "$${item}" == 'fd-find' ]
-	then
-	item=fd
-	fi
-	if [ "$${item}" == 'ripgrep' ]
-	then
-	item=rg
-	fi
-	buildah run $(WORKING_CONTAINER) whereis $${item}
 	done
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
@@ -113,7 +104,6 @@ info/neovim.info: latest/neovim.json
 	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## HOST-SPAWN
-
 latest/host-spawn.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
