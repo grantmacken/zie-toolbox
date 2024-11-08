@@ -42,7 +42,7 @@ info/beam.info:
 		--skip-broken \
 		--no-allow-downgrade \
 		-y \
-		$${item}
+		$${item} &>/dev/null
 	done
 	buildah run $(TBX) sh -c "dnf -y info installed $(BEAM) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
