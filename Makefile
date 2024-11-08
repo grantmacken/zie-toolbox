@@ -47,6 +47,12 @@ info/beam.info:
 	buildah run $(TBX) sh -c "dnf -y info installed $(BEAM) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
+	buildah run $(TBX) sh -c 'erl -version' | tee -a $@
+	echo -n 'OTP Release: '
+	buildah run $(TBX) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." | tee -a  $@
+	echo -n 'Elixir: ' && buildah run $(WORKING_CONTAINER) sh -c 'elixir --version' | tee $@
+	echo -n 'Mix: ' && buildah run $(WORKING_CONTAINER) sh -c 'mix --version' | tee -a $@
+	echo -n 'Rebar3: ' && buildah run $(WORKING_CONTAINER) sh -c 'rebar3 --version' | tee -a $@
 
 latest/gleam.download:
 	mkdir -p $(dir $@)
