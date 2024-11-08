@@ -33,8 +33,6 @@ beam: info/beam.info
 info/beam.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah run $(TBX) localectl set-locale LANG=C.UTF-8
-	buildah run $(TBX) localectl set-locale LC_ALL=C.UTF-8
 	for item in $(BEAM)
 	buildah run $(TBX) rpm -ql $${item} &>/dev/null ||
 	buildah run $(TBX) dnf install \
