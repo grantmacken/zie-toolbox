@@ -19,7 +19,7 @@ beam_me_up: from-tbx beam gleam
 	buildah run $(TBX) which gleam
 ifdef GITHUB_ACTIONS
 	buildah commit $(TBX) ghcr.io/grantmacken/beam-me-up-toolbox
-	buildah push ghcr.io/grantmacken/beam-me-up--toolbox
+	buildah push ghcr.io/grantmacken/beam-me-up-toolbox
 endif
 
 from-tbx: info/tbx.info
