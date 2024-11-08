@@ -16,7 +16,6 @@ beam_me_up: from-tbx beam gleam
 	buildah run $(TBX) which erl
 	buildah run $(TBX) which rebar3
 	buildah run $(TBX) which elixir
-	buildah run $(TBX) which hex
 	buildah run $(TBX) which gleam
 ifdef GITHUB_ACTIONS
 	buildah commit $(TBX) ghcr.io/grantmacken/beam-me-up-toolbox
