@@ -33,8 +33,10 @@ beam: info/beam.info
 info/beam.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
+	WORKING_CONTAINER
 	for item in $(BEAM)
-	do
+	buildah run $(TBX) localectl set-locale LANG=C.UTF-8
+	buildah run $(TBX) localectl set-locale LC_ALL=C.UTF-8
 	buildah run $(TBX) rpm -ql $${item} &>/dev/null ||
 	buildah run $(TBX) dnf install \
 		--allowerasing \
