@@ -26,7 +26,7 @@ from-tbx: info/tbx.info
 info/tbx.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP 'ghcr.io/grantmacken/zie-toolbox' || buildah pull ghcr.io/grantmacken/zie-toolbox | tee  $@
+	podman images | grep -oP 'ghcr.io/grantmacken/zie-toolbox' || buildah pull ghcr.io/grantmacken/zie-toolbox:latest | tee  $@
 	buildah from ghcr.io/grantmacken/zie-toolbox | tee -a $@
 
 beam: info/beam.info
@@ -35,7 +35,6 @@ info/beam.info:
 	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
-	buildah run $(TBX) rpm -ql $${item} &>/dev/null ||
 	buildah run $(TBX) dnf install \
 		--allowerasing \
 		--skip-unavailable \
