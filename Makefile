@@ -18,7 +18,6 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
-
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -32,8 +31,8 @@ endif
 # which bat #cli tools
 
 clean:
-	buildah run $(WORKING_CONTAINER) dnf leaves
-	buildah run $(WORKING_CONTAINER) dnf autoremove
+	# buildah run $(WORKING_CONTAINER) dnf leaves
+	# buildah run $(WORKING_CONTAINER) dnf autoremove
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 
 reset:
@@ -49,13 +48,6 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-# commit:
-# 	podman stop tbx || true
-# 	toolbox rm -f tbx || true
-# 	buildah commit $(WORKING_CONTAINER) tbx
-# 	toolbox create --image localhost/tbx tbx
-
-###############################################
 
 init: info/working.info
 
@@ -72,7 +64,6 @@ info/cli.info:
 	mkdir -p $(dir $@)
 	for item in $(CLI)
 	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
 	buildah run $(WORKING_CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
@@ -136,7 +127,6 @@ info/deps.info:
 	mkdir -p $(dir $@)
 	for item in $(DEPS)
 	do
-	buildah run $(WORKING_CONTAINER) rpm -ql $${item} &>/dev/null ||
 	buildah run $(WORKING_CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
