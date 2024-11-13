@@ -72,7 +72,7 @@ info/cli.info:
 		--no-allow-downgrade \
 		-y \
 		$${item} &>/dev/null
-	buildah run $(WORKING_CONTAINER) dnf repoquery --info --installed $${item}
+	# buildah run $(WORKING_CONTAINER) dnf repoquery --info --installed $${item}
 	done
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
@@ -187,11 +187,15 @@ info/luarocks.info: latest/luarocks.json
  --lua-version=5.1 \
  --with-lua-bin=/usr/local/bin \
  --with-lua-lib=/usr/local/lib/lua \
- --with-lua-include=/usr/local/include/luajit-2.1 \
- --sysconfdir=/etc/xdg/luarocks --force-config --disable-incdir-check'
+ --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	# --with-lua-include=/usr/local/include/luajit-2.1 \
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	# buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
+	buildah run $(WORKING_CONTAINER) exa --tree /etc/xdg
+	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/luarocks.config
+
+
 
 ####################################################
 

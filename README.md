@@ -10,7 +10,7 @@ I use Fedora silverblue so these come already installed out of the box.
 ## Getting Started
 
 1. Pull the image as gitHub actions produces the the zie-toolbox so you don't have to run make locally.
-2. Create the toolbox with a easy to remember name 
+2. Create the toolbox with a easy to remember name
 3. Enter the toolbox
 
 ```
@@ -33,7 +33,7 @@ The idea here is to have a **long running** toolbox containing the CLI tools I r
 For the *main* toolbox I have tried to limit contained CLI tools to useful stuff for code editing and have **excluded**
  1. Runtimes and compiler build tooling with  [chainguard container images](https://images.chainguard.dev)
  2. Language Server Protocal servers:  I run these as separate containers
- 3. Code linters and formatters not associated LSP servers as separate wolfi containers
+ 3. Code linters and formatters not associated LSP servers as separate Wolfi containers
  <!-- Also checkout test containers are separate container -->
 
 ## Neovim , luajit and luarocks
