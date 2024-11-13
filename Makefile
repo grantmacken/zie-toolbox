@@ -11,7 +11,7 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-CLI := bat eza fd-find flatpak-spawn fswatch fzf gh jq make ripgrep wl-clipboard yq zoxide
+CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make ripgrep wl-clipboard yq zoxide
  # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
@@ -34,6 +34,7 @@ clean:
 	# buildah run $(WORKING_CONTAINER) dnf leaves
 	# buildah run $(WORKING_CONTAINER) dnf autoremove
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 
 reset:
 	buildah rm $(WORKING_CONTAINER) || true
@@ -71,6 +72,7 @@ info/cli.info:
 		--no-allow-downgrade \
 		-y \
 		$${item} &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf repoquery --info --installed $${item}
 	done
 	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
@@ -113,7 +115,7 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
 	echo ' - add symlinks to exectables on host using host-spawn'
-	# buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/make'
+	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
@@ -170,7 +172,8 @@ latest/luarocks.json:
 
 info/luarocks.info: latest/luarocks.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
@@ -181,18 +184,19 @@ info/luarocks.info: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
-		--lua-version=5.1 \
-		--with-lua-bin=/usr/local/bin \
-		--with-lua-lib=/usr/local/lib/lua\
-		--with-lua-include=/usr/local/include/luajit-2.1'
+ --lua-version=5.1 \
+ --with-lua-bin=/usr/local/bin \
+ --with-lua-lib=/usr/local/lib/lua \
+ --with-lua-include=/usr/local/include/luajit-2.1 \
+ --sysconfdir=/etc/xdg/luarocks --force-config --disable-incdir-check'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
+	# buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 
 ####################################################
 
 pull:
-	podman pull ghcr.io/grantmacken/tbx:latest
+	podman pull ghcr.io/grantmacken/zie-toolbox:latest
 
 worktree:
 	# automatically creates a new branch whose name is the final component of <path>
