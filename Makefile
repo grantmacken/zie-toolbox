@@ -193,7 +193,8 @@ info/luarocks.info: latest/luarocks.json
 	# buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
 	buildah run $(WORKING_CONTAINER) exa --tree /etc/xdg
-	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/luarocks.config
+	buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/
+	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
 
 
 
