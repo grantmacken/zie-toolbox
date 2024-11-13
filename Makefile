@@ -184,10 +184,10 @@ info/luarocks.info: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
- --lua-version=5.1 \
- --with-lua-bin=/usr/local/bin \
- --with-lua-lib=/usr/local/lib/lua \
+ --lua-version=5.1 --with-lua-interpreter=luajit \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	#--with-lua-bin=/usr/local/bin \
+	#--with-lua-lib=/usr/local/lib/lua \
 	# --with-lua-include=/usr/local/include/luajit-2.1 \
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	# buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
