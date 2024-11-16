@@ -109,11 +109,8 @@ info/host-spawn.info: latest/host-spawn.json
 	TARG=/usr/local/bin/host-spawn
 	echo "$$SRC"
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG}
-	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /usr/local/bin/'
-	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
-	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - check: " &&  which host-spawn'
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
-	buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
+	# buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
 	echo ' - add symlinks to exectables on host using host-spawn'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
@@ -184,7 +181,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
- --lua-version=5.1 --with-lua-interpreter=luajit \
+ --lua-version=5.1 --with-lu/a-interpreter=luajit \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	#--with-lua-bin=/usr/local/bin \
 	#--with-lua-lib=/usr/local/lib/lua \
@@ -195,6 +192,18 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) exa --tree /etc/xdg
 	buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/
 	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
+
+stylua: info/stylua.info
+info/stylua.info:
+	buildah copy --from JohnnyMorganz/StyLua:0.20.0  --chmod 755 $(WORKING_CONTAINER) /stylua /usr/local/bin/stylua
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
+	buildah run $(WORKING_CONTAINER) stylua --version | tee $@
+
+
+
+
+
+
 
 
 
