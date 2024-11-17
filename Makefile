@@ -15,7 +15,7 @@ CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make ripgrep wl-cl
  # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-REMOVE := vim-minimal default-editor gcc-c++  gettext-devel  libevent-devel  openssl-devel  readline-devel
+REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
 ifdef GITHUB_ACTIONS
@@ -48,7 +48,6 @@ help: ## show this help
 	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-
 
 init: info/working.info
 
@@ -193,11 +192,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/
 	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
 
-stylua: info/stylua.info
-info/stylua.info:
-	buildah copy --from JohnnyMorganz/StyLua:0.20.0  --chmod 755 $(WORKING_CONTAINER) /stylua /usr/local/bin/stylua
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
-	buildah run $(WORKING_CONTAINER) stylua --version | tee $@
+
 
 
 
