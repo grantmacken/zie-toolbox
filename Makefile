@@ -90,7 +90,8 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
  --lua-version=5.1 --with-lua-interpreter=luajit \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
+	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
 	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
