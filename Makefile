@@ -23,6 +23,12 @@ ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
 
+# echo 'final checks'
+# which nvim
+# which host-spawn
+# which lua
+# which luarocks
+# which bat #cli tools
 
 clean:
 	# buildah run $(WORKING_CONTAINER) dnf leaves
