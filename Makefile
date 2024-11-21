@@ -11,7 +11,7 @@ MAKEFLAGS += --silent
 FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
-CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make ripgrep wl-clipboard yq zoxide
+CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep wl-clipboard yq zoxide
  # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
@@ -23,12 +23,6 @@ ifdef GITHUB_ACTIONS
 	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
 
-# echo 'final checks'
-# which nvim
-# which host-spawn
-# which lua
-# which luarocks
-# which bat #cli tools
 
 clean:
 	# buildah run $(WORKING_CONTAINER) dnf leaves
@@ -111,7 +105,6 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
 	# buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
 	echo ' - add symlinks to exectables on host using host-spawn'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/node'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
 	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
@@ -183,16 +176,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
  --lua-version=5.1 --with-lua-interpreter=luajit \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-	#--with-lua-bin=/usr/local/bin \
-	#--with-lua-lib=/usr/local/lib/lua \
-	# --with-lua-include=/usr/local/include/luajit-2.1 \
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	# buildah run $(WORKING_CONTAINER) sh -c 'luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
-	buildah run $(WORKING_CONTAINER) exa --tree /etc/xdg
-	buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/
-	buildah run $(WORKING_CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
-
 
 
 
