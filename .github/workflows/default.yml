@@ -1,10 +1,8 @@
 name: Build zie-toolbox image
 on:
-  schedule:
-    - cron: '0 1 * * 1'  #  1am every monday
   push:
     branches:
-    - main
+    - tbx-luarocks
     paths-ignore:
     - '**/README.md'
 jobs:
