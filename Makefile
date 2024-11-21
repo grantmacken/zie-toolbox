@@ -12,7 +12,7 @@ IMAGE     := ghcr.io/grantmacken/zie-toolbox
 CONTAINER := zie-toolbox-working-container
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-default: from-tbx deps
+default: from-tbx deps luajit
 
 from-tbx: info/tbx.info
 info/tbx.info:
@@ -20,7 +20,6 @@ info/tbx.info:
 	mkdir -p $(dir $@)
 	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE):latest | tee  $@
 	buildah from  $(IMAGE) | tee -a $@
-
 
 # luarocks:info/deps.info info/luajit.info info/luarocks.info
 
@@ -43,6 +42,7 @@ grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
 ## https://github.com/openresty/luajit2
+luajit: latest/luajit.json
 latest/luajit.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
