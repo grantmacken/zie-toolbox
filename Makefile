@@ -12,23 +12,20 @@ FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
 WORKING_CONTAINER := fedora-toolbox-working-container
 
 CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep wl-clipboard yq zoxide
- # common deps used to build luajit and luarocks
+
+# TODO move to helper container
+# common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+REMOVE := vim-minimal default-editor
+# gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+# luarocks removed
 
-default: init cli-tools neovim host-spawn luarocks clean ## build the toolbox
+default: init cli-tools neovim host-spawn clean ## build the toolbox
 ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
-
-# echo 'final checks'
-# which nvim
-# which host-spawn
-# which lua
-# which luarocks
-# which bat #cli tools
 
 clean:
 	# buildah run $(WORKING_CONTAINER) dnf leaves
