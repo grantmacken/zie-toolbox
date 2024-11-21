@@ -12,7 +12,7 @@ IMAGE     := ghcr.io/grantmacken/zie-toolbox
 CONTAINER := zie-toolbox-working-container
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-default: from-tbx deps luajit
+default: from-tbx deps luajit luarocks
 
 from-tbx: info/tbx.info
 info/tbx.info:
@@ -42,7 +42,8 @@ grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
 ## https://github.com/openresty/luajit2
-luajit: latest/luajit.json
+luajit: info/luajit.info
+
 latest/luajit.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -64,6 +65,8 @@ info/luajit.info: latest/luajit.json
 	buildah run $(CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
+
+luarocks: info/luarocks.info
 
 latest/luarocks.json:
 	echo '##[ $@ ]##'
@@ -87,5 +90,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
  --lua-version=5.1 --with-lua-interpreter=luajit \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
