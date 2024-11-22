@@ -99,7 +99,7 @@ info/luarocks.info: latest/luarocks.json
 
 
 nlua: info/nlua.info
-info/nlua.info
+info/nlua.info:
 	buildah run $(CONTAINER) luarocks --system install nlua
 	buildah run $(CONTAINER) exa --tree /usr/local
 
