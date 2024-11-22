@@ -8,8 +8,8 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --silent
 
-FEDORA_TOOLBOX    := registry.fedoraproject.org/fedora-toolbox:41
-WORKING_CONTAINER := fedora-toolbox-working-container
+IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
+CONTAINER := fedora-toolbox-working-container
 
 CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep wl-clipboard yq zoxide
 
@@ -17,24 +17,23 @@ CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgre
 # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-REMOVE := vim-minimal default-editor
-# gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools neovim host-spawn clean ## build the toolbox
+default: init cli-tools neovim host-spawn deps luajit luarocks nlua clean ## build the toolbox
 ifdef GITHUB_ACTIONS
-	buildah commit $(WORKING_CONTAINER) ghcr.io/grantmacken/zie-toolbox
+	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
 endif
 
 clean:
-	# buildah run $(WORKING_CONTAINER) dnf leaves
-	# buildah run $(WORKING_CONTAINER) dnf autoremove
-	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	# buildah run $(CONTAINER) dnf leaves
+	# buildah run $(CONTAINER) dnf autoremove
+	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
+	buildah run $(CONTAINER) rm -rf /tmp/*
 
 reset:
-	buildah rm $(WORKING_CONTAINER) || true
+	buildah rm $(CONTAINER) || true
 	rm -rfv info
 	rm -rfv latest
 	rm -rfv files
@@ -51,8 +50,8 @@ init: info/working.info
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP '$(FEDORA_TOOLBOX)' || buildah pull $(FEDORA_TOOLBOX) | tee  $@
-	buildah containers | grep -oP $(WORKING_CONTAINER) || buildah from $(FEDORA_TOOLBOX) | tee -a $@
+	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
+	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
 
 cli-tools: info/cli.info
@@ -61,16 +60,16 @@ info/cli.info:
 	mkdir -p $(dir $@)
 	for item in $(CLI)
 	do
-	buildah run $(WORKING_CONTAINER) dnf install \
+	buildah run $(CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
 		--no-allow-downgrade \
 		-y \
 		$${item} &>/dev/null
-	# buildah run $(WORKING_CONTAINER) dnf repoquery --info --installed $${item}
+	# buildah run $(CONTAINER) dnf repoquery --info --installed $${item}
 	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(CLI) | \
+	buildah run $(CONTAINER) sh -c "dnf -y info installed $(CLI) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
@@ -84,13 +83,13 @@ neovim: info/neovim.info
 info/neovim.info: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah run $(CONTAINER) sh -c "rm -rf /tmp/*"
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $${SRC}"
 	mkdir -p files/usr/local
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/usr/local
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/usr/local /usr/local
-	buildah run $(WORKING_CONTAINER) sh -c 'nvim -V1 -v' | tee $@
+	buildah add --chmod 755 $(CONTAINER) files/usr/local /usr/local
+	buildah run $(CONTAINER) sh -c 'nvim -V1 -v' | tee $@
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -104,25 +103,24 @@ info/host-spawn.info: latest/host-spawn.json
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
 	echo "$$SRC"
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG}
-	buildah run $(WORKING_CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
-	# buildah run $(WORKING_CONTAINER) sh -c 'host-spawn --help' | tee -a $@
+	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
+	buildah run $(CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
+	# buildah run $(CONTAINER) sh -c 'host-spawn --help' | tee -a $@
 	echo ' - add symlinks to exectables on host using host-spawn'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
-	buildah run $(WORKING_CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
 
-luarocks:info/deps.info info/luajit.info info/luarocks.info
-
+deps: info/deps.info
 info/deps.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	for item in $(DEPS)
 	do
-	buildah run $(WORKING_CONTAINER) dnf install \
+	buildah run $(CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
@@ -130,11 +128,13 @@ info/deps.info:
 		-y \
 		$${item} &>/dev/null
 	done
-	buildah run $(WORKING_CONTAINER) sh -c "dnf -y info installed $(DEPS) | \
+	buildah run $(CONTAINER) sh -c "dnf -y info installed $(DEPS) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 paste - - - " | tee $@
 
 ## https://github.com/openresty/luajit2
+luajit: info/luajit.info
+
 latest/luajit.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -149,13 +149,15 @@ info/luajit.info: latest/luajit.json
 	echo "url: $${URL}"
 	mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
-	buildah run $(WORKING_CONTAINER) sh -c "rm -rf /tmp/*"
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luajit /tmp
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	buildah run $(WORKING_CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
-	buildah run $(WORKING_CONTAINER) sh -c 'lua -v' | tee $@
+	buildah run $(CONTAINER) sh -c "rm -rf /tmp/*"
+	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
+	buildah run $(CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
+	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
+
+luarocks: info/luarocks.info
 
 latest/luarocks.json:
 	echo '##[ $@ ]##'
@@ -165,8 +167,8 @@ latest/luarocks.json:
 
 info/luarocks.info: latest/luarocks.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
+	buildah run $(CONTAINER) rm -rf /tmp/*
+	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	echo "name: $${NAME}"
@@ -174,20 +176,32 @@ info/luarocks.info: latest/luarocks.json
 	echo "waiting for download ... "
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
-	buildah run $(WORKING_CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
+	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
+	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
  --lua-version=5.1 --with-lua-interpreter=luajit \
- --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-	buildah run $(WORKING_CONTAINER) sh -c 'luarocks' | tee $@
+ --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(CONTAINER) rm -rf /tmp/*
+	echo '- change system luarocks config '
+	buildah run $(CONTAINER) sed -i 's%luarocks%local/share/luarocks%g' /etc/xdg/luarocks/config-5.1.lua
+	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
+	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
 
-
-
-
-
-
-
+nlua: info/nlua.info
+info/nlua.info:
+	buildah run $(CONTAINER) luarocks install nlua
+	# confirm it is working
+	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
+	buildah run $(CONTAINER) sh -c 'nlua -e "print(package.path)" '
+	buildah run $(CONTAINER) sh -c 'nlua -e "print(package.cpath)" '
+	buildah run $(CONTAINER) nlua -e "print(vim.fn.stdpath('data'))"
+	# use nlua as lua interpreter when using luarocks
+	buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
+	buildah run $(CONTAINER) nlua 
+	# checks
+	#
 
 
 ####################################################
