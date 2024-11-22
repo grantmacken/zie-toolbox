@@ -95,6 +95,11 @@ info/luarocks.info: latest/luarocks.json
 	echo '- change system luarocks config '
 	buildah run $(CONTAINER) sed -i 's%luarocks%local/share/luarocks%g' /etc/xdg/luarocks/config-5.1.lua
 	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
-	# buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
+	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
+
+nlua: info/nlua.info
+info/nlua.info
+	buildah run $(CONTAINER) luarocks --system install nlua
+	buildah run $(CONTAINER) exa --tree /usr/local
 
