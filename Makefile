@@ -89,7 +89,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
  --lua-version=5.1 --with-lua-interpreter=luajit \
- --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+ --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	echo '- change system luarocks config '
@@ -100,6 +100,6 @@ info/luarocks.info: latest/luarocks.json
 
 nlua: info/nlua.info
 info/nlua.info:
-	buildah run $(CONTAINER) luarocks --system install nlua
+	buildah run $(CONTAINER) luarocks install nlua
 	buildah run $(CONTAINER) exa --tree /usr/local
 
