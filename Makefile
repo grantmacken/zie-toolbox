@@ -101,5 +101,10 @@ info/luarocks.info: latest/luarocks.json
 nlua: info/nlua.info
 info/nlua.info:
 	buildah run $(CONTAINER) luarocks install nlua
-	buildah run $(CONTAINER) exa --tree /usr/local
+	# confirm it is working
+	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
+	# use nlua as lua interpreter
+	buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
+	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
+
 
