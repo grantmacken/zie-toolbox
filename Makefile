@@ -12,7 +12,7 @@ IMAGE     := ghcr.io/grantmacken/zie-toolbox
 CONTAINER := zie-toolbox-working-container
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 
-default: from-tbx deps luajit luarocks
+default: from-tbx deps luajit luarocks nlua
 
 from-tbx: info/tbx.info
 info/tbx.info:
