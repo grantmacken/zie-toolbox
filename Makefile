@@ -11,7 +11,7 @@ MAKEFLAGS += --silent
 IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
-CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep wl-clipboard yq zoxide
+CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep stow wl-clipboard yq zoxide
 
 # TODO move to helper container
 # common deps used to build luajit and luarocks
@@ -113,6 +113,7 @@ info/host-spawn.info: latest/host-spawn.json
 	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
 	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
 	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
+	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/dconf'
 
 deps: info/deps.info
 info/deps.info:
@@ -199,7 +200,7 @@ info/nlua.info:
 	buildah run $(CONTAINER) nlua -e "print(vim.fn.stdpath('data'))"
 	# use nlua as lua interpreter when using luarocks
 	buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
-	buildah run $(CONTAINER) nlua 
+	buildah run $(CONTAINER) nlua
 	# checks
 	#
 
