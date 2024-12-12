@@ -29,7 +29,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init deps luajit luarocks neovim nlua
+default: init cli-tools deps luajit luarocks neovim nlua
 
 # cli-tools host-spawn neovim nlua
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
@@ -111,8 +111,6 @@ files/node/usr/local/bin/node: latest/nodejs.tagname
 	echo "source: $${SRC}"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
 	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
-
-# info/nodejs.info: files/node/usr/local/bin/node
 
 nodejs: info/nodejs.md
 info/nodejs.md: files/node/usr/local/bin/node
@@ -231,7 +229,8 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
+	buildah run $(CONTAINER) luarocks
+	# printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
 	# buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
 	# buildah run $(CONTAINER) sh -c 'whereis busted'
 
