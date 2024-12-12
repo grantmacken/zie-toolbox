@@ -32,7 +32,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools host-spawn neovim
+default: init cli-tools host-spawn neovim nlua
 
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
@@ -138,9 +138,9 @@ neovim: info/neovim.md
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" "Neovim , luajit and luarocks" | tee $@
-	printf "Neovim version %s .\n This is the nightly release tags" \
-	$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+') tee $@
+	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+')
+	printf "$(HEADING2) %s\n" "Neovim , luajit and luarocks" | tee $@
+	printf "Neovim version: %s\n" "$$VERSION" | tee -a $@
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -156,13 +156,13 @@ info/host-spawn.md: latest/host-spawn.json
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
 	printf "$(HEADING2) %s\n\n" "host-spawn" > $@
 	echo 'With host-spawn we can run commands on your host machine from inside the toolbox' | tee -a $@
-	printf "Host-spawn version %s .\n " \
-	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') tee $@
+	printf "Host-spawn version %s\n " \
+	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') | tee -a $@
 	echo 'The following exectables on host can be used from this toolbox' | tee -a $@
 	for item in $(SPAWN)
 	do
 	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" ${ITEM} | tee -a $@
+	printf " - %s\n" "$${ITEM}" | tee -a $@
 	done
 
 deps: info/deps.info
@@ -241,7 +241,10 @@ info/luarocks.info: latest/luarocks.json
 
 nlua: info/nlua.info
 info/nlua.info:
-	buildah run $(CONTAINER) luarocks install nlua
+	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
+	TARG=/usr/local/bin/nlua
+	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
+	# buildah run $(CONTAINER) luarocks install nlua
 	# confirm it is working
 	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
 	buildah run $(CONTAINER) sh -c 'nlua -e "print(package.path)" '
