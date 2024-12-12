@@ -24,17 +24,14 @@ CONTAINER := fedora-toolbox-working-container
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
-# fswatch nodejs
-# TODO move to helper container
 # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
 default: init deps luajit luarocks neovim nlua
 
-# cli-tools host-spawn neovim nlua 
+# cli-tools host-spawn neovim nlua
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
 ifdef GITHUB_ACTIONS
@@ -99,12 +96,6 @@ info/gh-cli-copilot.md:
 	buildah run $(CONTAINER) gh --help
 	buildah run $(CONTAINER) gh extension list
 	# printf "%s\n" "$$VERSION" | tee -a $@
-
-
-
-
-
-
 
 ## NODEJS
 latest/nodejs.tagname:
@@ -205,11 +196,11 @@ info/luajit.md: latest/luajit.json
 	echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
+	#echo "name: $${NAME}"
+	#echo "url: $${URL}"
 	mkdir -p files/luajit
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
-	buildah run $(CONTAINER) sh -c "rm -rf /tmp/*"
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
+	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
@@ -229,14 +220,12 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
-	echo "name: $${NAME}"
-	echo "url: $${URL}"
-	echo "waiting for download ... "
+	# echo "name: $${NAME}"
+	# echo "url: $${URL}"
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
-	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
