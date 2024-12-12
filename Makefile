@@ -234,12 +234,17 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
 	 --lua-version=5.1 \
-	 --with-lua-interpreter=nlua
-	 --with-lua-bin=/usr/local/bin/nlua \
+	 --with-lua-interpreter=nlua \
+	 --with-lua-bin=/usr/bin \
+	 --with-lua=/usr \
+	 ---with-lua-lib=/usr/lib \
+	 --with-lua-include=/usr/include/luajit-2.1 \
 	 --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	# buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
 	# --lua-version=5.1 --with-lua-interpreter=luajit \
 	# --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+
+sddddd:
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	echo '- change system luarocks config '
@@ -250,7 +255,7 @@ info/luarocks.info: latest/luarocks.json
 nlua: info/nlua.info
 info/nlua.info:
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
-	TARG=/usr/local/bin/nlua
+	TARG=/usr/bin/nlua
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
 	# buildah run $(CONTAINER) luarocks install nlua
 	# confirm it is working
