@@ -241,7 +241,7 @@ info/nlua.info:
 	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
 	buildah run $(CONTAINER) sh -c 'luarocks config lua_interpreter nlua'
 	# buildah run $(CONTAINER) sh -c 'luarocks'
-	cat /etc/xdg/luarocks/config-5.1.lua
+	buildah run $(CONTAINER) sh -c 'cat /etc/xdg/luarocks/config-5.1.lua'
 	# buildah run $(CONTAINER) sh -c 'nlua -e "print(package.path)" '
 	# buildah run $(CONTAINER) sh -c 'nlua -e "print(package.cpath)" '
 
