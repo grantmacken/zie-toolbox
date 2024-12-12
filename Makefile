@@ -32,7 +32,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools host-spawn neovim nlua
+default: init cli-tools host-spawn neovim nlua luarocks
 
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
@@ -230,7 +230,7 @@ info/luarocks.info: latest/luarocks.json
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
- --lua-version=5.1 --with-lua-interpreter=luajit \
+ --lua-version=5.1 --with-lua-interpreter=nlua \
  --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
@@ -251,8 +251,7 @@ info/nlua.info:
 	buildah run $(CONTAINER) sh -c 'nlua -e "print(package.cpath)" '
 	buildah run $(CONTAINER) nlua -e "print(vim.fn.stdpath('data'))"
 	# use nlua as lua interpreter when using luarocks
-	buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
-	buildah run $(CONTAINER) nlua
+	# buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
 	# checks
 ####################################################
 
