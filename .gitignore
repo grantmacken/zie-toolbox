@@ -1,4 +1,6 @@
-info
+info/*.info
+info/*.md
+!info/toolbox_overview.md
 latest
 files
 
