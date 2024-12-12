@@ -162,7 +162,7 @@ info/host-spawn.md: latest/host-spawn.json
 	for item in $(SPAWN)
 	do
 	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" "$${ITEM}" | tee -a $@
+	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
 deps: info/deps.info
