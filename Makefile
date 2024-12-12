@@ -32,7 +32,10 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools neovim host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
+default: init cli-tools
+
+# neovim host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
+#
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -84,9 +87,9 @@ info/cli.md:
 	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
-	dnf info -q installed ${CLI[*]} | \
+	dnf info -q installed $${CLI[*]} | \
 	   grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-	   paste  - - - | awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $1, $2, $3}' | tee -a $@
+	   paste  - - - | awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 	 printf "| %-13s | %-7s | %-83s |\n" "" "" | tee -a $@
 
 ## NODEJS
@@ -250,28 +253,9 @@ info/README.md:
 	cat info/toolbox_intro.md | tee $@
 	cat info/toolbox_getting_started.md | tee -a $@
 	cat info/toolbox_overview.md | tee -a $@
+
 	cat info/nodejs.md | tee -a $@
 	# rm info/README.md
-
-dfdfd:
-	printf "$(HEADING1) %s\n\n"  "grantmacken/zie-toolbox" | tee $@
-	printf "%s\n" \
-	"The aim is to provide a personal development toolbx for code wrangling" | tee -a $@
-	printf "$(HEADING2) %s\n%s"  "Requirements" | tee -a $@
-	printf "\n%s\n%s\n\n%s\n\n" \
-	"1. Linux OS with [Podman and Toolbox](https://github.com/containers/toolbox)" \
-	"2. Terminal: I use ptyxis the new gnome terminal installed with latest Fedora => 41 " \
-	"I use Fedora silverblue so these come already installed out of the box." | tee -a $@
-	printf "$(HEADING2) %s\n\n"  "getting started" | tee -a $@
-	cat << EOF | tee -a $@
-	\`\`\`sh
-	podman pull ghcr.io/grantmacken/zie-toolbox
-	toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
-	toolbox enter tbx
-	\`\`\`
-	EOF
-	cat info/nodejs.md | tee -a $@
-
 
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
