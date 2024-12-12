@@ -1,18 +1,30 @@
-SHELL=/bin/bash
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
+MAKEFLAGS += --silent
+unexport MAKEFLAGS
+
+SHELL := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
-.ONESHELL:
+
+.SUFFIXES:            # Delete the default suffixes
+.ONESHELL:            #all lines of the recipe will be given to a single invocation of the shell
 .DELETE_ON_ERROR:
 .SECONDARY:
 
-MAKEFLAGS += --warn-undefined-variables
-MAKEFLAGS += --no-builtin-rules
-MAKEFLAGS += --silent
+HEADING1 := \#
+HEADING2 := $(HEADING1)$(HEADING1)
+
+COMMA := ,
+EMPTY:=
+SPACE := $(EMPTY) $(EMPTY)
 
 IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
-CLI := bat direnv eza fd-find flatpak-spawn fswatch fzf gh jq make nodejs ripgrep stow wl-clipboard yq zoxide
+CLI := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 
+# fswatch nodejs 
 # TODO move to helper container
 # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
@@ -20,7 +32,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools neovim host-spawn deps luajit luarocks nlua clean ## build the toolbox
+default: init cli-tools neovim host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -54,8 +66,8 @@ info/working.info:
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
 
-cli-tools: info/cli.info
-info/cli.info:
+cli-tools: info/cli.md
+info/cli.md:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	for item in $(CLI)
@@ -69,11 +81,41 @@ info/cli.info:
 		$${item} &>/dev/null
 	# buildah run $(CONTAINER) dnf repoquery --info --installed $${item}
 	done
-	buildah run $(CONTAINER) sh -c "dnf -y info installed $(CLI) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
+	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
+	dnf info -q installed ${CLI[*]} | \
+	   grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+	   paste  - - - | awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $1, $2, $3}' | tee -a $@
+	 printf "| %-13s | %-7s | %-83s |\n" "" "" | tee -a $@
+
+## NODEJS
+latest/nodejs.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
+
+files/node/usr/local/bin/node: latest/nodejs.tagname
+	echo '##[ $@ ]##'
+	mkdir -p files/$(notdir $@)/usr/local
+	TAG=$(shell cat $<)
+	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
+	echo "source: $${SRC}"
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $<)usr/local /usr/local
+
+# info/nodejs.info: files/node/usr/local/bin/node
+nodejs: info/nodejs.md
+info/nodejs.md: files/node/usr/local/bin/node
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
+	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
+	available from [node org](https://nodejs.org/download/release/)"  \
+	$$(cat latest/nodejs.tagname) >> $@
 
 ## NEOVIM
+neovim: latest/neovim.json
 latest/neovim.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -189,7 +231,6 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
 	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
-
 nlua: info/nlua.info
 info/nlua.info:
 	buildah run $(CONTAINER) luarocks install nlua
@@ -202,10 +243,35 @@ info/nlua.info:
 	buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
 	buildah run $(CONTAINER) nlua
 	# checks
-	#
-
-
 ####################################################
+
+readme: info/README.md
+info/README.md:
+	cat info/toolbox_intro.md | tee $@
+	cat info/toolbox_getting_started.md | tee -a $@
+	cat info/toolbox_overview.md | tee -a $@
+	cat info/nodejs.md | tee -a $@
+	# rm info/README.md
+
+dfdfd:
+	printf "$(HEADING1) %s\n\n"  "grantmacken/zie-toolbox" | tee $@
+	printf "%s\n" \
+	"The aim is to provide a personal development toolbx for code wrangling" | tee -a $@
+	printf "$(HEADING2) %s\n%s"  "Requirements" | tee -a $@
+	printf "\n%s\n%s\n\n%s\n\n" \
+	"1. Linux OS with [Podman and Toolbox](https://github.com/containers/toolbox)" \
+	"2. Terminal: I use ptyxis the new gnome terminal installed with latest Fedora => 41 " \
+	"I use Fedora silverblue so these come already installed out of the box." | tee -a $@
+	printf "$(HEADING2) %s\n\n"  "getting started" | tee -a $@
+	cat << EOF | tee -a $@
+	\`\`\`sh
+	podman pull ghcr.io/grantmacken/zie-toolbox
+	toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
+	toolbox enter tbx
+	\`\`\`
+	EOF
+	cat info/nodejs.md | tee -a $@
+
 
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest

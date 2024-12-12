@@ -1,8 +1,8 @@
-info/*.info
 info/*
-!info/toolbox_*.md
+!info/toolbox_*
 latest
 files
-
+tmp
+bin
 
 

@@ -19,7 +19,6 @@ toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
 toolbox enter tbx
 ```
 
-
 ## In The Box Overview
 
 The aim is to provide a personal development toolbx for code wrangling
@@ -39,6 +38,7 @@ For the *main* toolbox I have tried to limit contained CLI tools to useful stuff
 ## Neovim , luajit and luarocks
 
 Ihe image contains the latest release version of Neovim.
+
 
 
 ## Some useful CLI tools
@@ -64,9 +64,17 @@ Although not required by Neovim they can be used by Neovim e.g. ripgrep as a fas
  - [luarocks](shttps://luarocks.org/)
 
 
-Note: this list will be extended
 
-<!--
+## run-time exception: nodejs
+
+For the *main* toolbox I have tried to limit toolbox installed apps to CLI tools
+and have tries to  **excluded** runtimes and compiler build tooling.
+
+
+
+
+
+
 
 
 
