@@ -29,7 +29,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools deps neovim luajit luarocks 
+default: init cli-tools neovim deps luajit luarocks 
 
 # neovim
 # cli-tools host-spawn neovim nlua
@@ -92,13 +92,8 @@ info/cli.md:
 	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
-# gh-cli-copilot: info/gh-cli-copilot.md
-# info/gh-cli-copilot.md:
-# buildah run $(CONTAINER) gh --help
-# buildah run $(CONTAINER) gh extension list
-# https://github.com/kodepandai/awesome-gh-cli-extensions
-# printf "%s\n" "$$VERSION" | tee -a $@
 
+# https://github.com/kodepandai/awesome-gh-cli-extensions
 
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
@@ -122,31 +117,8 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+')
-	printf "\n%s\n" "Neovim" "$$VERSION" "Vim-fork focused on extensibility and usability"| tee $@
-	printf "Neovim version: %s\n" "$$VERSION" | tee -a $@
+	printf "| %-13s | %-7s | %-83s |\n" "Neovim" "$$VERSION" "Vim-fork focused on extensibility and usability" | tee $@
 
-## HOST-SPAWN
-latest/host-spawn.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
-
-host-spawn: info/host-spawn.md
-info/host-spawn.md: latest/host-spawn.json
-	echo '##[ $@ ]##'
-	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
-	TARG=/usr/local/bin/host-spawn
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
-	printf "$(HEADING2) %s\n\n" "host-spawn" > $@
-	echo 'With host-spawn we can run commands on your host machine from inside the toolbox' | tee -a $@
-	printf "Host-spawn version %s\n " \
-	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') | tee -a $@
-	echo 'The following exectables on host can be used from this toolbox' | tee -a $@
-	for item in $(SPAWN)
-	do
-	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" "$${item}" | tee -a $@
-	done
 
 deps: ## deps for make installs
 	# echo '##[ $@ ]##'
@@ -182,7 +154,8 @@ info/luajit.md: latest/luajit.json
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	printf "%s\n" "$$(buildah run $(CONTAINER) sh -c 'luajit -v')" | grep -oP '^.+?(?=-)'| tee  $@
+	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
+	printf "| %-13s | %-7s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
@@ -209,11 +182,12 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+'"
+	buildah run $(CONTAINER) sh -c "luarocks --version | grep -oP '^LuaRocks.+' | sed 's/,//' | paste - - -" | \
+	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
+	   tee -a $@
 	# printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
-	buildah run $(CONTAINER) sh -c 'luarocks install busted'
-	buildah run $(CONTAINER) sh -c 'whereis busted'
-
+	#buildah run $(CONTAINER) sh -c 'luarocks install busted'
+	#buildah run $(CONTAINER) sh -c 'whereis busted'
 
 nlua: info/nlua.info
 info/nlua.info:
@@ -230,6 +204,28 @@ info/nlua.info:
 	buildah run $(CONTAINER) sh -c 'which luarocks'
 	buildah run $(CONTAINER) sh -c 'where is nlua'
 
+## HOST-SPAWN
+latest/host-spawn.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
+
+host-spawn: info/host-spawn.md
+info/host-spawn.md: latest/host-spawn.json
+	echo '##[ $@ ]##'
+	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
+	TARG=/usr/local/bin/host-spawn
+	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
+	printf "$(HEADING2) %s\n\n" "host-spawn" > $@
+	echo 'With host-spawn we can run commands on your host machine from inside the toolbox' | tee -a $@
+	printf "Host-spawn version %s\n " \
+	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') | tee -a $@
+	echo 'The following exectables on host can be used from this toolbox' | tee -a $@
+	for item in $(SPAWN)
+	do
+	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
+	printf " - %s\n" "$${item}" | tee -a $@
+	done
 
 	# buildah run $(CONTAINER) nlua -e "print(package.path)"
 	# buildah run $(CONTAINER) nlua -e "print(package.cpath)"
