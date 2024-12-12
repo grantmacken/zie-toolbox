@@ -29,8 +29,9 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools deps luajit luarocks neovim nlua
+default: init cli-tools deps luajit luarocks
 
+# neovim
 # cli-tools host-spawn neovim nlua
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
@@ -229,10 +230,10 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) sh -c "luarocks | grep -oP 'LuaRocks.+'"
+	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+'"
 	# printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
-	# buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
-	# buildah run $(CONTAINER) sh -c 'whereis busted'
+	buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
+	buildah run $(CONTAINER) sh -c 'whereis busted'
 
 
 nlua: info/nlua.info
