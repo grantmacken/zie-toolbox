@@ -94,6 +94,18 @@ info/cli.md:
 	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
+gh-cli-copilot: info/gh-cli-copilot.md
+info/gh-cli-copilot.md:
+	buildah run $(CONTAINER) gh --help
+	buildah run $(CONTAINER) gh extension list
+	# printf "%s\n" "$$VERSION" | tee -a $@
+
+
+
+
+
+
+
 ## NODEJS
 latest/nodejs.tagname:
 	echo '##[ $@ ]##'
@@ -222,6 +234,7 @@ info/luarocks.md: latest/luarocks.json
 	echo "waiting for download ... "
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
+	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -229,9 +242,9 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "%s\n" "$$(buildah run $(CONTAINER) sh -c 'luarocks')" | grep -oP 'Luarocks.+'| tee  $@
-	buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
-	buildah run $(CONTAINER) sh -c 'whereis busted'
+	printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
+	# buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
+	# buildah run $(CONTAINER) sh -c 'whereis busted'
 
 
 nlua: info/nlua.info
