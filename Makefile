@@ -237,7 +237,7 @@ info/luarocks.info: latest/luarocks.json
 	 --with-lua-interpreter=nlua \
 	 --with-lua-bin=/usr/bin \
 	 --with-lua=/usr \
-	 ---with-lua-lib=/usr/lib \
+	 --with-lua-lib=/usr/lib \
 	 --with-lua-include=/usr/include/luajit-2.1 \
 	 --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	# buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
