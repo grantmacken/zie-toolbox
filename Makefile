@@ -203,7 +203,7 @@ info/luajit.info: latest/luajit.json
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	# buildah run $(CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
 	# buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
-	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
+	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.info
 
