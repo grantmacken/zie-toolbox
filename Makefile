@@ -229,14 +229,17 @@ info/luarocks.info: latest/luarocks.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/nlua /usr/local/bin/luajit
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
- --lua-version=5.1 --with-lua-interpreter=nlua \
- --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+		--lua-version=5.1 --with-lua-interpreter=luajit \
+		--sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	echo '- change system luarocks config '
-	buildah run $(CONTAINER) sed -i 's%luarocks%local/share/luarocks%g' /etc/xdg/luarocks/config-5.1.lua
-	buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
+	# buildah run $(CONTAINER) sed -i 's%luarocks%local/share/luarocks%g' /etc/xdg/luarocks/config-5.1.lua
+	# buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
 	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
 
 nlua: info/nlua.info
