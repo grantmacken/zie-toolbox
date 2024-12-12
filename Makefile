@@ -87,7 +87,7 @@ info/cli.md:
 	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
-	buildah run $(CONTAINER) sh -c  "dnf info -q installed $${CLI[*]} | \
+	buildah run $(CONTAINER) sh -c  "dnf info -q installed $(CLI) | \
 	   grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
 	   paste  - - - | awk -F'\t' '{printf \"| %-13s | %-7s | %-83s |\n\", $$1, $$2, $$3}'" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
