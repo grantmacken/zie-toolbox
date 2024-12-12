@@ -34,6 +34,7 @@ REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  open
 
 default:
 	ls -al /usr/local/bin
+	which luarocks
 
 # init cli-tools host-spawn neovim nlua deps luarocks
 
