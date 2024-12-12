@@ -32,12 +32,9 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default:
-	ls -al /usr/local/bin
-	which luarocks
+default: init deps luajit luarocks
 
-# init cli-tools host-spawn neovim nlua deps luarocks
-
+# cli-tools host-spawn neovim nlua 
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
 ifdef GITHUB_ACTIONS
@@ -183,13 +180,9 @@ info/deps.info:
 		-y \
 		$${item} &>/dev/null
 	done
-	buildah run $(CONTAINER) sh -c "dnf -y info installed $(DEPS) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
 
 ## https://github.com/openresty/luajit2
 luajit: info/luajit.info
-
 latest/luajit.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -204,14 +197,12 @@ info/luajit.info: latest/luajit.json
 	echo "url: $${URL}"
 	mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
-
-xxxxxxx:
 	buildah run $(CONTAINER) sh -c "rm -rf /tmp/*"
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	buildah run $(CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
+	# buildah run $(CONTAINER) ln -sf  /usr/local/bin/luajit /usr/local/bin/lua
+	# buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.info
@@ -235,21 +226,14 @@ info/luarocks.info: latest/luarocks.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c "wget $${URL} -q -O- | tar xz --strip-components=1 -C /tmp"
-	buildah run $(CONTAINER) sh -c 'mkdir -p /usr/include/luajit-2.1 && cd /tmp && ./configure \
-	 --lua-version=5.1 \
-	 --with-lua-interpreter=nlua \
-	 --with-lua-bin=/usr/bin \
-	 --with-lua=/usr \
-	 --with-lua-lib=/usr/lib \
-	 --with-lua-include=/usr/include/luajit-2.1 \
-	 --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-	# buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
-	# --lua-version=5.1 --with-lua-interpreter=luajit \
-	# --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-
-sddddd:
+	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
+	--lua-version=5.1 --with-lua-interpreter=luajit \
+	--sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
+	buildah run $(CONTAINER) sh -c 'luarocks' | tee $@
+
+xxxx:
 	echo '- change system luarocks config '
 	# buildah run $(CONTAINER) sed -i 's%luarocks%local/share/luarocks%g' /etc/xdg/luarocks/config-5.1.lua
 	# buildah run $(CONTAINER) cat /etc/xdg/luarocks/config-5.1.lua
