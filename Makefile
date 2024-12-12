@@ -29,7 +29,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools deps luajit luarocks
+default: init cli-tools deps neovim luajit luarocks 
 
 # neovim
 # cli-tools host-spawn neovim nlua
@@ -92,57 +92,37 @@ info/cli.md:
 	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
-gh-cli-copilot: info/gh-cli-copilot.md
-info/gh-cli-copilot.md:
-	buildah run $(CONTAINER) gh --help
-	buildah run $(CONTAINER) gh extension list
-	# printf "%s\n" "$$VERSION" | tee -a $@
+# gh-cli-copilot: info/gh-cli-copilot.md
+# info/gh-cli-copilot.md:
+# buildah run $(CONTAINER) gh --help
+# buildah run $(CONTAINER) gh extension list
+# https://github.com/kodepandai/awesome-gh-cli-extensions
+# printf "%s\n" "$$VERSION" | tee -a $@
 
-## NODEJS
-latest/nodejs.tagname:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
 
-files/node/usr/local/bin/node: latest/nodejs.tagname
-	echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	TAG=$(shell cat $<)
-	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
-	echo "source: $${SRC}"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
+##[[ NEOVIM ]]##
+neovim: info/neovim.md
 
-nodejs: info/nodejs.md
-info/nodejs.md: files/node/usr/local/bin/node
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
-	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
-	available from [node org](https://nodejs.org/download/release/)"  \
-	$$(cat latest/nodejs.tagname) >> $@
-
-## NEOVIM
-neovim: latest/neovim.json
 latest/neovim.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
 
 files/nvim/usr/local/bin/nvim: latest/neovim.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p files/$(notdir $@)/usr/local
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $${SRC}"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
 	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
 
-neovim: info/neovim.md
 info/neovim.md: files/nvim/usr/local/bin/nvim
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
+	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
+	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+')
-	printf "$(HEADING2) %s\n" "Neovim , luajit and luarocks" | tee $@
+	printf "\n%s\n" "Neovim" "$$VERSION" "Vim-fork focused on extensibility and usability"| tee $@
 	printf "Neovim version: %s\n" "$$VERSION" | tee -a $@
 
 ## HOST-SPAWN
@@ -168,10 +148,9 @@ info/host-spawn.md: latest/host-spawn.json
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
-deps: info/deps.info
-info/deps.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
+deps: ## deps for make installs
+	# echo '##[ $@ ]##'
+	# mkdir -p $(dir $@)
 	for item in $(DEPS)
 	do
 	buildah run $(CONTAINER) dnf install \
@@ -186,13 +165,13 @@ info/deps.info:
 ## https://github.com/openresty/luajit2
 luajit: info/luajit.md
 latest/luajit.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
 	jq '.[0]' > $@
 
 info/luajit.md: latest/luajit.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	#echo "name: $${NAME}"
@@ -258,6 +237,33 @@ info/nlua.info:
 	# use nlua as lua interpreter when using luarocks
 	# buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
 	# checks
+	#
+
+##[[ NODEJS ]]##
+
+latest/nodejs.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
+
+files/node/usr/local/bin/node: latest/nodejs.tagname
+	echo '##[ $@ ]##'
+	mkdir -p files/$(notdir $@)/usr/local
+	TAG=$(shell cat $<)
+	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
+	echo "source: $${SRC}"
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
+
+nodejs: info/nodejs.md
+info/nodejs.md: files/node/usr/local/bin/node
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
+	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
+	available from [node org](https://nodejs.org/download/release/)"  \
+	$$(cat latest/nodejs.tagname) >> $@
+
 ####################################################
 
 readme: info/README.md
