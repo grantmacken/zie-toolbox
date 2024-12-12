@@ -32,7 +32,10 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools host-spawn neovim nlua deps luarocks
+default:
+	ls -al /usr/local
+
+# init cli-tools host-spawn neovim nlua deps luarocks
 
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
