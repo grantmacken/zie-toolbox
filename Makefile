@@ -32,10 +32,10 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools
+default: init cli-tools neovim
 
-# neovim host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
-#
+#  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
+dddd:
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -88,8 +88,10 @@ info/cli.md:
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
-	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | paste  - - - ' | \
-	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
+	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
+	   paste  - - - ' | \
+	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
+	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 ## NODEJS
@@ -105,9 +107,10 @@ files/node/usr/local/bin/node: latest/nodejs.tagname
 	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
 	echo "source: $${SRC}"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $<)usr/local /usr/local
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
 
 # info/nodejs.info: files/node/usr/local/bin/node
+
 nodejs: info/nodejs.md
 info/nodejs.md: files/node/usr/local/bin/node
 	echo '##[ $@ ]##'
@@ -124,17 +127,21 @@ latest/neovim.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
 
-neovim: info/neovim.info
-info/neovim.info: latest/neovim.json
+files/nvim/usr/local/bin/nvim: latest/neovim.json
 	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	buildah run $(CONTAINER) sh -c "rm -rf /tmp/*"
+	mkdir -p files/$(notdir $@)/usr/local
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
 	echo "source: $${SRC}"
-	mkdir -p files/usr/local
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/usr/local /usr/local
-	buildah run $(CONTAINER) sh -c 'nvim -V1 -v' | tee $@
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
+
+neovim: info/neovim.md
+info/neovim.md: files/nvim/usr/local/bin/nvim
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	printf "$(HEADING2) %s\n\n" "Neovim , luajit and luarocks" > $@
+	printf "Neovim version %s .\n This is the nightly release tags" \
+	$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+') >> $@
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -253,7 +260,7 @@ info/README.md:
 	cat info/toolbox_intro.md | tee $@
 	cat info/toolbox_getting_started.md | tee -a $@
 	cat info/toolbox_overview.md | tee -a $@
-
+	cat info/neovim.md | tee -a $@
 	cat info/nodejs.md | tee -a $@
 	# rm info/README.md
 
