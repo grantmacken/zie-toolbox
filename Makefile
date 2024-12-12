@@ -231,6 +231,7 @@ info/luarocks.md: latest/luarocks.md
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	printf "%s\n" "$$(buildah run $(CONTAINER) sh -c 'luarocks')" | grep -oP 'Luarocks.+'| tee  $@
 	buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
+	buildah run $(CONTAINER) sh -c 'whereis busted'
 
 
 nlua: info/nlua.info
