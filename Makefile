@@ -4,7 +4,7 @@ MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
 unexport MAKEFLAGS
 
-SHELL := /bin/bash
+SHELL       := /bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 .SUFFIXES:            # Delete the default suffixes
@@ -23,8 +23,8 @@ IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf 
-# fswatch nodejs 
+SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
+# fswatch nodejs
 # TODO move to helper container
 # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
@@ -233,8 +233,13 @@ info/luarocks.info: latest/luarocks.json
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua-5.1
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
-		--lua-version=5.1 --with-lua-interpreter=luajit \
-		--sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	 --lua-version=5.1 \
+	 --with-lua-interpreter=nlua
+	 --with-lua-bin=/usr/local/bin/nlua \
+	 --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	# buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
+	# --lua-version=5.1 --with-lua-interpreter=luajit \
+	# --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	echo '- change system luarocks config '
