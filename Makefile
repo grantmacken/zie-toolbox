@@ -88,8 +88,8 @@ info/cli.md:
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
-	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | paste  - - - ' | tee installed.txt
-	# awk -F'\t' '{printf \"| %-13s | %-7s | %-83s |\n\", $$1, $$2, $$3}'" | tee -a $@
+	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | paste  - - - ' | \
+	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 ## NODEJS
@@ -142,8 +142,8 @@ latest/host-spawn.json:
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
 
-host-spawn: info/host-spawn.info
-info/host-spawn.info: latest/host-spawn.json
+host-spawn: info/host-spawn.md
+info/host-spawn.info: latest/host-spawn.md
 	echo '##[ $@ ]##'
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
