@@ -228,8 +228,8 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
 	--lua-version=5.1 --with-lua-interpreter=luajit \
-	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	--sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
 	# buildah run $(CONTAINER) sh -c 'luarocks --system install busted'
