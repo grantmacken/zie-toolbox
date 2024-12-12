@@ -22,8 +22,8 @@ SPACE := $(EMPTY) $(EMPTY)
 IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
-CLI := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-
+CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
+SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf 
 # fswatch nodejs 
 # TODO move to helper container
 # common deps used to build luajit and luarocks
@@ -32,7 +32,7 @@ DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readl
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 # luarocks removed
 
-default: init cli-tools neovim
+default: init cli-tools host-spawn neovim
 
 #  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
 dddd:
@@ -82,7 +82,6 @@ info/cli.md:
 		--no-allow-downgrade \
 		-y \
 		$${item} &>/dev/null
-	# buildah run $(CONTAINER) dnf repoquery --info --installed $${item}
 	done
 	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
@@ -139,9 +138,9 @@ neovim: info/neovim.md
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" "Neovim , luajit and luarocks" > $@
+	printf "$(HEADING2) %s\n\n" "Neovim , luajit and luarocks" | tee $@
 	printf "Neovim version %s .\n This is the nightly release tags" \
-	$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+') >> $@
+	$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+') tee $@
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -150,22 +149,21 @@ latest/host-spawn.json:
 	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
 
 host-spawn: info/host-spawn.md
-info/host-spawn.info: latest/host-spawn.md
+info/host-spawn.md: latest/host-spawn.json
 	echo '##[ $@ ]##'
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
-	echo "$$SRC"
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
-	buildah run $(CONTAINER) sh -c 'echo -n " - host-spawn version: " &&  host-spawn --version' | tee $@
-	# buildah run $(CONTAINER) sh -c 'host-spawn --help' | tee -a $@
-	echo ' - add symlinks to exectables on host using host-spawn'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/firefox'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/flatpak'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/podman'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/buildah'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/systemctl'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/rpm-ostree'
-	buildah run $(CONTAINER) /bin/bash -c 'ln -fs /usr/local/bin/host-spawn /usr/local/bin/dconf'
+	printf "$(HEADING2) %s\n\n" "host-spawn" > $@
+	echo 'With host-spawn we can run commands on your host machine from inside the toolbox' | tee -a $@
+	printf "Host-spawn version %s .\n " \
+	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') tee $@
+	echo 'The following exectables on host can be used from this toolbox' | tee -a $@
+	for item in $(SPAWN)
+	do
+	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
+	printf " - %s\n" ${ITEM} | tee -a $@
+	done
 
 deps: info/deps.info
 info/deps.info:
