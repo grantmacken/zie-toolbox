@@ -211,7 +211,7 @@ latest/luarocks.json:
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
 	jq  '.[0]' > $@
 
-info/luarocks.md: latest/luarocks.md
+info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
