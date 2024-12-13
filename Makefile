@@ -70,7 +70,8 @@ info/working.info:
 
 cli-tools: info/cli.md
 info/cli.md:
-	echo '##[ $@ ]##'
+	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	$echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	for item in $(CLI)
 	do
@@ -87,11 +88,10 @@ info/cli.md:
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
-	   paste  - - - ' | \
+	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-
 
 # https://github.com/kodepandai/awesome-gh-cli-extensions
 
@@ -116,9 +116,8 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+')
-	printf "| %-13s | %-7s | %-83s |\n" "Neovim" "$$VERSION" "Vim-fork focused on extensibility and usability" | tee $@
-
+	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
+	printf "| %-13s | %-7s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
 deps: ## deps for make installs
 	# echo '##[ $@ ]##'
@@ -166,7 +165,7 @@ latest/luarocks.json:
 	jq  '.[0]' > $@
 
 info/luarocks.md: latest/luarocks.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
@@ -174,7 +173,7 @@ info/luarocks.md: latest/luarocks.json
 	# echo "name: $${NAME}"
 	# echo "url: $${URL}"
 	mkdir -p files/luarocks
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -182,7 +181,8 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) sh -c "luarocks --version | grep -oP '^LuaRocks.+' | sed 's/,//' | paste - - -" | \
+	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+'" 
+	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+' | sed 's/,//' | paste - - -" | \
 	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
 	# printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
