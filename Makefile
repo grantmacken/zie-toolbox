@@ -25,7 +25,7 @@ CONTAINER := fedora-toolbox-working-container
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
-DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools neovim deps luajit luarocks nlua host-spawn clean
@@ -36,8 +36,9 @@ endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
-	# buildah run $(CONTAINER) dnf autoremove
 	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
+	buildah run $(CONTAINER) dnf autoremove -y
+	buildah run $(CONTAINER) dnf upgrade -y --minimal
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
 reset:
@@ -106,11 +107,11 @@ files/nvim/usr/local/bin/nvim: latest/neovim.json
 
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
-	printf "| %-9s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
-	printf "| %-9s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee $@
-	printf "| %-9s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
+	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	printf "| %-9s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
 deps: ## deps for make installs
 	# echo '##[ $@ ]##'
@@ -147,7 +148,7 @@ info/luajit.md: latest/luajit.json
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
-	printf "| %-9s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
@@ -174,15 +175,14 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "| %-9s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 
 nlua: info/nlua.info
 info/nlua.info:
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
 	TARG=/usr/bin/nlua
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-9s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
-
+	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
 	# buildah run $(CONTAINER) luarocks install nlua
 	# # confirm it is working
 	# buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
@@ -207,7 +207,7 @@ info/host-spawn.md: latest/host-spawn.json
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-9s | %-13s | %-83s |\n" "host-spawn" "$${NAME}" "run commands on your host machine from inside the toolbox" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "host-spawn" "$${NAME}" "run commands on your host machine from inside the toolbox" | tee $@
 	echo 'The following host executables can be used from this toolbox' | tee -a $@
 	for item in $(SPAWN)
 	do
