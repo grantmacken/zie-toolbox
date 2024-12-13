@@ -71,7 +71,6 @@ info/working.info:
 cli-tools: info/cli.md
 info/cli.md:
 	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	$echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	for item in $(CLI)
 	do
@@ -150,7 +149,7 @@ info/luajit.md: latest/luajit.json
 	mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
+	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
@@ -175,7 +174,7 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp
+	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
@@ -193,7 +192,7 @@ nlua: info/nlua.info
 info/nlua.info:
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
 	TARG=/usr/bin/nlua
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
+	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	# buildah run $(CONTAINER) luarocks install nlua
 	# confirm it is working
 	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
