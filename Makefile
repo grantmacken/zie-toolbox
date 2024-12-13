@@ -27,14 +27,8 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-# luarocks removed
 
-default: init cli-tools neovim deps luajit luarocks 
-
-# neovim
-# cli-tools host-spawn neovim nlua
-#  host-spawn deps luajit luarocks nlua nodejs clean ## build the toolbox
-dddd:
+default: init cli-tools neovim deps luajit luarocks nlua host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -106,17 +100,17 @@ files/nvim/usr/local/bin/nvim: latest/neovim.json
 	# echo '##[ $@ ]##'
 	mkdir -p files/$(notdir $@)/usr/local
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
-	echo "source: $${SRC}"
+	# echo "source: $${SRC}"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
 
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
-	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
-	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
+	printf "| %-9s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-9s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-9s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	printf "| %-13s | %-7s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
+	printf "| %-9s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
 deps: ## deps for make installs
 	# echo '##[ $@ ]##'
@@ -153,12 +147,12 @@ info/luajit.md: latest/luajit.json
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
-	printf "| %-13s | %-7s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
+	printf "| %-9s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
 latest/luarocks.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
 	jq  '.[0]' > $@
@@ -180,46 +174,41 @@ info/luarocks.md: latest/luarocks.json
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+'" 
-	buildah run $(CONTAINER) sh -c "luarocks | grep -oP '^LuaRocks.+' | sed 's/,//' | paste - - -" | \
-	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
-	   tee -a $@
-	# printf "%s\n" "$$(buildah run $(CONTAINER) luarocks)" | grep -oP 'Luarocks.+'| tee  $@
-	#buildah run $(CONTAINER) sh -c 'luarocks install busted'
-	#buildah run $(CONTAINER) sh -c 'whereis busted'
+	printf "| %-9s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 
 nlua: info/nlua.info
 info/nlua.info:
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
 	TARG=/usr/bin/nlua
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
+	printf "| %-9s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
+
 	# buildah run $(CONTAINER) luarocks install nlua
-	# confirm it is working
-	buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
-	buildah run $(CONTAINER) sh -c 'luarocks config lua_interpreter nlua'
-	# buildah run $(CONTAINER) sh -c 'luarocks'
-	buildah run $(CONTAINER) sh -c 'cat /etc/xdg/luarocks/config-5.1.lua'
-	buildah run $(CONTAINER) sh -c 'whereis luarocks'
-	buildah run $(CONTAINER) sh -c 'which luarocks'
-	buildah run $(CONTAINER) sh -c 'where is nlua'
+	# # confirm it is working
+	# buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
+	# buildah run $(CONTAINER) sh -c 'luarocks config lua_interpreter nlua'
+	# # buildah run $(CONTAINER) sh -c 'luarocks'
+	# buildah run $(CONTAINER) sh -c 'cat /etc/xdg/luarocks/config-5.1.lua'
+	# buildah run $(CONTAINER) sh -c 'whereis luarocks'
+	# buildah run $(CONTAINER) sh -c 'which luarocks'
+	# buildah run $(CONTAINER) sh -c 'where is nlua'
 
 ## HOST-SPAWN
 latest/host-spawn.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest > $@
+	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest |
+	jq '.' > $@
 
 host-spawn: info/host-spawn.md
 info/host-spawn.md: latest/host-spawn.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG}
-	printf "$(HEADING2) %s\n\n" "host-spawn" > $@
-	echo 'With host-spawn we can run commands on your host machine from inside the toolbox' | tee -a $@
-	printf "Host-spawn version %s\n " \
-	$$(buildah run $(CONTAINER) sh -c 'host-spawn --version') | tee -a $@
-	echo 'The following exectables on host can be used from this toolbox' | tee -a $@
+	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
+	printf "| %-9s | %-13s | %-83s |\n" "host-spawn" "$${NAME}" "run commands on your host machine from inside the toolbox" | tee $@
+	echo 'The following host executables can be used from this toolbox' | tee -a $@
 	for item in $(SPAWN)
 	do
 	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
@@ -232,7 +221,6 @@ info/host-spawn.md: latest/host-spawn.json
 	# use nlua as lua interpreter when using luarocks
 	# buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
 	# checks
-	#
 
 ##[[ NODEJS ]]##
 
