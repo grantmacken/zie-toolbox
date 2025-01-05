@@ -28,7 +28,7 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init deps luajit
+default: init deps luajit luarocks 
 
 # cli-tools deps neovim luajit luarocks nlua host-spawn clean
 # ifdef GITHUB_ACTIONS
@@ -132,17 +132,18 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 luajit: info/luajit.md
 info/luajit.md:
 	# echo '##[ $@ ]##'
-	URL=https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.ROLLING.tar.gz
+	URL=https://github.com/luajit/luajit/archive/refs/tags/v2.1.ROLLING.tar.gz
 	mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install' &>/dev/null
 	buildah run $(CONTAINER) ls -alR /usr/local/
-	# buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	# VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
-	# printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
-	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1 /usr/local/bin/luajit
+	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
+	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROL:w
+	LING release" | tee $@
+	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
 latest/luarocks.json:
