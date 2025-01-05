@@ -28,11 +28,13 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools neovim deps luajit luarocks nlua host-spawn clean
-ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-	buildah push ghcr.io/grantmacken/zie-toolbox
-endif
+default: init deps luajit
+
+# cli-tools deps neovim luajit luarocks nlua host-spawn clean
+# ifdef GITHUB_ACTIONS
+# 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
+# 	buildah push ghcr.io/grantmacken/zie-toolbox
+# endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
@@ -114,8 +116,7 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
 deps: ## deps for make installs
-	# echo '##[ $@ ]##'
-	# mkdir -p $(dir $@)
+	echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
 	buildah run $(CONTAINER) dnf install \
@@ -127,25 +128,15 @@ deps: ## deps for make installs
 		$${item} &>/dev/null
 	done
 
-## https://github.com/openresty/luajit2
 luajit: info/luajit.md
-latest/luajit.json:
+info/luajit.md:
 	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/openresty/luajit2/tags |
-	jq '.[0]' > $@
-
-info/luajit.md: latest/luajit.json
-	# echo '##[ $@ ]##'
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	#echo "name: $${NAME}"
-	#echo "url: $${URL}"
+	URL=https://github.com/LuaJIT/LuaJIT/archive/refs/tags/v2.1.ROLLING.tar.gz
 	mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
 	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
@@ -264,3 +255,7 @@ pull:
 worktree:
 	# automatically creates a new branch whose name is the final component of <path>
 	git worktree add ../beam_me_up
+
+
+run:
+	podman run --rm -it openresty/openresty:fedora  /bin/bash
