@@ -89,6 +89,19 @@ info/cli.md:
 	   tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
+deps: ## deps for make installs
+	echo '##[ $@ ]##'
+	for item in $(DEPS)
+	do
+	buildah run $(CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item} &>/dev/null
+	done
+
 # https://github.com/kodepandai/awesome-gh-cli-extensions
 
 ##[[ NEOVIM ]]##
@@ -115,18 +128,6 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
-deps: ## deps for make installs
-	echo '##[ $@ ]##'
-	for item in $(DEPS)
-	do
-	buildah run $(CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item} &>/dev/null
-	done
 
 luajit: info/luajit.md
 info/luajit.md:
@@ -137,9 +138,10 @@ info/luajit.md:
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install' &>/dev/null
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
-	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
+	buildah run $(CONTAINER) ls -al /usr/local/bin/
+	# buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-$${NAME} /usr/local/bin/luajit
+	# VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
+	# printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from openresty fork" | tee $@
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
