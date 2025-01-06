@@ -126,7 +126,6 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
 
-
 luajit: info/luajit.md
 info/luajit.md:
 	echo '##[ $@ ]##'
