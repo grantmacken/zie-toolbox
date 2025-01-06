@@ -35,4 +35,4 @@ jobs:
           git config user.name  "grantmacken"
           git config user.email "grantmacken@gmail.com"
           git commit README.md -m "Update README"
-          # git push
+          git push
