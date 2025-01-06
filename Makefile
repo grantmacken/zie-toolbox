@@ -28,13 +28,11 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init deps luajit luarocks
-
-# cli-tools deps neovim luajit luarocks nlua host-spawn clean
-# ifdef GITHUB_ACTIONS
-# 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-# 	buildah push ghcr.io/grantmacken/zie-toolbox
-# endif
+default: init cli-tools deps neovim luajit luarocks nlua host-spawn clean
+ifdef GITHUB_ACTIONS
+	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
+	buildah push ghcr.io/grantmacken/zie-toolbox
+endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
