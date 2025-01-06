@@ -32,6 +32,9 @@ default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
+	cat info/toolbox_intro.md > README.md
+	cat info/toolbox_overview.md >> README.md
+	cat info/toolbox_getting_started.md >> README.md
 endif
 
 clean:
@@ -134,7 +137,7 @@ info/luajit.md:
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install' &>/dev/null
 	# buildah run $(CONTAINER) ls -al /usr/local/bin
 	buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )

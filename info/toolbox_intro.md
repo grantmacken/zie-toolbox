@@ -1,4 +1,4 @@
-# A toolbox for neovim users and CLI fans
+# My toolbox for making stuff with Neovim and various CLI tools.
 
 This is my toolbox, you might like to give it a wirl.
 
