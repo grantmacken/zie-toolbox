@@ -29,10 +29,10 @@ jobs:
       #   run: make
       - name: Commit changes
         run: |
-          cat info/toolbox_intro.md > README.md
-          cat info/toolbox_overview.md >> README.md
-          cat info/toolbox_getting_started.md >> README.md
-          git config --global user.name "${{ github.repository_owner }}"
-          git config --global user.email "grantmacken@gmail.com"
+          cat info/toolbox_intro.md | tee README.md
+          cat info/toolbox_overview.md | tee -a README.md
+          cat info/toolbox_getting_started.md | tee -a README.md
+          git config user.name "${{ github.repository_owner }}"
+          git config user.email "grantmacken@gmail.com"
           git commit README.md -m "Update README"
-          git push
+          # git push
