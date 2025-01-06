@@ -25,13 +25,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
       - uses: actions/checkout@v4
-      - name: Toolbox Build
-        run: make
+      # - name: Toolbox Build
+      #   run: make
       - name: Commit changes
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          cat info/toolbox_intro.md > README.md
+          cat info/toolbox_overview.md >> README.md
+          cat info/toolbox_getting_started.md >> README.md
+          git config --global user.name "${{ github.repository_owner }}"
+          git config --global user.email "grantmacken@gmail.com"
           git commit README.md -m "Update README"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
