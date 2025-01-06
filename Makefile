@@ -142,7 +142,7 @@ info/luajit.md:
 	buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
 	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROLLING release" | tee $@
-	buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
+	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
 latest/luarocks.json:
