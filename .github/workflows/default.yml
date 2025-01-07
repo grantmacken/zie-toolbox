@@ -45,5 +45,9 @@ jobs:
           cat info/host-spawn.md >> README.md
           git commit README.md -m "Update README"
           git push origin HEAD:main
+          cat README.md
         env:
           ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
+
+# origin HEAD:main
+

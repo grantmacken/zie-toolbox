@@ -14,6 +14,7 @@ SHELL       := /bin/bash
 
 HEADING1 := \#
 HEADING2 := $(HEADING1)$(HEADING1)
+HEADING3 := $(HEADING2)$(HEADING1)
 
 COMMA := ,
 EMPTY:=
@@ -77,9 +78,9 @@ info/cli.md:
 		-y \
 		$${item} &>/dev/null
 	done
-	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------"
+	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
@@ -120,11 +121,13 @@ files/nvim/usr/local/bin/nvim: latest/neovim.json
 
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
+	# table header
 	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
-	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | -a tee $@
 	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee $@
+	# table row
+	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
 luajit: info/luajit.md
 info/luajit.md:
@@ -173,15 +176,6 @@ info/nlua.info:
 	TARG=/usr/bin/nlua
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
-	# buildah run $(CONTAINER) luarocks install nlua
-	# # confirm it is working
-	# buildah run $(CONTAINER) sh -c 'echo "print(1 + 2)" | nlua'
-	# buildah run $(CONTAINER) sh -c 'luarocks config lua_interpreter nlua'
-	# # buildah run $(CONTAINER) sh -c 'luarocks'
-	# buildah run $(CONTAINER) sh -c 'cat /etc/xdg/luarocks/config-5.1.lua'
-	# buildah run $(CONTAINER) sh -c 'whereis luarocks'
-	# buildah run $(CONTAINER) sh -c 'which luarocks'
-	# buildah run $(CONTAINER) sh -c 'where is nlua'
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -198,19 +192,15 @@ info/host-spawn.md: latest/host-spawn.json
 	TARG=/usr/local/bin/host-spawn
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "| %-10s | %-13s | %-83s |\n" "host-spawn" "$${NAME}" "run commands on your host machine from inside the toolbox" | tee $@
-	echo 'The following host executables can be used from this toolbox' | tee -a $@
+	# close table
+	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	printf "\n$(HEADING3) %s\n" "Host Spawn Commands" | tee -a $@
+	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
 	do
 	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
-
-	# buildah run $(CONTAINER) nlua -e "print(package.path)"
-	# buildah run $(CONTAINER) nlua -e "print(package.cpath)"
-	# buildah run $(CONTAINER) nlua -e "print(vim.fn.stdpath('data'))"
-	# use nlua as lua interpreter when using luarocks
-	# buildah run $(CONTAINER) sed -i 's/luajit/nlua/g' /etc/xdg/luarocks/config-5.1.lua
-	# checks
 
 ##[[ NODEJS ]]##
 
