@@ -123,7 +123,7 @@ info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
 	# table header
 	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
-	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | -a tee $@
+	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
 	# table row
