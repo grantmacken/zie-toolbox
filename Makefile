@@ -32,6 +32,15 @@ default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
+	cat info/toolbox_intro.md | tee README.md
+	cat info/toolbox_overview.md | tee -a README.md
+	cat info/toolbox_getting_started.md | tee -a README.md
+	cat info/cli.md >> README.md
+	cat info/neovim.md >> README.md
+	cat info/luajit.md >> README.md
+	cat info/luarocks.md >> README.md
+	cat info/nlua.info >> README.md
+	cat info/host-spawn.md >> README.md
 endif
 
 clean:
@@ -239,15 +248,6 @@ info/nodejs.md: files/node/usr/local/bin/node
 
 ####################################################
 
-readme: info/README.md
-info/README.md:
-	cat info/toolbox_intro.md | tee $@
-	cat info/toolbox_getting_started.md | tee -a $@
-	cat info/toolbox_overview.md | tee -a $@
-	cat info/neovim.md | tee -a $@
-	cat info/nodejs.md | tee -a $@
-	# rm info/README.md
-
 pull:
 	podman pull ghcr.io/grantmacken/zie-toolbox:latest
 
@@ -255,6 +255,3 @@ worktree:
 	# automatically creates a new branch whose name is the final component of <path>
 	git worktree add ../beam_me_up
 
-
-run:
-	podman run --rm -it openresty/openresty:fedora  /bin/bash
