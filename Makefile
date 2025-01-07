@@ -66,7 +66,6 @@ info/working.info:
 
 cli-tools: info/cli.md
 info/cli.md:
-	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
 	mkdir -p $(dir $@)
 	for item in $(CLI)
 	do
@@ -78,15 +77,16 @@ info/cli.md:
 		-y \
 		$${item} &>/dev/null
 	done
+	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
 	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee $@
+	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	# printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 deps: ## deps for make installs
 	echo '##[ $@ ]##'
@@ -120,11 +120,11 @@ files/nvim/usr/local/bin/nvim: latest/neovim.json
 	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
 
 info/neovim.md: files/nvim/usr/local/bin/nvim
-	printf "$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
 	# table header
-	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------"
+	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
 	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------"
+	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
 	# table row
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
@@ -191,10 +191,10 @@ info/host-spawn.md: latest/host-spawn.json
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-10s | %-13s | %-83s |\n" "host-spawn" "$${NAME}" "run commands on your host machine from inside the toolbox" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
+	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
 	# close table
-	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	printf "\n$(HEADING3) %s\n" "Host Spawn Commands" | tee -a $@
+	printf "\n %s\n" "Host Spawn Commands" | tee -a $@
 	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
 	do
