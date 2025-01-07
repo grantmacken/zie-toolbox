@@ -35,7 +35,7 @@ jobs:
           git config --global user.name ${{ github.repository_owner }}
           git config --global  user.email "grantmacken@gmail.com"
           git config --list
-          # git commit README.md -m "Update README"
-          # git push
+          git commit README.md -m "Update README"
+          git push
         env:
           GITHUB_TOKEN: ${{ github.token }}
