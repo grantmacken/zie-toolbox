@@ -78,7 +78,7 @@ info/cli.md:
 		$${item} &>/dev/null
 	done
 	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
+	# printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
@@ -122,7 +122,7 @@ files/nvim/usr/local/bin/nvim: latest/neovim.json
 info/neovim.md: files/nvim/usr/local/bin/nvim
 	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
 	# table header
-	printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
+	# printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
 	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
@@ -194,7 +194,6 @@ info/host-spawn.md: latest/host-spawn.json
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
 	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
 	# close table
-	printf "\n %s\n" "Host Spawn Commands" | tee -a $@
 	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
 	do
