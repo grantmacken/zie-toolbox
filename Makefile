@@ -32,7 +32,6 @@ default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
-
 endif
 
 clean:
