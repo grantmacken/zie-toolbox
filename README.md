@@ -32,6 +32,7 @@ toolbox enter tbx
 ```
 
 | Name          | Version | Summary                                                                             |
+| ----          | ------- | ----------------------------                                                        |
 | bat           | 0.24.0  | Cat(1) clone with wings                                                             |
 | direnv        | 2.32.3  | Per-directory shell configuration tool                                              |
 | eza           | 0.19.3  | Modern replacement for ls                                                           |
@@ -46,11 +47,18 @@ toolbox enter tbx
 | yq            | 4.43.1  | Yq is a portable command-line YAML, JSON, XML, CSV, TOML  and properties processor  |
 | zoxide        | 0.9.4   | Smarter cd command for your terminal                                                |
 | ----          | ------- | ----------------------------                                                        |
+## Neovim , luajit, luarocks, nlua
+
+| Name       | Version       | Summary                                                                             |
 | Neovim     | v0.11.0       | The text editor with a focus on extensibility and usability                         |
 | luajit     | 2.1.ROLLING   | built from ROLLING release                                                          |
 | luarocks   | 3.11.1        | built from source from latest luarocks tag                                          |
 | nlua       | HEAD          | lua script added from github 'mfussenegger/nlua'                                    |
 | host-spawn | 1.6.0         | run commands on your host machine from inside the toolbox                           |
+| ----       | -------       | ----------------------------                                                        |
+
+### Host Spawn Commands
+
 The following host executables can be used from this toolbox
  - firefox
  - flatpak
