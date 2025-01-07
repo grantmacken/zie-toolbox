@@ -15,7 +15,7 @@ jobs:
     continue-on-error: false
     # https://docs.github.com/en/actions/reference/authentication-in-a-workflow
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
     steps:
