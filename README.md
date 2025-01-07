@@ -31,3 +31,31 @@ toolbox create --image ghcr.io/grantmacken/zie-toolbox tbx
 toolbox enter tbx
 ```
 
+| Name          | Version | Summary                                                                             |
+| bat           | 0.24.0  | Cat(1) clone with wings                                                             |
+| direnv        | 2.32.3  | Per-directory shell configuration tool                                              |
+| eza           | 0.19.3  | Modern replacement for ls                                                           |
+| fd-find       | 10.1.0  | Fd is a simple, fast and user-friendly alternative to find                          |
+| fzf           | 0.57.0  | A command-line fuzzy finder written in Go                                           |
+| gh            | 2.63.2  | GitHub's official command line tool                                                 |
+| jq            | 1.7.1   | Command-line JSON processor                                                         |
+| make          | 4.4.1   | A GNU tool which simplifies the build process for users                             |
+| ripgrep       | 14.1.1  | Line-oriented search tool                                                           |
+| stow          | 2.4.1   | Manage the installation of software packages from source                            |
+| wl-clipboard  | 2.2.1   | Command-line copy/paste utilities for Wayland                                       |
+| yq            | 4.43.1  | Yq is a portable command-line YAML, JSON, XML, CSV, TOML  and properties processor  |
+| zoxide        | 0.9.4   | Smarter cd command for your terminal                                                |
+| ----          | ------- | ----------------------------                                                        |
+| Neovim     | v0.11.0       | The text editor with a focus on extensibility and usability                         |
+| luajit     | 2.1.ROLLING   | built from ROLLING release                                                          |
+| luarocks   | 3.11.1        | built from source from latest luarocks tag                                          |
+| nlua       | HEAD          | lua script added from github 'mfussenegger/nlua'                                    |
+| host-spawn | 1.6.0         | run commands on your host machine from inside the toolbox                           |
+The following host executables can be used from this toolbox
+ - firefox
+ - flatpak
+ - podman
+ - buildah
+ - systemctl
+ - rpm-ostree
+ - dconf
