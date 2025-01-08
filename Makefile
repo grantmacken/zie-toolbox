@@ -31,11 +31,9 @@ REMOVE := vim-minimal
 # default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init cli-tools deps neovim luajit luarocks neovim nlua host-spawn clean
-
-xx1:
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-	buildah push ghcr.io/grantmacken/zie-toolbox
+	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-neovim-release
+	buildah push ghcr.io/grantmacken/tbx-neovim-release:latest
 endif
 
 clean:
