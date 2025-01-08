@@ -117,12 +117,12 @@ neovim: info/neovim.md
 info/neovim.md: latest/neovim.tagname
 	echo '##[ $@ ]##'
 	VERSION=$$(cat $<)
-	printf "neovim version%s\n" "$${VERSION}"
+	printf "neovim version%s \n" "$${VERSION}"
 	TARGET=files/$(basename $(notdir $@))/usr/local
 	mkdir -p $${TARGET}
 	SRC="https://github.com/neovim/neovim/releases/download/$${VERSION}/nvim-linux64.tar.gz"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
+	buildah add --chmod 755 $(CONTAINER) $${TARGET} &>/dev/null
 	# CHECK:
 	buildah run $(CONTAINER) nvim -v
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
