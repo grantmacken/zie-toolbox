@@ -39,7 +39,6 @@ clean:
 	# buildah run $(CONTAINER) dnf leaves
 	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
-	buildah run $(CONTAINER) dnf upgrade -y --minimal
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
 reset:
@@ -67,6 +66,7 @@ info/working.info:
 cli-tools: info/cli.md
 info/cli.md:
 	mkdir -p $(dir $@)
+	buildah run $(CONTAINER) dnf upgrade -y --minimal
 	for item in $(CLI)
 	do
 	buildah run $(CONTAINER) dnf install \
@@ -101,21 +101,13 @@ deps: ## deps for make installs
 		$${item} &>/dev/null
 	done
 
-# https://github.com/kodepandai/awesome-gh-cli-extensions
-
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
-
-latest/neovim.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/tags/nightly' > $@
-
-files/nvim/usr/local/bin/nvim: latest/neovim.json
+files/nvim/usr/local/bin/nvim:
 	# echo '##[ $@ ]##'
 	mkdir -p files/$(notdir $@)/usr/local
-	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
-	# echo "source: $${SRC}"
+	# SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
+	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
 	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
 
@@ -169,6 +161,7 @@ info/luarocks.md: latest/luarocks.json
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(CONTAINER) luarocks
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 
