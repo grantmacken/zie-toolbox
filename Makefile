@@ -27,9 +27,14 @@ CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxi
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+REMOVE := vim-minimal 
+# default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
+default: init neovim
+
+# cli-tools deps luajit luarocks neovim nlua host-spawn clean
+
+xx1:
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -102,16 +107,28 @@ deps: ## deps for make installs
 	done
 
 ##[[ NEOVIM ]]##
-neovim: info/neovim.md
-files/nvim/usr/local/bin/nvim:
-	# echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	# SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
-	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
+latest/neovim.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/neovim/neovim/releases/latest' |
+	jq  '.tag_name' | tr -d '"' > $@
 
-info/neovim.md: files/nvim/usr/local/bin/nvim
+neovim: info/neovim.md
+info/neovim.md: latest/neovim.tagname
+	echo '##[ $@ ]##'
+	VERSION=$$(cat $<)
+	printf "neovim version%s\n" "$${VERSION}"
+	TARGET=files/$(basename $(notdir $@))/usr/local
+	mkdir -p $${TARGET}
+	SRC="https://github.com/neovim/neovim/releases/download/$${VERSION}/nvim-linux64.tar.gz"
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
+	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
+	# CHECK:
+	buildah run $(CONTAINER) nvim -v
+	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
+		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
+
+xxx:
 	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
 	# table header
 	# printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@

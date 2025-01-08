@@ -28,4 +28,5 @@ jobs:
       - name: Toolbox Build
         run: |
           printf "%s\n" "neovim from latest release"
+          make
 
