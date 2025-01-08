@@ -27,12 +27,10 @@ CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxi
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := vim-minimal 
+REMOVE := vim-minimal
 # default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init neovim
-
-# cli-tools deps luajit luarocks neovim nlua host-spawn clean
+default: init cli-tools deps neovim luajit luarocks neovim nlua host-spawn clean
 
 xx1:
 ifdef GITHUB_ACTIONS
@@ -128,24 +126,17 @@ info/neovim.md: latest/neovim.tagname
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
 		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
-xxx:
-	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
-	# table header
-	# printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
-	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	# table row
-	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
 luajit: info/luajit.md
 info/luajit.md:
 	echo '##[ $@ ]##'
 	URL=https://github.com/luajit/luajit/archive/refs/tags/v2.1.ROLLING.tar.gz
-	mkdir -p files/luajit
+	# mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
+	src/luajit
+	SRC=https://github.com/neovim/deps/tree/master/src/luajit
+	buildah add --chmod 755 $(CONTAINER) /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
 	# buildah run $(CONTAINER) ls -al /usr/local/bin
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
