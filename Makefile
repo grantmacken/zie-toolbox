@@ -20,24 +20,27 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
+IMAGE     := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+REMOVE := vim-minimal
 
-default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
+# .PHONY: help init
+
+default: init cli-tools host-spawn
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-	buildah push ghcr.io/grantmacken/zie-toolbox
+	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-cli-tools
+	buildah push ghcr.io/grantmacken/tbx-cli-tools:latest
 endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
-	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
+	buildah run $(CO:w
+	NTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
@@ -55,7 +58,6 @@ help: ## show this help
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 init: info/working.info
-
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -101,85 +103,14 @@ deps: ## deps for make installs
 		$${item} &>/dev/null
 	done
 
-##[[ NEOVIM ]]##
-neovim: info/neovim.md
-files/nvim/usr/local/bin/nvim:
-	# echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	# SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
-	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
-
-info/neovim.md: files/nvim/usr/local/bin/nvim
-	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
-	# table header
-	# printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
-	printf "| %-10s | %-13s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-10s | %-13s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	# table row
-	printf "| %-10s | %-13s | %-83s |\n" "Neovim" "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
-
-luajit: info/luajit.md
-info/luajit.md:
-	echo '##[ $@ ]##'
-	URL=https://github.com/luajit/luajit/archive/refs/tags/v2.1.ROLLING.tar.gz
-	mkdir -p files/luajit
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
-	# buildah run $(CONTAINER) ls -al /usr/local/bin
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
-	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
-	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROLLING release" | tee $@
-	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
-
-luarocks: info/luarocks.md
-latest/luarocks.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
-	jq  '.[0]' > $@
-
-info/luarocks.md: latest/luarocks.json
-	# echo '##[ $@ ]##'
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	# echo "name: $${NAME}"
-	# echo "url: $${URL}"
-	mkdir -p files/luarocks
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
-	--lua-version=5.1 --with-lua-interpreter=luajit \
-	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(CONTAINER) luarocks
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
-
-nlua: info/nlua.info
-info/nlua.info:
-	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
-	TARG=/usr/bin/nlua
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
-
 ## HOST-SPAWN
+host-spawn: info/host-spawn.md
 latest/host-spawn.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest |
 	jq '.' > $@
 
-host-spawn: info/host-spawn.md
 info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
