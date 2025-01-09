@@ -28,4 +28,5 @@ jobs:
       - name: Toolbox Build
         run: |
           printf "%s\n" " - building tbx-cli-tools Image"
-          make
+          printenv
+          # make

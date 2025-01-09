@@ -127,37 +127,8 @@ info/host-spawn.md: latest/host-spawn.json
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
-##[[ NODEJS ]]##
-
-latest/nodejs.tagname:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
-
-files/node/usr/local/bin/node: latest/nodejs.tagname
-	echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	TAG=$(shell cat $<)
-	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
-	echo "source: $${SRC}"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
-
-nodejs: info/nodejs.md
-info/nodejs.md: files/node/usr/local/bin/node
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
-	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
-	available from [node org](https://nodejs.org/download/release/)"  \
-	$$(cat latest/nodejs.tagname) >> $@
-
 ####################################################
 
 pull:
-	podman pull ghcr.io/grantmacken/zie-toolbox:latest
-
-worktree:
-	# automatically creates a new branch whose name is the final component of <path>
-	git worktree add ../beam_me_up
-
+	podman pull ghcr.io/grantmacken/tbx-cli-tools:latest
+	toolbox create --image ghcr.io/grantmacken/tbx-cli-tools:latest tbx-cli-tools:
