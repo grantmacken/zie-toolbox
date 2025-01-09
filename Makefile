@@ -4,7 +4,7 @@ MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
 unexport MAKEFLAGS
 
-SHELL       := /bin/bash
+SHELL       := /usr/bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
 
 .SUFFIXES:            # Delete the default suffixes
@@ -32,6 +32,7 @@ REMOVE := vim-minimal
 # .PHONY: help init
 
 default: init cli-tools host-spawn
+	buildah run $(CONTAINER) printenv
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-cli-tools
 	buildah push ghcr.io/grantmacken/tbx-cli-tools:latest
@@ -39,8 +40,7 @@ endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
-	buildah run $(CO:w
-	NTAINER) dnf remove -y $(REMOVE)
+	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 

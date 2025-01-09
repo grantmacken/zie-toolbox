@@ -29,7 +29,6 @@ jobs:
         run: |
           printf "%s\n" " - building tbx-cli-tools Image"
           printenv
-          ls /usr/bin | grep bash || true
+          ls -al /usr/bin | grep bash || true
           echo '+++++++++++++++'
-          ls /bin | grep bash || true
-          # make
+          make
