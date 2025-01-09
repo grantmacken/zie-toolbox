@@ -32,8 +32,8 @@ REMOVE := vim-minimal
 
 default: init cli-tools deps neovim luajit luarocks neovim nlua host-spawn clean
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-neovim-release
-	buildah push ghcr.io/grantmacken/tbx-neovim-release:latest
+	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-nvim-release
+	buildah push ghcr.io/grantmacken/tbx-nvim-release:latest
 endif
 
 clean:
@@ -56,7 +56,6 @@ help: ## show this help
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 init: info/working.info
-
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -129,9 +128,9 @@ info/luajit.md:
 	echo '##[ $@ ]##'
 	URL=https://github.com/luajit/luajit/archive/refs/tags/v2.1.ROLLING.tar.gz
 	mkdir -p files/luajit
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
+	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
 	# buildah run $(CONTAINER) ls -al /usr/local/bin
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
@@ -139,41 +138,6 @@ info/luajit.md:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
 	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROLLING release" | tee $@
-
-
-luarocks: info/luarocks.md
-latest/luarocks.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
-	jq  '.[0]' > $@
-
-info/luarocks.md: latest/luarocks.json
-	# echo '##[ $@ ]##'
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	# echo "name: $${NAME}"
-	# echo "url: $${URL}"
-	mkdir -p files/luarocks
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
-	--lua-version=5.1 --with-lua-interpreter=luajit \
-	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(CONTAINER) luarocks
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
-
-nlua: info/nlua.info
-info/nlua.info:
-	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
-	TARG=/usr/bin/nlua
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
 
 ## HOST-SPAWN
 latest/host-spawn.json:
@@ -199,37 +163,8 @@ info/host-spawn.md: latest/host-spawn.json
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
-##[[ NODEJS ]]##
-
-latest/nodejs.tagname:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
-
-files/node/usr/local/bin/node: latest/nodejs.tagname
-	echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	TAG=$(shell cat $<)
-	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
-	echo "source: $${SRC}"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
-
-nodejs: info/nodejs.md
-info/nodejs.md: files/node/usr/local/bin/node
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
-	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
-	available from [node org](https://nodejs.org/download/release/)"  \
-	$$(cat latest/nodejs.tagname) >> $@
-
 ####################################################
 
 pull:
-	podman pull ghcr.io/grantmacken/zie-toolbox:latest
-
-worktree:
-	# automatically creates a new branch whose name is the final component of <path>
-	git worktree add ../beam_me_up
+	podman pull ghcr.io/grantmacken/tbx-nvim-release:latest
 
