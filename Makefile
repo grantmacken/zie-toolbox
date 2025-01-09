@@ -65,7 +65,7 @@ info/working.info:
 config: info/config.md
 info/config.md:
 	mkdir -p $(dir $@)
-	buildah config --shell /usr/bin/bash --env SHELL /usr/bin/bash $(CONTAINER)
+	buildah config --shell /usr/bin/bash --env SHELL=/usr/bin/bash $(CONTAINER)
 	printf "%s\n" " - set shell to bash" | tee $@
 
 cli-tools: info/cli.md
