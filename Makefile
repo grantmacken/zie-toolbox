@@ -30,7 +30,7 @@ DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel rea
 REMOVE := vim-minimal
 # default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools deps neovim luajit luarocks neovim nlua host-spawn clean
+default: init cli-tools neovim host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-nvim-release
 	buildah push ghcr.io/grantmacken/tbx-nvim-release:latest
