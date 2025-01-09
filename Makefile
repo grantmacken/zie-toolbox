@@ -29,10 +29,7 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal
 
-# .PHONY: help init
-
-default: init cli-tools host-spawn
-	buildah run $(CONTAINER) printenv
+default: init config cli-tools host-spawn
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-cli-tools
 	buildah push ghcr.io/grantmacken/tbx-cli-tools:latest
@@ -64,6 +61,12 @@ info/working.info:
 	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
+
+config: info/config.md
+info/config.md:
+	mkdir -p $(dir $@)
+	buildah config --shell /usr/bin/bash --env SHELL /usr/bin/bash $(CONTAINER)
+	printf "%s\n" " - set shell to bash" | tee $@
 
 cli-tools: info/cli.md
 info/cli.md:
