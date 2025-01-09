@@ -29,7 +29,7 @@ SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal
 
-default: init config cli-tools host-spawn
+default: init config cli-tools host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-cli-tools
 	buildah push ghcr.io/grantmacken/tbx-cli-tools:latest
@@ -41,18 +41,6 @@ clean:
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
-reset:
-	buildah rm $(CONTAINER) || true
-	rm -rfv info
-	rm -rfv latest
-	rm -rfv files
-
-.PHONY: help
-help: ## show this help
-	@cat $(MAKEFILE_LIST) |
-	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
-	sort |
-	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 init: info/working.info
 info/working.info:
@@ -65,7 +53,13 @@ info/working.info:
 config: info/config.md
 info/config.md:
 	mkdir -p $(dir $@)
-	buildah config --shell /usr/bin/bash --env SHELL=/usr/bin/bash $(CONTAINER)
+	buildah config \
+		--shell /usr/bin/bash \
+		--env SHELL=/usr/bin/bash \
+		--cmd /usr/bin/bash \
+		--author grantmacken \
+	    --comment 'built from $(IMAGE)' \
+		$(CONTAINER)
 	printf "%s\n" " - set shell to bash" | tee $@
 
 cli-tools: info/cli.md
@@ -134,4 +128,5 @@ info/host-spawn.md: latest/host-spawn.json
 
 pull:
 	podman pull ghcr.io/grantmacken/tbx-cli-tools:latest
-	toolbox create --image ghcr.io/grantmacken/tbx-cli-tools:latest tbx-cli-tools:
+	# toolbox create --image ghcr.io/grantmacken/tbx-cli-tools:latest tbx-cli-tools
+	podman inspect ghcr.io/grantmacken/tbx-cli-tools
