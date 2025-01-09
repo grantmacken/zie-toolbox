@@ -1,11 +1,11 @@
+SHELL       := /usr/bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
 unexport MAKEFLAGS
-
-SHELL       := /bin/bash
-.SHELLFLAGS := -eu -o pipefail -c
 
 .SUFFIXES:            # Delete the default suffixes
 .ONESHELL:            #all lines of the recipe will be given to a single invocation of the shell
@@ -24,6 +24,7 @@ IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
 TBX_IMAGE := ghcr.io/grantmacken/tbx-nvim-release
 TBX_CONTAINER_NAME=tbx-nvim-release
+NVIM_APPNAME=$(TBX_CONTAINER_NAME)
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
@@ -41,7 +42,7 @@ endif
 config: info/config.md
 info/config.md:
 	mkdir -p $(dir $@)
-	buildah config --env NVIM_APPNAME=$(TBX_CONTAINER_NAME) $(CONTAINER)
+	buildah config --env NVIM_APPNAME=$(NVIM_APPNAME) $(CONTAINER)
 	printf "%s\n" " - set nvim appname" | tee $@
 
 init: info/working.info
