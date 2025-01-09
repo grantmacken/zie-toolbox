@@ -132,7 +132,6 @@ info/luajit.md:
 	# mkdir -p files/luajit
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	src/luajit
 	SRC=https://github.com/neovim/deps/tree/master/src/luajit
 	buildah add --chmod 755 $(CONTAINER) /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
