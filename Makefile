@@ -20,7 +20,7 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
+IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := fedora-toolbox-working-container
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
@@ -30,7 +30,9 @@ DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel rea
 REMOVE := vim-minimal
 # default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools neovim host-spawn clean
+default: init
+
+# cli-tools neovim host-spawn clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-nvim-release
 	buildah push ghcr.io/grantmacken/tbx-nvim-release:latest
@@ -59,8 +61,8 @@ init: info/working.info
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
-	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
+	buildah pull $(IMAGE) | tee  $@
+	buildah from $(IMAGE) | tee -a $@
 	echo
 
 cli-tools: info/cli.md
