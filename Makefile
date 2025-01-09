@@ -22,6 +22,8 @@ SPACE := $(EMPTY) $(EMPTY)
 
 IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
+TBX_IMAGE := ghcr.io/grantmacken/tbx-nvim-release
+TBX_CONTAINER_NAME=tbx-nvim-release
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
@@ -30,30 +32,17 @@ DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel rea
 REMOVE := vim-minimal
 # default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init neovim
+default: init config neovim
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-nvim-release
-	buildah push ghcr.io/grantmacken/tbx-nvim-release:latest
+	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
 endif
 
-clean:
-	# buildah run $(CONTAINER) dnf leaves
-	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
-	buildah run $(CONTAINER) dnf autoremove -y
-	buildah run $(CONTAINER) rm -rf /tmp/*
-
-reset:
-	buildah rm $(CONTAINER) || true
-	rm -rfv info
-	rm -rfv latest
-	rm -rfv files
-
-.PHONY: help
-help: ## show this help
-	@cat $(MAKEFILE_LIST) |
-	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
-	sort |
-	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+config: info/config.md
+info/config.md:
+	mkdir -p $(dir $@)
+	buildah config --env NVIM_APPNAME=$(TBX_CONTAINER_NAME) $(CONTAINER)
+	printf "%s\n" " - set nvim appname" | tee $@
 
 init: info/working.info
 info/working.info:
@@ -79,14 +68,34 @@ info/neovim.md: latest/neovim.tagname
 	mkdir -p $${TARGET}
 	SRC="https://github.com/neovim/neovim/releases/download/$${VERSION}/nvim-linux64.tar.gz"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755 $(CONTAINER) $${TARGET} &>/dev/null
+	buildah add --chmod 755 $(CONTAINER) files/$(basename $(notdir $@)) &>/dev/null
 	# CHECK:
 	buildah run $(CONTAINER) nvim -v
+	buildah run $(CONTAINER) whereis nvim
+	buildah run $(CONTAINER) which nvim
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
 		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
 ####################################################
 
-pull:
-	podman pull ghcr.io/grantmacken/tbx-nvim-release:latest
+setup:
+	# podman pull $(TBX_IMAGE):latest
+	# podman inspect $(TBX_IMAGE)
+	printf "toolbox container name: %s\n" "$(TBX_CONTAINER_NAME)"
+	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
+	then
+		echo " ---------------------------------------"
+		echo " Recreate the toolbox container $(TBX_CONTAINER_NAME) "
+		echo " ---------------------------------------"
+		echo " - 1: Remove the toolbox container $(TBX_CONTAINER_NAME)"
+		toolbox rm -f $(TBX_CONTAINER_NAME)
+		echo " - 2: Recreate toolbox from the latest image and"
+		echo "      give it the same name as the removed container"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	else
+		echo " -----------------------------------------------------------"
+		echo " Create the toolbox container with name: $(TBX_CONTAINER_NAME)  "
+		echo " -----------------------------------------------------------"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	fi
 
