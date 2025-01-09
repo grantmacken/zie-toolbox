@@ -73,6 +73,7 @@ info/neovim.md: latest/neovim.tagname
 	buildah run $(CONTAINER) nvim -v
 	buildah run $(CONTAINER) whereis nvim
 	buildah run $(CONTAINER) which nvim
+	buildah run $(CONTAINER) printenv
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
 		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
