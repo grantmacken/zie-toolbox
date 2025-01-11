@@ -137,6 +137,7 @@ latest/nodejs.tagname:
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.tagname
 	# echo '##[ $@ ]##'
+	printf "$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
 	NAME=$(basename $(notdir $@))
 	VERSION=$(shell cat $<)
 	printf "nodejs version: %s\n" "$${VERSION}"
@@ -147,8 +148,9 @@ info/nodejs.md: latest/nodejs.tagname
 	mkdir -p $${TARGET}
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
 	buildah add --chmod 755  $(CONTAINER) files/$${NAME} &>/dev/null
-	#printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
-	#available from [node org](https://nodejs.org/download/release/)"  "$$(cat latest/nodejs.tagname)" | tee -a $@
+	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release" "$${VERSION}"  | tee -a $@
+	printf "%s\n" "Sourced from [node org](https://nodejs.org/download/release/)"  | tee -a $@
+	printf "%s\n" "Node runtime included as is pretty much ubiquitous"  | tee -a $@
 
 ####################################################
 
