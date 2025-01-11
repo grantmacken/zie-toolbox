@@ -81,8 +81,8 @@ info/neovim.md: latest/neovim.tagname
 ####################################################
 
 setup:
-	# podman pull $(TBX_IMAGE):latest
-	# podman inspect $(TBX_IMAGE)
+	podman pull $(TBX_IMAGE):latest
+	podman inspect $(TBX_IMAGE)
 	printf "toolbox container name: %s\n" "$(TBX_CONTAINER_NAME)"
 	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
 	then
