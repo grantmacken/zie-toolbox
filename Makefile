@@ -23,16 +23,20 @@ SPACE := $(EMPTY) $(EMPTY)
 IMAGE     := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
+TBX_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
+TBX_CONTAINER_NAME=tbx-cli-tools
+
+
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal
 
-default: init config cli-tools host-spawn clean
+default: init config cli-tools host-spawn nodejs clean
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/tbx-cli-tools
-	buildah push ghcr.io/grantmacken/tbx-cli-tools:latest
+	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
 endif
 
 clean:
@@ -40,7 +44,6 @@ clean:
 	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
-
 
 init: info/working.info
 info/working.info:
@@ -124,9 +127,49 @@ info/host-spawn.md: latest/host-spawn.json
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
+##[[ NODEJS ]]##
+latest/nodejs.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' |
+	jq '.tag_name' |  tr -d '"' > $@
+
+nodejs: info/nodejs.md
+info/nodejs.md: latest/nodejs.tagname
+	# echo '##[ $@ ]##'
+	NAME=$(basename $(notdir $@))
+	VERSION=$(shell cat $<)
+	printf "nodejs version: %s\n" "$${VERSION}"
+	SRC=https://nodejs.org/download/release/$${VERSION}/node-$${VERSION}-linux-x64.tar.gz
+	printf "download URL: %s\n" "$${SRC}"
+	TARGET=files/$${NAME}/usr/local
+	printf "download TARGET: %s\n" "$${TARGET}"
+	mkdir -p $${TARGET}
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
+	buildah add --chmod 755  $(CONTAINER) files/$${NAME} &>/dev/null
+	#printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
+	#available from [node org](https://nodejs.org/download/release/)"  "$$(cat latest/nodejs.tagname)" | tee -a $@
+
 ####################################################
 
-pull:
-	podman pull ghcr.io/grantmacken/tbx-cli-tools:latest
+setup:
+	# podman pull $(TBX_IMAGE):latest
 	# toolbox create --image ghcr.io/grantmacken/tbx-cli-tools:latest tbx-cli-tools
-	podman inspect ghcr.io/grantmacken/tbx-cli-tools
+	# podman inspect $(TBX_IMAGE)
+	printf "toolbox container name: %s\n" "$(TBX_CONTAINER_NAME)"
+	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
+	then
+		echo " ---------------------------------------"
+		echo " Recreate the toolbox container $(TBX_CONTAINER_NAME) "
+		echo " ---------------------------------------"
+		echo " - 1: Remove the toolbox container $(TBX_CONTAINER_NAME)"
+		toolbox rm -f $(TBX_CONTAINER_NAME)
+		echo " - 2: Recreate toolbox from the latest image and"
+		echo "      give it the same name as the removed container"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	else
+		echo " -----------------------------------------------------------"
+		echo " Create the toolbox container with name: $(TBX_CONTAINER_NAME)  "
+		echo " -----------------------------------------------------------"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	fi
