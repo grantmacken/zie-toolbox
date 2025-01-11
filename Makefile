@@ -1,11 +1,11 @@
+SHELL       := /bin/bash
+.SHELLFLAGS := -eu -o pipefail -c
+
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
 unexport MAKEFLAGS
-
-SHELL       := /bin/bash
-.SHELLFLAGS := -eu -o pipefail -c
 
 .SUFFIXES:            # Delete the default suffixes
 .ONESHELL:            #all lines of the recipe will be given to a single invocation of the shell
@@ -20,19 +20,17 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-IMAGE    := registry.fedoraproject.org/fedora-toolbox:41
-CONTAINER := fedora-toolbox-working-container
+IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
+CONTAINER := tbx-cli-tools-working-container
 
-CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
-# common deps used to build luajit and luarocks
-DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := vim-minimal default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+TBX_CONTAINER_NAME=tbx-neovim-prerelease
+NVIM_APPNAME=$(TBX_CONTAINER_NAME)
 
-default: init cli-tools deps luajit luarocks neovim nlua host-spawn clean
+default: init config neovim
+
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-	buildah push ghcr.io/grantmacken/zie-toolbox
+	buildah commit $(CONTAINER) $(TBX_CONTAINER_NAME)
+	buildah push $(TBX_CONTAINER_NAME)
 endif
 
 clean:
@@ -41,21 +39,8 @@ clean:
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
-reset:
-	buildah rm $(CONTAINER) || true
-	rm -rfv info
-	rm -rfv latest
-	rm -rfv files
-
-.PHONY: help
-help: ## show this help
-	@cat $(MAKEFILE_LIST) |
-	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
-	sort |
-	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 init: info/working.info
-
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -63,55 +48,31 @@ info/working.info:
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
 
-cli-tools: info/cli.md
-info/cli.md:
+config: info/config.md
+info/config.md:
 	mkdir -p $(dir $@)
-	buildah run $(CONTAINER) dnf upgrade -y --minimal
-	for item in $(CLI)
-	do
-	buildah run $(CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item} &>/dev/null
-	done
-	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	# printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
-	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
-	   paste  - - -  | sort -u ' | \
-	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
-	   tee -a $@
-	# printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-
-deps: ## deps for make installs
-	echo '##[ $@ ]##'
-	for item in $(DEPS)
-	do
-	buildah run $(CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item} &>/dev/null
-	done
+	buildah config --env NVIM_APPNAME=$(NVIM_APPNAME) $(CONTAINER)
+	printf "%s\n" " - set nvim appname" | tee $@
 
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
-files/nvim/usr/local/bin/nvim:
-	# echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	# SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+nvim-linux64.tar.gz$$')
+info/neovim.md:
+	echo '##[ $@ ]##'
+	TARGET=files/$(basename $(notdir $@))/usr/local
+	mkdir -p $${TARGET}
 	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local &>/dev/null
+	buildah add --chmod 755 $(CONTAINER) files/$(basename $(notdir $@)) &>/dev/null
+	# CHECK:
+	buildah run $(CONTAINER) nvim -v
+	buildah run $(CONTAINER) whereis nvim
+	buildah run $(CONTAINER) which nvim
+	# buildah run $(CONTAINER) printenv
+	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
+	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
+		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
-info/neovim.md: files/nvim/usr/local/bin/nvim
+xcxc:
 	printf "\n$(HEADING2) %s\n\n" "Neovim , luajit, luarocks, nlua" | tee $@
 	# table header
 	# printf "| %-10s | %-13s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@

@@ -1,10 +1,10 @@
-name: Build zie-toolbox image
+name: Build tbx-neovim-prerelease image
 on:
-  schedule:
-    - cron: '0 1 * * 1'  #  1am every monday
+  # schedule:
+  #   - cron: '0 2 * * 1'  #  1am every monday
   push:
     branches:
-    - main
+    - tbx-neovim-prerelease
     paths-ignore:
     - '**/README.md'
 jobs:
@@ -26,28 +26,6 @@ jobs:
           password: ${{ github.token }}
       - uses: actions/checkout@v4
       - name: Toolbox Build
-        run: make
-      - name: Set up Git
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.ACTIONS_PAT }}@github.com/${{ github.repository }}.git
-      - name: Build Readme and Commit Changes
-        run: |
-          cat info/toolbox_intro.md > README.md
-          cat info/toolbox_overview.md >> README.md
-          cat info/toolbox_getting_started.md >> README.md
-          cat info/cli.md >> README.md
-          cat info/neovim.md >> README.md
-          cat info/luajit.md >> README.md
-          cat info/luarocks.md >> README.md
-          cat info/nlua.info >> README.md
-          cat info/host-spawn.md >> README.md
-          git commit README.md -m "Update README"
-          git push origin HEAD:main
-          cat README.md
-        env:
-          ACTIONS_PAT: ${{ secrets.ACTIONS_PAT }}
-
-# origin HEAD:main
-
+          printf "%s\n" "neovim from latest prerelease"
+          make
