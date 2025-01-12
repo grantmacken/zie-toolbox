@@ -25,11 +25,13 @@ CONTAINER := tbx-cli-tools-working-container
 
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
 
-DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-
+DEPS   := git gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+REMOVE := git
 # gcc-c++
 
-default: init deps luajit luarocks
+default: init deps luajit
+
+# luarocks neovim clean
 
 ddddd:
 ifdef GITHUB_ACTIONS
@@ -103,7 +105,8 @@ info/luajit.md:
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
-	# buildah run $(CONTAINER) ls -al /usr/local/bin
+
+CCCCCCL:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
@@ -145,9 +148,6 @@ info/luarocks.md: latest/luarocks.tag_name
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 	buildah run $(CONTAINER) luarocks install luarocks
 	buildah run $(CONTAINER) luarocks show luarocks
-
-
-
 
 nlua: info/nlua.info
 info/nlua.info:
