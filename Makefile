@@ -29,7 +29,7 @@ DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-de
 # REMOVE := git
 # gcc-c++
 
-default: init deps luajit luarocks neovim nlua
+default: init neovim deps luajit luarocks nlua
 
 # luarocks neovim clean
 
@@ -152,7 +152,6 @@ info/luarocks.md: latest/luarocks.tag_name
 
 nlua: info/nlua.info
 info/nlua.info:
-	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/refs/heads/main/nlua
-	TARG=/usr/bin/nlua
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
+	buildah run $(CONTAINER) luarocks install nlua
+	buildah run $(CONTAINER) luarocks show nlua
+	# printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
