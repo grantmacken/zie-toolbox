@@ -120,11 +120,10 @@ luarocks: info/luarocks.md
 latest/luarocks.tag_name:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq -r '.[0].name'  > $@
+	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq -r '.[0]'  > $@
 
 info/luarocks.md: latest/luarocks.tag_name
 	 echo '##[ $@ ]##'
-	NAME=$$(cat $< | tr -d  'v')
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
