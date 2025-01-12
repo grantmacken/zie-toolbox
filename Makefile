@@ -65,8 +65,6 @@ deps: ## deps for make installs
 		$${item} &>/dev/null
 	done
 
-
-
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
 info/neovim.md:
@@ -109,7 +107,7 @@ info/luajit.md:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
-	 CHECK:
+	#CHECK:
 	buildah run $(CONTAINER) whereis luajit
 	buildah run $(CONTAINER) which nvim
 	buildah run $(CONTAINER) luajit -v
