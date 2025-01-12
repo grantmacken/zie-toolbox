@@ -26,7 +26,7 @@ CONTAINER := tbx-cli-tools-working-container
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
 NVIM_APPNAME=$(TBX_CONTAINER_NAME)
 
-default: init config neovim
+default: init config neovim luajit
 
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_CONTAINER_NAME)
@@ -38,7 +38,6 @@ clean:
 	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
-
 
 init: info/working.info
 info/working.info:
@@ -58,11 +57,12 @@ info/config.md:
 neovim: info/neovim.md
 info/neovim.md:
 	echo '##[ $@ ]##'
-	TARGET=files/$(basename $(notdir $@))/usr/local
+	NAME=$(basename $(notdir $@))
+	TARGET=files/$${NAME}/usr/local
 	mkdir -p $${TARGET}
 	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(basename $(notdir $@)) &>/dev/null
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/${NAME}/usr/local
+	buildah add --chmod 755 $(CONTAINER) files/${NAME} &>/dev/null
 	# CHECK:
 	buildah run $(CONTAINER) nvim -v
 	buildah run $(CONTAINER) whereis nvim
@@ -90,13 +90,18 @@ info/luajit.md:
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make CFLAGS="-DLUAJIT_ENABLE_LUA52COMPAT" && make install'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
 	# buildah run $(CONTAINER) ls -al /usr/local/bin
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
+		# CHECK:
+	buildah run $(CONTAINER) whereis luajit
+	buildah run $(CONTAINER) which nvim
+	buildah run $(CONTAINER) luajit -v
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
 	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROLLING release" | tee $@
+	buildah run $(CONTAINER) rm -rf /tmp/*
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
