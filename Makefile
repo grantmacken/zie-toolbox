@@ -109,7 +109,6 @@ info/luajit.md:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
 	#CHECK:
 	buildah run $(CONTAINER) whereis luajit
-	buildah run $(CONTAINER) which nvim
 	buildah run $(CONTAINER) luajit -v
 	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v' | cut -d' ' -f2 )
 	printf "| %-10s | %-13s | %-83s |\n" "luajit" "$$VERSION" "built from ROLLING release" | tee $@
@@ -140,12 +139,15 @@ info/luarocks.md: latest/luarocks.tag_name
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	# CHECK:
-	buildah run $(CONTAINER) whereis luajit
-	buildah run $(CONTAINER) which nvim
-	buildah run $(CONTAINER) luajit -v
 	buildah run $(CONTAINER) luarocks
+	buildah run $(CONTAINER) whereis luarocks
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
+	buildah run $(CONTAINER) luarocks install luarocks
+	buildah run $(CONTAINER) luarocks show luarocks
+
+
+
 
 nlua: info/nlua.info
 info/nlua.info:
