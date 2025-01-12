@@ -29,7 +29,7 @@ DEPS   := git gcc glibc-devel ncurses-devel openssl-devel libevent-devel readlin
 REMOVE := git
 # gcc-c++
 
-default: init deps luajit
+default: init deps luajit luarocks
 
 # luarocks neovim clean
 
@@ -105,8 +105,6 @@ info/luajit.md:
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
-
-CCCCCCL:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
@@ -155,62 +153,3 @@ info/nlua.info:
 	TARG=/usr/bin/nlua
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
-
-## HOST-SPAWN
-latest/host-spawn.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest |
-	jq '.' > $@
-
-host-spawn: info/host-spawn.md
-info/host-spawn.md: latest/host-spawn.json
-	# echo '##[ $@ ]##'
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
-	TARG=/usr/local/bin/host-spawn
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
-	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
-	# close table
-	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
-	for item in $(SPAWN)
-	do
-	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" "$${item}" | tee -a $@
-	done
-
-##[[ NODEJS ]]##
-
-latest/nodejs.tagname:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' | jq '.tag_name' | tee $@
-
-files/node/usr/local/bin/node: latest/nodejs.tagname
-	echo '##[ $@ ]##'
-	mkdir -p files/$(notdir $@)/usr/local
-	TAG=$(shell cat $<)
-	SRC=https://nodejs.org/download/release/$${TAG}/node-$${TAG}-linux-x64.tar.gz
-	echo "source: $${SRC}"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$(notdir $@)/usr/local
-	buildah add --chmod 755 $(CONTAINER) files/$(notdir $@)/usr/local
-
-nodejs: info/nodejs.md
-info/nodejs.md: files/node/usr/local/bin/node
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" $(basename $(notdir $@)) > $@
-	printf "The toolbox nodejs: %s runtime.\n This is the **latest** prebuilt release\
-	available from [node org](https://nodejs.org/download/release/)"  \
-	$$(cat latest/nodejs.tagname) >> $@
-
-####################################################
-
-pull:
-	podman pull ghcr.io/grantmacken/zie-toolbox:latest
-
-worktree:
-	# automatically creates a new branch whose name is the final component of <path>
-	git worktree add ../beam_me_up
-
