@@ -25,8 +25,9 @@ CONTAINER := tbx-cli-tools-working-container
 
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
 
-default: init neovim luajit
+default: init luajit luarocks 
 
+ddddd:
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_CONTAINER_NAME)
 	buildah push $(TBX_CONTAINER_NAME)
@@ -98,14 +99,14 @@ info/luajit.md:
 	# buildah run $(CONTAINER) sh -c 'lua -v' | tee $@
 
 luarocks: info/luarocks.md
-latest/luarocks.json:
+latest/luarocks.tag_name:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' |
-	jq  '.[0]' > $@
+	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' > $@
 
-info/luarocks.md: latest/luarocks.json
-	# echo '##[ $@ ]##'
+info/luarocks.md: latest/luarocks.tag_name
+	 echo '##[ $@ ]##'
+	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
