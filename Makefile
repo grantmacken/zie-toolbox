@@ -24,9 +24,8 @@ IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
 
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
-NVIM_APPNAME=$(TBX_CONTAINER_NAME)
 
-default: init config neovim luajit
+default: init neovim luajit
 
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_CONTAINER_NAME)
@@ -46,12 +45,6 @@ info/working.info:
 	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
-
-config: info/config.md
-info/config.md:
-	mkdir -p $(dir $@)
-	buildah config --env NVIM_APPNAME=$(NVIM_APPNAME) $(CONTAINER)
-	printf "%s\n" " - set nvim appname" | tee $@
 
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
