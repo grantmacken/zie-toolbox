@@ -25,7 +25,11 @@ CONTAINER := tbx-cli-tools-working-container
 
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
 
-default: init luajit luarocks 
+DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+
+# gcc-c++
+
+default: init deps luajit luarocks
 
 ddddd:
 ifdef GITHUB_ACTIONS
@@ -46,6 +50,22 @@ info/working.info:
 	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
 	echo
+
+##[[ DEPS ]]##
+deps: ## deps for make installs
+	echo '##[ $@ ]##'
+	for item in $(DEPS)
+	do
+	buildah run $(CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item} &>/dev/null
+	done
+
+
 
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
@@ -89,7 +109,7 @@ info/luajit.md:
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
-		# CHECK:
+	 CHECK:
 	buildah run $(CONTAINER) whereis luajit
 	buildah run $(CONTAINER) which nvim
 	buildah run $(CONTAINER) luajit -v
@@ -121,6 +141,10 @@ info/luarocks.md: latest/luarocks.tag_name
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	# CHECK:
+	buildah run $(CONTAINER) whereis luajit
+	buildah run $(CONTAINER) which nvim
+	buildah run $(CONTAINER) luajit -v
 	buildah run $(CONTAINER) luarocks
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
