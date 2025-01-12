@@ -25,11 +25,11 @@ CONTAINER := tbx-cli-tools-working-container
 
 TBX_CONTAINER_NAME=tbx-neovim-prerelease
 
-DEPS   := git gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := git
+DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+# REMOVE := git
 # gcc-c++
 
-default: init deps luajit luarocks
+default: init deps luajit luarocks neovim nlua
 
 # luarocks neovim clean
 
@@ -41,7 +41,7 @@ endif
 
 clean:
 	# buildah run $(CONTAINER) dnf leaves
-	buildah run $(CONTAINER) dnf remove -y $(REMOVE)
+	# buildah run $(CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
@@ -138,13 +138,17 @@ info/luarocks.md: latest/luarocks.tag_name
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	# CHECK:
-	buildah run $(CONTAINER) luarocks
-	buildah run $(CONTAINER) whereis luarocks
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 	buildah run $(CONTAINER) luarocks install luarocks
-	buildah run $(CONTAINER) luarocks show luarocks
+	#Cean up buildah run $(CONTAINER) luarocks show luarocks
+	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
+	buildah run $(CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
+	buildah run $(CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
+	# CHECK:
+	buildah run $(CONTAINER) which luarocks
+	buildah run $(CONTAINER) whereis luarocks
+	buildah run $(CONTAINER) luarocks
+
 
 nlua: info/nlua.info
 info/nlua.info:
