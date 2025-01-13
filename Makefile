@@ -104,7 +104,7 @@ info/luajit.md:
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luajit &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(CONTAINER) files/luajit /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	# buildah run $(CONTAINER) mv /usr/local/bin/luajit-2.1. /usr/local/bin/luajit
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/luajit /usr/local/bin/lua
@@ -139,15 +139,15 @@ info/luarocks.md: latest/luarocks.tag_name
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) luarocks install luarocks
+	buildah run $(CONTAINER) luarocks install luarocks &>/dev/null
 	#Cean up buildah run $(CONTAINER) luarocks show luarocks
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 	buildah run $(CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
 	buildah run $(CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
 	# CHECK:
-	buildah run $(CONTAINER) which luarocks
-	buildah run $(CONTAINER) whereis luarocks
-	buildah run $(CONTAINER) luarocks
+	# buildah run $(CONTAINER) which luarocks
+	# buildah run $(CONTAINER) whereis luarocks
+	# buildah run $(CONTAINER) luarocks
 
 
 nlua: info/nlua.info
@@ -156,7 +156,7 @@ info/nlua.info:
 	buildah run $(CONTAINER) luarocks show nlua
 	buildah run $(CONTAINER) luarocks config lua_version 5.1
 	buildah run $(CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+	# buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 	buildah run $(CONTAINER) which nlua
 	buildah run $(CONTAINER) whereis nlua
 	buildah run $(CONTAINER) luarocks
@@ -165,7 +165,7 @@ busted: info/busted.info
 info/busted.info:
 	buildah run $(CONTAINER) luarocks install busted
 	buildah run $(CONTAINER) luarocks show busted
-	buildah run $(CONTAINER) luarocks
+	# buildah run $(CONTAINER) luarocks
 	buildah run $(CONTAINER) which busted
 	buildah run $(CONTAINER) whereis busted
 
