@@ -29,7 +29,7 @@ DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-de
 # REMOVE := git
 # gcc-c++
 
-default: init neovim deps luajit luarocks nlua busted
+default: init config neovim deps luajit luarocks nlua busted clean
 
 config: info/config.md
 info/config.md:
