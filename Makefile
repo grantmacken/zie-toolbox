@@ -168,6 +168,8 @@ info/busted.info:
 	# buildah run $(CONTAINER) luarocks
 	buildah run $(CONTAINER) which busted
 	buildah run $(CONTAINER) whereis busted
+	buildah run $(CONTAINER) cat usr/local/bin/busted
+
 
 
 	# printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
