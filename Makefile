@@ -29,7 +29,7 @@ DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-de
 # REMOVE := git
 # gcc-c++
 
-default: init neovim deps luajit luarocks nlua
+default: init neovim deps luajit luarocks nlua busted
 
 # luarocks neovim clean
 
@@ -154,4 +154,20 @@ nlua: info/nlua.info
 info/nlua.info:
 	buildah run $(CONTAINER) luarocks install nlua
 	buildah run $(CONTAINER) luarocks show nlua
+	buildah run $(CONTAINER) luarocks config lua_version 5.1
+	buildah run $(CONTAINER) luarocks config lua_interpreter nlua
+	buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+	buildah run $(CONTAINER) which nlua
+	buildah run $(CONTAINER) whereis nlua
+	buildah run $(CONTAINER) luarocks
+
+busted: info/busted.info
+info/busted.info:
+	buildah run $(CONTAINER) luarocks install busted
+	buildah run $(CONTAINER) luarocks show busted
+	buildah run $(CONTAINER) luarocks
+	buildah run $(CONTAINER) which busted
+	buildah run $(CONTAINER) whereis busted
+
+
 	# printf "| %-10s | %-13s | %-83s |\n" "nlua" "HEAD" "lua script added from github 'mfussenegger/nlua'" | tee $@
