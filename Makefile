@@ -23,7 +23,7 @@ SPACE := $(EMPTY) $(EMPTY)
 IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
 
-TBX_CONTAINER_NAME=tbx-neovim-rolling
+TBX_CONTAINER_NAME=tbx-neovim-dev
 
 DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # REMOVE := git
@@ -36,8 +36,6 @@ info/config.md:
 	mkdir -p $(dir $@)
 	buildah config --env NVIM_APPNAME=nvim $(CONTAINER)
 	printf "%s\n" " - set nvim appname" | tee $@
-
-ddddd:
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_CONTAINER_NAME)
 	buildah push $(TBX_CONTAINER_NAME)
