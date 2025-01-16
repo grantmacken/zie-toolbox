@@ -26,7 +26,7 @@ CONTAINER := tbx-cli-tools-working-container
 DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # REMOVE := default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init config neovim deps luajit luarocks nlua busted clean
+default: init neovim deps luajit luarocks nlua busted clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
 	buildah push ghcr.io/grantmacken/zie-toolbox
@@ -44,7 +44,6 @@ help: ## show this help
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 init: info/working.info
-
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
