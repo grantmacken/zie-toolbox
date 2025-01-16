@@ -66,7 +66,7 @@ info/working.info:
 cli-tools: info/cli.md
 info/cli.md:
 	mkdir -p $(dir $@)
-	buildah run $(CONTAINER) dnf upgrade -y --minimal
+	# buildah run $(CONTAINER) dnf upgrade -y --minimal
 	for item in $(CLI)
 	do
 	buildah run $(CONTAINER) dnf install \
