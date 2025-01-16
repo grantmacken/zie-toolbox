@@ -26,13 +26,6 @@ TBX_IMAGE := ghcr.io/grantmacken/tbx-nvim-release
 TBX_CONTAINER_NAME=tbx-nvim-release
 NVIM_APPNAME=$(TBX_CONTAINER_NAME)
 
-CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
-# common deps used to build luajit and luarocks
-DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-REMOVE := vim-minimal
-# default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-
 default: init config neovim
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
