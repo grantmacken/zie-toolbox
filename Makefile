@@ -1,33 +1,48 @@
-SHELL=/bin/bash
+SHELL       := /usr/bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
-.ONESHELL:
-.DELETE_ON_ERROR:
-.SECONDARY:
 
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
+unexport MAKEFLAGS
+
+.SUFFIXES:            # Delete the default suffixes
+.ONESHELL:            # All lines of the recipe will be given to a single invocation of the shell
+.DELETE_ON_ERROR:
+.SECONDARY:
+
+HEADING1 := \#
+HEADING2 := $(HEADING1)$(HEADING1)
+HEADING3 := $(HEADING2)$(HEADING1)
+
+COMMA := ,
+EMPTY:=
+SPACE := $(EMPTY) $(EMPTY)
+
+IMAGE    :=  ghcr.io/grantmacken/zie-toolbox
+CONTAINER := zie-toolbox-working-container
+
+# The Bluefin Developer Experience (bluefin-dx)
+TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox-dx
+TBX_CONTAINER_NAME=zie-toolbox-dx
 
 TBX := zie-toolbox-working-container
 BEAM := erlang erlang-rebar3 elixir
 
-beam_me_up: from-tbx beam gleam
-	# rebar3 elixir gleam:w
-	buildah run $(TBX) which erl
-	buildah run $(TBX) which rebar3
-	buildah run $(TBX) which elixir
-	buildah run $(TBX) which gleam
+default: init beam gleam
 ifdef GITHUB_ACTIONS
-	buildah commit $(TBX) ghcr.io/grantmacken/beam-me-up-toolbox
-	buildah push ghcr.io/grantmacken/beam-me-up-toolbox
+	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
 endif
 
-from-tbx: info/tbx.info
-info/tbx.info:
+init: info/working.info
+info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP 'ghcr.io/grantmacken/zie-toolbox' || buildah pull ghcr.io/grantmacken/zie-toolbox:latest | tee  $@
-	buildah from ghcr.io/grantmacken/zie-toolbox | tee -a $@
+	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
+	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
+	echo
 
 beam: info/beam.info
 info/beam.info:
