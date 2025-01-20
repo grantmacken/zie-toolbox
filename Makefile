@@ -88,9 +88,9 @@ info/gleam.info: latest/gleam.download
 
 latest/golang.download:
 	mkdir -p $(dir $@)
-	wget -q -O - https://go.dev/dl | \
-		grep -oP '^.+class="download" href=.+\K(\d{1,2}\.\d{1,2}.\d{1,2})' | \
-		head -1 | tee $@
+	wget -q -O - https://go.dev/dl | 
+	grep -oP '^.+class="download" href=.+\K(\d{1,2}\.\d{1,2}.\d{1,2})' | \
+	head -n 1 | tee $@
 
 golang: info/golang.info
 info/golang.info: latest/golang.download
