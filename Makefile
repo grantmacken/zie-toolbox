@@ -100,10 +100,18 @@ info/golang.info: latest/golang.download
 	TARGET=files/$${NAME}/usr/local
 	mkdir -p $${TARGET}
 	VERSION=$$(cat $<)
-	printf " - golang version: %s \n" "$${VERSION}"
+	printf " - golang version: %s \n" "$${VERSION}" | tee $@
 	SRC=https://golang.org/dl/go$${VERSION}.linux-amd64.tar.gz
-	printf " - source: %s \n" "$${SRC}"
+	printf " - source: %s \n" "$${SRC}" | tee -a $@
 	wget $${SRC} -q -O- | tar xz -C $${TARGET}
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/gofmt /usr/local/bin/gofmt
+	# install gopls
+	buildah run $(CONTAINER) go install golang.org/x/tools/gopls@latest
+	# CHECK:
+	buildah run $(CONTAINER) which go
+	buildah run $(CONTAINER) whereis go
+	buildah run $(CONTAINER) which gopls
+	buildah run $(CONTAINER) whereis gopls
+	buildah run $(CONTAINER) gopls version | tee -a $@
