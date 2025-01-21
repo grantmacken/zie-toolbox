@@ -117,7 +117,7 @@ info/golang.info: latest/golang.download
 	buildah run $(CONTAINER) whereis go
 	# install gopls
 	buildah run $(CONTAINER) go install golang.org/x/tools/gopls@latest
-	buildah run $(CONTAINER) ls ~/go/bin
+	buildah run $(CONTAINER) ls /usr/local/go/bin
 
 	# cp $(go env GOPATH)/bin/gopls /usr/local/bin
 	# buildah run $(CONTAINER) which gopls
