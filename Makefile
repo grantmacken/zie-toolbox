@@ -105,8 +105,8 @@ info/golang.info: latest/golang.download
 	printf " - source: %s \n" "$${SRC}" | tee -a $@
 	wget $${SRC} -q -O- | tar xz -C $${TARGET}
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/go /usr/local/bin/go
-	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/gofmt /usr/local/bin/gofmt
+	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
+	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
 	buildah run $(CONTAINER) go --version
 	buildah run $(CONTAINER) which go
 	buildah run $(CONTAINER) whereis go
