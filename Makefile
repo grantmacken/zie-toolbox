@@ -107,12 +107,14 @@ info/golang.info: latest/golang.download
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
-	export GOPATH=$(go env GOPATH)
-	printf " - gopath: %s \n" "$${GOPATH}" 
+	GOPATH=$(go env GOPATH)
+	buildah config --env GOPATH=nvim $(CONTAINER)
+	GOPATH=$$(buildah run $(CONTAINER) go env GOPATH)
+	printf " - gopath: %s \n" "$${GOPATH}"
 	# CHECK: golang
-	buildah run $(CONTAINER) go version
-	buildah run $(CONTAINER) which go
-	buildah run $(CONTAINER) whereis go
+	# buildah run $(CONTAINER) go version
+	# buildah run $(CONTAINER) which go
+	# buildah run $(CONTAINER) whereis go
 
 xxx:
 	# install gopls
