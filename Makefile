@@ -111,7 +111,7 @@ info/golang.info: latest/golang.download
 	# GOPATH=$(go env GOPATH)
 	# printf " - gopath: %s \n" "$${GOPATH}"
 	# buildah config --env GOPATH=nvim $(CONTAINER)
-	CHECK: golang
+	# CHECK: golang
 	buildah run $(CONTAINER) go version
 	buildah run $(CONTAINER) which go
 	buildah run $(CONTAINER) whereis go
