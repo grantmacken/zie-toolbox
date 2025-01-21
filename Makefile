@@ -107,12 +107,16 @@ info/golang.info: latest/golang.download
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+	printf " - gopath: %s \n" "$${GOPATH}" 
 	# CHECK: golang
 	buildah run $(CONTAINER) go version
 	buildah run $(CONTAINER) which go
 	buildah run $(CONTAINER) whereis go
+
+xxx:
 	# install gopls
 	buildah run $(CONTAINER) go install golang.org/x/tools/gopls@latest
+	cp $(go env GOPATH)/bin/gopls /usr/local/bin
 	buildah run $(CONTAINER) which gopls
 	buildah run $(CONTAINER) whereis gopls
 	buildah run $(CONTAINER) gopls version
