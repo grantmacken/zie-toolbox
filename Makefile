@@ -108,9 +108,8 @@ info/golang.info: latest/golang.download
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
 	GOPATH=$(go env GOPATH)
-	buildah config --env GOPATH=nvim $(CONTAINER)
-	GOPATH=$$(buildah run $(CONTAINER) go env GOPATH)
 	printf " - gopath: %s \n" "$${GOPATH}"
+	# buildah config --env GOPATH=nvim $(CONTAINER)
 	# CHECK: golang
 	# buildah run $(CONTAINER) go version
 	# buildah run $(CONTAINER) which go
