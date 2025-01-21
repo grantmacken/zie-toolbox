@@ -86,12 +86,24 @@ info/gleam.info: latest/gleam.download
 	buildah run $(CONTAINER) gleam --version | tee $@
 	buildah run $(CONTAINER) gleam --help  | tee -a $@
 
+golang: info/golang.info
+
 latest/golang.download:
 	mkdir -p $(dir $@)
-	wget -q -O - https://go.dev/dl | 
-	grep -oP '^.+class="download" href=.+\K(\d{1,2}\.\d{1,2}.\d{1,2})' | \
-	head -n 1 | tee $@
+	wget -q -O - https://go.dev/dl  |
+	grep -oP '^<a class="download downloadBox" href="/dl/go\K\d{1,2}\.\d{1,2}.\d{1,2}(?=\.linux-amd64)' > $@
 
-golang: info/golang.info
 info/golang.info: latest/golang.download
-	echo "download url: "
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	NAME=$(basename $(notdir $@))
+	TARGET=files/$${NAME}/usr/local
+	mkdir -p $${TARGET}
+	VERSION=$$(cat $<)
+	printf " - golang version: %s \n" "$${VERSION}"
+	SRC=https://golang.org/dl/go$${VERSION}.linux-amd64.tar.gz
+	printf " - source: %s \n" "$${SRC}"
+	wget $${SRC} -q -O- | tar xz -C $${TARGET}
+	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/go /usr/local/bin/go
+	buildah run $(CONTAINER) ln -sf /usr/local/bin/go/bin/gofmt /usr/local/bin/gofmt
