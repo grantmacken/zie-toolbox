@@ -107,6 +107,7 @@ info/golang.info: latest/golang.download
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
+	export GOPATH=$(go env GOPATH)
 	printf " - gopath: %s \n" "$${GOPATH}" 
 	# CHECK: golang
 	buildah run $(CONTAINER) go version
