@@ -29,7 +29,7 @@ TBX_CONTAINER_NAME=zie-toolbox-dx
 
 BEAM := erlang erlang-rebar3 elixir
 
-default: init beam gleam golang gopls
+default: init beam gleam golang
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
