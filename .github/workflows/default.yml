@@ -64,7 +64,6 @@ jobs:
             username: ${{ github.repository_owner }}
             password: ${{ github.token }}
         - uses: actions/checkout@v4
-          with:
         - name: Toolbox Incorporating the Latest Neovim Prerelease
           run: make
   developer-experience-image:
@@ -83,6 +82,7 @@ jobs:
             username: ${{ github.repository_owner }}
             password: ${{ github.token }}
         - uses: actions/checkout@v4
+          with:
             ref: beam_me_up
         - name: zie developer experience toolbox
           run: make
