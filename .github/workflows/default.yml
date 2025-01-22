@@ -86,6 +86,3 @@ jobs:
             ref: beam_me_up
         - name: zie developer experience toolbox
           run: make
-
-# https://docs.github.com/en/actions/reference/authentication-in-a-workflow
-
