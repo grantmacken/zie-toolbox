@@ -23,15 +23,13 @@ SPACE := $(EMPTY) $(EMPTY)
 IMAGE    :=  ghcr.io/grantmacken/zie-toolbox
 CONTAINER := zie-toolbox-working-container
 
-# The Bluefin Developer Experience (bluefin-dx)
+# Toolbox Developer Experience
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox-dx
 TBX_CONTAINER_NAME=zie-toolbox-dx
 
 BEAM := erlang erlang-rebar3 elixir
 
-default: init gleam
-
-sssss:
+default: init beam gleam golang gopls
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest

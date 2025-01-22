@@ -2,7 +2,7 @@ name: Build zie-toolbox-dx image
 on:
   push:
     branches:
-    - beam_me_up
+    - xbeam_me_up
     paths-ignore:
     - '**/README.md'
 jobs:
