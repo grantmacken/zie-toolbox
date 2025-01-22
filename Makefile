@@ -29,7 +29,7 @@ TBX_CONTAINER_NAME=zie-toolbox-dx
 
 BEAM := erlang erlang-rebar3 elixir
 
-default: init golang
+default: init gleam
 
 sssss:
 ifdef GITHUB_ACTIONS
@@ -78,11 +78,13 @@ latest/gleam.download:
 gleam: info/gleam.info
 info/gleam.info: latest/gleam.download
 	mkdir -p $(dir $@)
-	mkdir -p files
-	DOWNLOAD_URL=$$(cat $<)
-	echo "download url: $${DOWNLOAD_URL}"
-	wget $${DOWNLOAD_URL} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files
-	buildah add --chmod 755 $(CONTAINER) files/gleam /usr/local/bin/gleam
+	NAME=$(basename $(notdir $@))
+	TARGET=files/$${NAME}/usr/local
+	mkdir -p $${TARGET}
+	SRC=$$(cat $<)
+	printf " - source: %s \n" "$${SRC}" | tee -a $@
+	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET}
+	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) gleam --version | tee $@
 	buildah run $(CONTAINER) gleam --help  | tee -a $@
 
@@ -107,19 +109,16 @@ info/golang.info: latest/golang.download
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/go /usr/local/bin/go
 	buildah run $(CONTAINER) ln -sf /usr/local/go/bin/gofmt /usr/local/bin/gofmt
-	# buildah run $(CONTAINER) sh -c 'echo $$PATH'
-	# GOPATH=$(go env GOPATH)
-	# printf " - gopath: %s \n" "$${GOPATH}"
-	# buildah config --env GOPATH=nvim $(CONTAINER)
 	# CHECK: golang
 	buildah run $(CONTAINER) go version
 	buildah run $(CONTAINER) which go
 	buildah run $(CONTAINER) whereis go
 	# install gopls
-	buildah run $(CONTAINER) go install golang.org/x/tools/gopls@latest
+	buildah run $(CONTAINER) go install golang.org/x/tools/gopls@latest &>/dev/null
 	buildah run $(CONTAINER) ls /usr/local/go/bin
 	buildah run $(CONTAINER) ls /usr/local/bin
 	buildah run $(CONTAINER) sh -c 'mv ~/go/bin/gopls /usr/local/bin/gopls'
+	# CHECK: gopls
 	buildah run $(CONTAINER) which gopls
 	buildah run $(CONTAINER) whereis gopls
 	buildah run $(CONTAINER) gopls version
