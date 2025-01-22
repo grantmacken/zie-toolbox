@@ -120,10 +120,6 @@ info/golang.info: latest/golang.download
 	buildah run $(CONTAINER) ls /usr/local/go/bin
 	buildah run $(CONTAINER) ls /usr/local/bin
 	buildah run $(CONTAINER) sh -c 'mv ~/go/bin/gopls /usr/local/bin/gopls'
-	# buildah run $(CONTAINER) mv /usr/local/go/bin/gopls /usr/local/bin/gopls
-
-
-	# cp $(go env GOPATH)/bin/gopls /usr/local/bin
-	# buildah run $(CONTAINER) which gopls
-	# buildah run $(CONTAINER) whereis gopls
-	# buildah run $(CONTAINER) gopls version
+	buildah run $(CONTAINER) which gopls
+	buildah run $(CONTAINER) whereis gopls
+	buildah run $(CONTAINER) gopls version
