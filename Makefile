@@ -79,7 +79,7 @@ gleam: info/gleam.info
 info/gleam.info: latest/gleam.download
 	mkdir -p $(dir $@)
 	NAME=$(basename $(notdir $@))
-	TARGET=files/$${NAME}/usr/local
+	TARGET=files/$${NAME}/usr/local/bin
 	mkdir -p $${TARGET}
 	SRC=$$(cat $<)
 	printf " - source: %s \n" "$${SRC}" | tee -a $@
