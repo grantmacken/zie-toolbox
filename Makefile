@@ -23,13 +23,16 @@ SPACE := $(EMPTY) $(EMPTY)
 IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
 
+TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
+TBX_CONTAINER_NAME=zie-toolbox
+
 DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # REMOVE := default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init neovim deps luajit luarocks nlua busted clean
 ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) ghcr.io/grantmacken/zie-toolbox
-	buildah push ghcr.io/grantmacken/zie-toolbox
+	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
 endif
 
 clean:
@@ -155,3 +158,23 @@ info/busted.info:
 	buildah run $(CONTAINER) which busted
 	buildah run $(CONTAINER) whereis busted
 	buildah run $(CONTAINER) cat usr/local/bin/busted
+
+
+setup:
+	podman pull $(TBX_IMAGE):latest
+	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
+	then
+		echo " ---------------------------------------"
+		echo " Recreate the toolbox container $(TBX_CONTAINER_NAME) "
+		echo " ---------------------------------------"
+		echo " - 1: Remove the toolbox container $(TBX_CONTAINER_NAME)"
+		toolbox rm -f $(TBX_CONTAINER_NAME)
+		echo " - 2: Recreate toolbox from the latest image and"
+		echo "      give it the same name as the removed container"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	else
+		echo " -----------------------------------------------------------"
+		echo " Create the toolbox container with name: $(TBX_CONTAINER_NAME)  "
+		echo " -----------------------------------------------------------"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	fi
