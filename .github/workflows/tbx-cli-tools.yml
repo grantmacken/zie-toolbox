@@ -1,12 +1,8 @@
 name: Build zie-toolbox image
 on:
-  schedule:
-    - cron: '0 1 * * 2'  #  1am every monday
   push:
     branches:
-    - tbx-cli-tools
-    paths-ignore:
-    - '**/README.md'
+    - xtbx-cli-tools
 jobs:
   build:
     name: Build tbx-cli-tools Image
@@ -25,7 +21,10 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ github.token }}
       - uses: actions/checkout@v4
-      - name: Toolbox Build
+      - uses: actions/checkout@v4
+        with:
+          ref: tbx-cli-tools
+      - name: Toolbox CLI Tools Build
         run: |
           printf "%s\n" " - building tbx-cli-tools Image"
           make

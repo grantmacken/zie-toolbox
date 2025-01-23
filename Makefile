@@ -27,8 +27,8 @@ TBX_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
 TBX_CONTAINER_NAME=tbx-cli-tools
 
 
-CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-SPAWN := firefox flatpak podman buildah systemctl rpm-ostree dconf
+CLI   := bat direnv eza fd-find fzf gh make ripgrep stow wl-clipboard yq zoxide
+SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 # common deps used to build luajit and luarocks
 DEPS   := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 REMOVE := vim-minimal
