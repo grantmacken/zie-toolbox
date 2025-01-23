@@ -120,3 +120,23 @@ info/golang.info: latest/golang.download
 	buildah run $(CONTAINER) which gopls
 	buildah run $(CONTAINER) whereis gopls
 	buildah run $(CONTAINER) gopls version
+
+setup:
+	podman pull $(TBX_IMAGE):latest
+	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
+	then
+		echo " ---------------------------------------"
+		echo " Recreate the toolbox container $(TBX_CONTAINER_NAME) "
+		echo " ---------------------------------------"
+		echo " - 1: Remove the toolbox container $(TBX_CONTAINER_NAME)"
+		toolbox rm -f $(TBX_CONTAINER_NAME)
+		echo " - 2: Recreate toolbox from the latest image and"
+		echo "      give it the same name as the removed container"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	else
+		echo " -----------------------------------------------------------"
+		echo " Create the toolbox container with name: $(TBX_CONTAINER_NAME)  "
+		echo " -----------------------------------------------------------"
+		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
+	fi
+
