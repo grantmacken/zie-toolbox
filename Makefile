@@ -41,7 +41,7 @@ clean:
 
 .PHONY: help
 help: ## show this help
-	@cat $(MAKEFILE_LIST) |
+	cat $(MAKEFILE_LIST) |
 	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
@@ -145,6 +145,7 @@ info/nlua.info:
 	buildah run $(CONTAINER) luarocks show nlua
 	buildah run $(CONTAINER) luarocks config lua_version 5.1
 	buildah run $(CONTAINER) luarocks config lua_interpreter nlua
+	buildah run $(CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	# buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 	buildah run $(CONTAINER) which nlua
 	buildah run $(CONTAINER) whereis nlua
