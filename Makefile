@@ -26,7 +26,7 @@ CONTAINER := tbx-cli-tools-working-container
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
-DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel cargo
 # REMOVE := default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
 default: init neovim deps luajit luarocks nlua clean
