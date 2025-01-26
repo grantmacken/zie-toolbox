@@ -29,7 +29,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
 # REMOVE := default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init neovim deps luajit luarocks nlua busted clean
+default: init neovim deps luajit luarocks nlua clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
@@ -144,22 +144,18 @@ info/nlua.info:
 	buildah run $(CONTAINER) luarocks install nlua
 	buildah run $(CONTAINER) luarocks show nlua
 	buildah run $(CONTAINER) luarocks config lua_version 5.1
+	## TODO: I think this is redundant as we only have to use the above
+	## @see https://github.com/mfussenegger/nlua
 	buildah run $(CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	# buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 	buildah run $(CONTAINER) which nlua
 	buildah run $(CONTAINER) whereis nlua
-	buildah run $(CONTAINER) luarocks
-
-busted: info/busted.info
-info/busted.info:
 	buildah run $(CONTAINER) luarocks install busted
-	buildah run $(CONTAINER) luarocks show busted
-	# buildah run $(CONTAINER) luarocks
-	buildah run $(CONTAINER) which busted
+	buildah run $(CONTAINER) luarocks install busted
+	buildah run $(CONTAINER) luarocks install tiktoken_core
 	buildah run $(CONTAINER) whereis busted
-	buildah run $(CONTAINER) cat usr/local/bin/busted
-
+	buildah run $(CONTAINER) whereis tiktoken_core
 
 setup:
 	podman pull $(TBX_IMAGE):latest
@@ -179,3 +175,5 @@ setup:
 		echo " -----------------------------------------------------------"
 		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
 	fi
+
+
