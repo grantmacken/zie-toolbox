@@ -77,7 +77,8 @@ info/neovim.md:
 	TARGET=files/$${NAME}/usr/local
 	mkdir -p $${TARGET}
 	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$${NAME}/usr/local
+	wget $${SRC} -q -O $${NAME}.tar.gz
+	tar xz --strip-components=1 -C $${TARGET} -f $${NAME}.tar.gz
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	# CHECK:
 	buildah run $(CONTAINER) nvim -v

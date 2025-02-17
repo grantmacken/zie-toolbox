@@ -1,7 +1,8 @@
 info/*
 !info/toolbox_*
+files/*
+!files/demo.lua
 latest
-files
 tmp
 bin
 
