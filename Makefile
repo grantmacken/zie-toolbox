@@ -8,7 +8,7 @@ MAKEFLAGS += --silent
 unexport MAKEFLAGS
 
 .SUFFIXES:            # Delete the default suffixes
-.ONESHELL:            #all lines of the recipe will be given to a single invocation of the shell
+.ONESHELL:            # All lines of the recipe will be given to a single invocation of the shell
 .DELETE_ON_ERROR:
 .SECONDARY:
 
@@ -20,20 +20,31 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
+FED_IMAGE     := registry.fedoraproject.org/fedora-toolbox:41
+FED_CONTAINER := fedora-toolbox-working-container
+
+CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
+CLI_CONTAINER_NAME=tbx-cli-tools
+
 IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
 CONTAINER := tbx-cli-tools-working-container
 
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
-DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel cargo
-# REMOVE := default-editor gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+CLI   := bat direnv eza fd-find fzf gh make ripgrep stow wl-clipboard yq zoxide
+SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
+DEPS   := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+# cargo
+REMOVE := default-editor vim-minimal
+# gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init neovim deps luajit luarocks nlua clean
-ifdef GITHUB_ACTIONS
-	buildah commit $(CONTAINER) $(TBX_IMAGE)
-	buildah push $(TBX_IMAGE):latest
-endif
+default: init cli-tools
+# neovim deps luajit luarocks nlua clean
+# ifdef GITHUB_ACTIONS
+# 	buildah commit $(CONTAINER) $(TBX_IMAGE)
+# 	buildah push $(TBX_IMAGE):latest
+# endif
 
 clean:
 	buildah run $(CONTAINER) dnf autoremove -y
@@ -50,9 +61,36 @@ init: info/working.info
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP '$(IMAGE)' || buildah pull $(IMAGE) | tee  $@
-	buildah containers | grep -oP $(CONTAINER) || buildah from $(IMAGE) | tee -a $@
+	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE) | tee  $@
+	buildah containers | grep -oP $(FED_CONTAINER) || buildah from $(FED_IMAGE) | tee -a $@
 	echo
+
+cli-tools: info/cli.md
+info/cli.md:
+	mkdir -p $(dir $@)
+	buildah run $(FED_CONTAINER) dnf upgrade -y --minimal
+	for item in $(CLI)
+	do
+	buildah run $(FED_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item} &>/dev/null
+	done
+	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	# printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
+	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
+	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	buildah run $(FED_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
+	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
+	   paste  - - -  | sort -u ' | \
+	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
+	   tee -a $@
+	# printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+
+
 
 deps: ## deps for make installs
 	echo '##[ $@ ]##'
@@ -74,8 +112,9 @@ info/neovim.md:
 	NAME=$(basename $(notdir $@))
 	TARGET=files/$${NAME}/usr/local
 	mkdir -p $${TARGET}
-	SRC="https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz"
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/$${NAME}/usr/local
+	SRC=https://github.com/neovim/neovim/releases/download/nightly/nvim-linux64.tar.gz
+	wget $${SRC} -q -O $${NAME}.tar.gz
+	tar xz --strip-components=1 -C files/$${NAME}/usr/local -f $${NAME}.tar.gz
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
 	# CHECK:
 	buildah run $(CONTAINER) nvim -v
