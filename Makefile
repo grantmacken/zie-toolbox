@@ -40,7 +40,7 @@ BEAM  := erlang elixir
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken beam gleam clean
+default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken beam nodejs gleam clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
@@ -259,6 +259,34 @@ paste - - - " | tee $@
 	TARG=/usr/local/bin/rebar3
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	echo -n 'Rebar3: ' && buildah run $(CONTAINER) sh -c 'rebar3 --version'
+
+
+##[[ NODEJS ]]##
+latest/nodejs.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' |
+	jq '.tag_name' |  tr -d '"' > $@
+
+nodejs: info/nodejs.md
+info/nodejs.md: latest/nodejs.tagname
+	# echo '##[ $@ ]##'
+	printf "$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
+	NAME=$(basename $(notdir $@))
+	VERSION=$(shell cat $<)
+	SRC=https://nodejs.org/download/release/$${VERSION}/node-$${VERSION}-linux-x64.tar.gz
+	printf "download URL: %s\n" "$${SRC}"
+	TARGET=files/$${NAME}/usr/local
+	printf "download TARGET: %s\n" "$${TARGET}"
+	mkdir -p $${TARGET}
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
+	buildah add --chmod 755  $(CONTAINER) files/$${NAME} &>/dev/null
+	cat << EOF | tee -a $@
+	Gleam can be compiled to javascript and run in the nodejs runtime.
+	So in this toolbox we have the nodejs runtime.
+	EOF
+	printf "Provided is the **latest** prebuilt release" "$${VERSION}"  | tee -a $@
+	printf "%s\n" "Sourced from [node org](https://nodejs.org/download/release/)"  | tee -a $@
 
 latest/gleam.download:
 	mkdir -p $(dir $@)
