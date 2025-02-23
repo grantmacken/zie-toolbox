@@ -35,17 +35,16 @@ TBX_CONTAINER_NAME=zie-toolbox
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-BEAM  := openssl erlang erlang-crypto elixir
+BEAM  := openssl erlang elixir
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken beam clean
-# neovim deps luajit luarocks nlua clean
-# ifdef GITHUB_ACTIONS
-# 	buildah commit $(CONTAINER) $(TBX_IMAGE)
-# 	buildah push $(TBX_IMAGE):latest
-# endif
+default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken beam gleam clean
+ifdef GITHUB_ACTIONS
+	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
+endif
 
 clean:
 	buildah run $(CONTAINER) dnf autoremove -y
