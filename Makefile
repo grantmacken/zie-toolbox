@@ -20,7 +20,7 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:latest
+FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:41
 CONTAINER := fedora-toolbox-working-container
 
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
@@ -67,8 +67,7 @@ info/working.info:
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE) | tee -a $@
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim, and the beam for developing with gleam' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>'  \
-	--label org.opencontainers.image.base.name='$(FED_IMAGE)'\
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
 	--env lang=C.UTF-8 $(CONTAINER)
 	echo
 
