@@ -35,7 +35,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-BEAM  := openssl erlang elixir
+BEAM  := erlang elixir
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
@@ -234,7 +234,14 @@ info/tiktoken.info:
 
 beam: info/beam.info
 info/beam.info:
-	echo '##[ $@ ]##'
+	NAME=$(basename $(notdir $@))
+	printf "\n$(HEADING2) %s\n\n" "$$NAME" | tee $@
+	cat << EOF | tee -a $@
+	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
+	Installed in this toolbox are the Erlang and Elixir programming languages.
+	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
+	This tooling is used to develop with the Gleam programming language.
+	EOF
 	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
@@ -269,7 +276,10 @@ info/gleam.info: latest/gleam.download
 	printf " - source: %s \n" "$${SRC}" | tee -a $@
 	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET}
 	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
-	buildah run $(CONTAINER) gleam --version | tee $@
+	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
+	cat << EOF | tee -a $@
+	The main developer experience language this toolbox provides for, is for the Gleam language.
+	EOF
 	buildah run $(CONTAINER) gleam --help  | tee -a $@
 
 setup:
