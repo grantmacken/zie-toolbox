@@ -20,7 +20,7 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:41
+FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:latest
 CONTAINER := fedora-toolbox-working-container
 
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
@@ -46,6 +46,8 @@ ifdef GITHUB_ACTIONS
 	buildah push $(TBX_IMAGE):latest
 endif
 
+
+
 clean:
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
@@ -63,6 +65,11 @@ info/working.info:
 	mkdir -p $(dir $@)
 	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE) | tee  $@
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE) | tee -a $@
+	buildah config \
+	--label summary='a toolbox with cli tools, neovim, and the beam for developing with gleam' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>'  \
+	--label org.opencontainers.image.base.name='$(FED_IMAGE)'\
+	--env lang=C.UTF-8 $(CONTAINER)
 	echo
 
 cli-tools: info/cli.md
@@ -230,10 +237,9 @@ beam: info/beam.info
 info/beam.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y 
 	for item in $(BEAM)
 	do
-	buildah run $(CONTAINER) dnf install --repo='rawhide' --releasever=42  -y $${item}
+	buildah run $(CONTAINER) dnf install -y $${item}
 	done
 	buildah run $(CONTAINER) sh -c "dnf -y info installed $(BEAM) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
