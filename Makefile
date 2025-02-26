@@ -40,13 +40,17 @@ BEAM  := erlang elixir
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken beam nodejs gleam clean
+default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
 endif
 
-
+dx: beam gleam nodejs clean
+ifdef GITHUB_ACTIONS
+	buildah commit $(CONTAINER) $(TBX_IMAGE)-dx
+	buildah push $(TBX_IMAGE)-dx:latest
+endif
 
 clean:
 	buildah run $(CONTAINER) dnf autoremove -y
@@ -66,7 +70,7 @@ info/working.info:
 	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE) | tee  $@
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE) | tee -a $@
 	buildah config \
-	--label summary='a toolbox with cli tools, neovim, and the beam for developing with gleam' \
+	--label summary='a toolbox with cli tools, neovim' \
 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
 	--env lang=C.UTF-8 $(CONTAINER)
 	echo
@@ -200,9 +204,9 @@ info/luarocks.md: latest/luarocks.tag_name
 	buildah run $(CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
 	buildah run $(CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
 	# CHECK:
-	buildah run $(CONTAINER) which luarocks
-	buildah run $(CONTAINER) whereis luarocks
-	buildah run $(CONTAINER) luarocks
+	#buildah run $(CONTAINER) which luarocks
+	#buildah run $(CONTAINER) whereis luarocks
+	#buildah run $(CONTAINER) luarocks
 
 nlua: info/nlua.info
 info/nlua.info:
@@ -245,7 +249,8 @@ info/beam.info:
 	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
-	buildah run $(CONTAINER) dnf install -y $${item}
+	buildah run $(CONTAINER) dnf install \
+		--allowerasing --skip-unavailable --skip-broken --no-allow-downgrade -y $${item} &>/dev/null
 	done
 	buildah run $(CONTAINER) sh -c "dnf -y info installed $(BEAM) | \
 grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
@@ -271,7 +276,7 @@ latest/nodejs.tagname:
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.tagname
 	# echo '##[ $@ ]##'
-	printf "$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
 	NAME=$(basename $(notdir $@))
 	VERSION=$(shell cat $<)
 	SRC=https://nodejs.org/download/release/$${VERSION}/node-$${VERSION}-linux-x64.tar.gz
@@ -283,10 +288,9 @@ info/nodejs.md: latest/nodejs.tagname
 	buildah add --chmod 755  $(CONTAINER) files/$${NAME} &>/dev/null
 	cat << EOF | tee -a $@
 	Gleam can be compiled to javascript and run in the nodejs runtime.
-	So in this toolbox we have the nodejs runtime.
+	This toolbox contains the latest nodejs runtime version, 
+	sourced from [node org](https://nodejs.org/download/release/$${VERSION})
 	EOF
-	printf "Provided is the **latest** prebuilt release" "$${VERSION}"  | tee -a $@
-	printf "%s\n" "Sourced from [node org](https://nodejs.org/download/release/)"  | tee -a $@
 
 latest/gleam.download:
 	mkdir -p $(dir $@)
