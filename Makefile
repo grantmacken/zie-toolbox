@@ -261,10 +261,9 @@ info/beam.info:
 	This tooling is used to develop with the Gleam programming language.
 	EOF
 	printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
-	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y
+	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
 	RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
 	echo "RAWHIDE_VER=$${RAWHIDE_VER}"
-	buildah run $(CONTAINER) dnf --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER}
 	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
