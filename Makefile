@@ -42,6 +42,10 @@ REMOVE := default-editor vim-minimal
 
 default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
+	buildah config \
+	--label summary='a toolbox with cli tools, neovim' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+	--env lang=C.UTF-8 $(CONTAINER)
 	buildah commit $(CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
 endif
@@ -76,12 +80,14 @@ info/working.info:
 	mkdir -p $(dir $@)
 	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE)
 	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE)
-	buildah run $(CONTAINER) cat /etc/os-release |
-	buildah config \
-	--label summary='a toolbox with cli tools, neovim' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(CONTAINER)
-	echo
+	INFO=$$(buildah run $(CONTAINER) cat /etc/os-release)
+	VER=$$(echo "$${INFO}" | grep VERSION_ID | cut -d= -f2) 
+	echo "VERSION_ID=$${VER}"
+	NEXT=$$(($${VER} + 1))
+	echo $${INFO} | tee $@
+	echo "RAWHIDE=$${NEXT}" | tee -a $@
+
+	# echo
 
 cli-tools: info/cli.md
 info/cli.md:
@@ -254,15 +260,19 @@ info/beam.info:
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
+	printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
+	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y
+	RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
+	echo "RAWHIDE_VER=$${RAWHIDE_VER}"
+	buildah run $(CONTAINER) dnf --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER}
 	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
-	buildah run $(CONTAINER) dnf install \
-		--allowerasing --skip-unavailable --skip-broken --no-allow-downgrade -y $${item} &>/dev/null
+	buildah run $(CONTAINER) dnf --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER} -y $${item} &>/dev/null \
 	done
-	buildah run $(CONTAINER) sh -c "dnf -y info installed $(BEAM) | \
-grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-paste - - - " | tee $@
+	buildah run $(CONTAINER) sh -c "dnf -y info installed $(BEAM) | \ 
+	grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
+	paste - - - " tee $@
 	buildah run $(CONTAINER) sh -c 'erl -version' | tee -a $@
 	echo -n 'OTP Release: '
 	buildah run $(CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." | tee -a  $@
