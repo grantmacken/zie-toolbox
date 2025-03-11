@@ -268,10 +268,9 @@ info/beam.info:
 	do
 	buildah run $(CONTAINER) dnf install --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER} -y $${item}
 	done
-	echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
 	buildah run $(CONTAINER) dnf -y info installed $(BEAM) |
 	grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' |
-	paste - - -  tee $@
+	paste - - - | tee $@
 	buildah run $(CONTAINER) sh -c 'erl -version' | tee -a $@
 	echo -n 'OTP Release: '
 	buildah run $(CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." | tee -a  $@
