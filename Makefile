@@ -264,14 +264,14 @@ info/beam.info:
 	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
 	RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
 	echo "RAWHIDE_VER=$${RAWHIDE_VER}"
-	mkdir -p $(dir $@)
 	for item in $(BEAM)
 	do
-	buildah run $(CONTAINER) dnf --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER} -y $${item} &>/dev/null \
+	buildah run $(CONTAINER) dnf --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER} -y $${item}
 	done
-	buildah run $(CONTAINER) sh -c "dnf -y info installed $(BEAM) | \ 
-	grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' | \
-	paste - - - " tee $@
+	echo 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+	# buildah run $(CONTAINER) dnf -y info installed $(BEAM) |
+	# grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' |
+	# paste - - -  tee $@
 	buildah run $(CONTAINER) sh -c 'erl -version' | tee -a $@
 	echo -n 'OTP Release: '
 	buildah run $(CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." | tee -a  $@
