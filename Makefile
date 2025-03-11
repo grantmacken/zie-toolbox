@@ -20,8 +20,6 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-
-# REL_VERSION := $(shell curl -sSL https://api.github.com/repos/1player/host-spawn/releases/latest | jq -r '.tag_name')
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:latest
 CONTAINER := fedora-toolbox-working-container
 
@@ -62,6 +60,9 @@ clean:
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
+rm:
+	buildah rm $(CONTAINER) || true
+
 .PHONY: help
 help: ## show this help
 	cat $(MAKEFILE_LIST) |
@@ -73,8 +74,9 @@ init: info/working.info
 info/working.info:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE) | tee  $@
-	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE) | tee -a $@
+	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE)
+	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE)
+	buildah run $(CONTAINER) cat /etc/os-release |
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
