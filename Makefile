@@ -20,7 +20,9 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:41
+
+# REL_VERSION := $(shell curl -sSL https://api.github.com/repos/1player/host-spawn/releases/latest | jq -r '.tag_name')
+FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:latest
 CONTAINER := fedora-toolbox-working-container
 
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
@@ -48,6 +50,10 @@ endif
 
 dx: beam gleam nodejs clean
 ifdef GITHUB_ACTIONS
+	buildah config \
+	--label summary='dx toolbox for the gleam lang' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+	--env lang=C.UTF-8 $(CONTAINER)
 	buildah commit $(CONTAINER) $(TBX_IMAGE)-dx
 	buildah push $(TBX_IMAGE)-dx:latest
 endif
