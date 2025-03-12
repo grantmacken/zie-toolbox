@@ -261,12 +261,13 @@ info/beam.info:
 	This tooling is used to develop with the Gleam programming language.
 	EOF
 	printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
-	buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
-	RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
-	echo "RAWHIDE_VER=$${RAWHIDE_VER}"
+	# buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
+	# RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
+	# echo "RAWHIDE_VER=$${RAWHIDE_VER}"
 	for item in $(BEAM)
 	do
-	buildah run $(CONTAINER) dnf install --disablerepo=* --enablerepo=rawhide --releasever=$${RAWHIDE_VER} -y $${item}
+	buildah run $(CONTAINER) dnf install --assumeyes $${item} &>/dev/null
+	# buildah run $(CONTAINER) dnf install --disablerepo=* --enablerepo=rawhide --releasever=42 --assumeyes $${item}
 	done
 	buildah run $(CONTAINER) dnf -y info installed $(BEAM) |
 	grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' |
@@ -308,11 +309,32 @@ info/nodejs.md: latest/nodejs.tagname
 	sourced from [node org](https://nodejs.org/download/release/$${VERSION})
 	EOF
 
+##[[ OTP ]]##
+latest/otp.version:
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/erlang/otp/releases/latest' |
+	jq -r '.tag_name' | cut -d- -f2 > $@
+
+otp: info/otp.info
+info/otp.info: latest/otp.version
+	echo '##[ $@ ]##'
+	NAME=$(basename $(notdir $@))
+	VER=$$(cat $<)
+	SRC=https://github.com/erlang/otp/releases/download/OTP-$${VER}/otp_src_$${VER}.tar.gz
+	printf "download URL: %s\n" "$${SRC}"
+	TARGET=files/$${NAME}/usr/local
+	printf "download TARGET: %s\n" "$${TARGET}"
+	mkdir -p $${TARGET}
+	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
+##[[ GLEAM ]]##
+
 latest/gleam.download:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
 	jq  -r '.assets[].browser_download_url' |
 	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
+
+
 
 gleam: info/gleam.info
 info/gleam.info: latest/gleam.download
