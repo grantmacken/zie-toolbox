@@ -260,7 +260,7 @@ info/beam.info:
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
-	printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
+	# printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
 	# buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
 	# RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
 	# echo "RAWHIDE_VER=$${RAWHIDE_VER}"
@@ -281,7 +281,6 @@ info/beam.info:
 	TARG=/usr/local/bin/rebar3
 	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
 	echo -n 'Rebar3: ' && buildah run $(CONTAINER) sh -c 'rebar3 --version'
-
 
 ##[[ NODEJS ]]##
 latest/nodejs.tagname:
@@ -326,14 +325,13 @@ info/otp.info: latest/otp.version
 	printf "download TARGET: %s\n" "$${TARGET}"
 	mkdir -p $${TARGET}
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
-##[[ GLEAM ]]##
 
+##[[ GLEAM ]]##
 latest/gleam.download:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
 	jq  -r '.assets[].browser_download_url' |
 	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
-
 
 
 gleam: info/gleam.info
@@ -352,23 +350,5 @@ info/gleam.info: latest/gleam.download
 	EOF
 	buildah run $(CONTAINER) gleam --help  | tee -a $@
 
-setup:
-	podman pull $(TBX_IMAGE):latest
-	if toolbox list --containers | grep -q $(TBX_CONTAINER_NAME)
-	then
-		echo " ---------------------------------------"
-		echo " Recreate the toolbox container $(TBX_CONTAINER_NAME) "
-		echo " ---------------------------------------"
-		echo " - 1: Remove the toolbox container $(TBX_CONTAINER_NAME)"
-		toolbox rm -f $(TBX_CONTAINER_NAME)
-		echo " - 2: Recreate toolbox from the latest image and"
-		echo "      give it the same name as the removed container"
-		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
-	else
-		echo " -----------------------------------------------------------"
-		echo " Create the toolbox container with name: $(TBX_CONTAINER_NAME)  "
-		echo " -----------------------------------------------------------"
-		toolbox create --image $(TBX_IMAGE):latest $(TBX_CONTAINER_NAME)
-	fi
 
 
