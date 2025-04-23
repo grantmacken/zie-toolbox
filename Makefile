@@ -20,7 +20,7 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:42
+FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:rawhide
 CONTAINER := fedora-toolbox-working-container
 
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
