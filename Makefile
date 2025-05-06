@@ -20,7 +20,9 @@ COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
 
-FED_IMAGE := registry.fedoraproject.org/fedora-toolbox:latest
+include .env
+
+FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 CONTAINER := fedora-toolbox-working-container
 
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
@@ -39,8 +41,33 @@ BEAM  := erlang elixir
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
+default: info/working.info
 
-default: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
+latest/fedora-toolbox.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	skopeo inspect docker://${FED_IMAGE}:latest | jq '.' > $@
+
+.env: latest/fedora-toolbox.json
+	echo '##[ $@ ]##'
+	FROM_REGISTRY=$(shell cat $< | jq -r '.Name')
+	FROM_VERSION=$(shell cat $< | jq -r '.Labels.version')
+	FROM_NAME=$(shell cat $< | jq -r '.Labels.name')
+	printf "FROM_NAME=%s\n" $$FROM_NAME | tee $@
+	printf "FROM_REGISTRY=%s\n" $$FROM_REGISTRY | tee -a $@
+	VERSION=$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.version')
+	printf "FROM_VERSION=%s\n" $$FROM_VERSION | tee -a $@
+	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
+	echo -n "WORKING_CONTAINER=" | tee -a .env
+	buildah from $$FROM_REGISTRY:$$FROM_VERSION | tee -a .env
+
+clear:
+	rm -f info/working.info
+	buildah rm --all
+	# rm -f .env
+
+
+xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -64,8 +91,6 @@ clean:
 	buildah run $(CONTAINER) dnf autoremove -y
 	buildah run $(CONTAINER) rm -rf /tmp/*
 
-rm:
-	buildah rm $(CONTAINER) || true
 
 .PHONY: help
 help: ## show this help
@@ -74,20 +99,24 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-init: info/working.info
 info/working.info:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	podman images | grep -oP '$(FED_IMAGE)' || buildah pull $(FED_IMAGE)
-	buildah containers | grep -oP $(CONTAINER) || buildah from $(FED_IMAGE)
-	INFO=$$(buildah run $(CONTAINER) cat /etc/os-release)
-	VER=$$(echo "$${INFO}" | grep VERSION_ID | cut -d= -f2) 
-	echo "VERSION_ID=$${VER}"
-	NEXT=$$(($${VER} + 1))
-	echo $${INFO} | tee $@
-	echo "RAWHIDE=$${NEXT}" | tee -a $@
+	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
+	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
+	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
+	printf "Pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 
-	# echo
+xxx:
+# 	# echo '##[ $@ ]##'
+# 	mkdir -p $(dir $@)
+	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
+	REGISTRY=$(shell cat latest/fedora-toolbox.json | jq -r '.Name')
+	VERSION=$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.version')
+	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
+	printf ", version %s\n" $$VERSION | tee -a $@
+	printf "Pulled from registry:  %s\n" $$REGISTRY | tee -a $@
+	buildah pull $$REGISTRY:$$VERSION &> /dev/null
+	echo -n "WORKING_CONTAINER=" | tee .env
+	buildah from $$REGISTRY:$$VERSION | tee -a .env
 
 cli-tools: info/cli.md
 info/cli.md:
@@ -218,7 +247,7 @@ info/luarocks.md: latest/luarocks.tag_name
 	buildah run $(CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
 	buildah run $(CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
 	# CHECK:
-	#buildah run $(CONTAINER) which luarocks
+#buildah run $(CONTAINER) which luarocks
 	#buildah run $(CONTAINER) whereis luarocks
 	#buildah run $(CONTAINER) luarocks
 
@@ -249,6 +278,24 @@ info/tiktoken.info:
 	printf "| %-10s | %-13s | %-83s |\n" "tiktoken" "0.2.3" "The lua module for generating tiktok tokens" | tee -a $@
 	# buildah run $(CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(CONTAINER) exa --tree /usr/local/share/lua/5.1
+
+## BEAM
+latest/erlang.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/erlang/otp/releases/latest | 
+	jq '.' > $@
+
+
+erlang: latest/erlang.json
+	echo '##[ $@ ]##'
+	NAME=$$(cat $< | jq -r '.name')
+	URL=$$(cat $< | jq -r '.tarball_url')
+
+latest/elixir.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/elixir-lang/elixir/releases/latest | jq '.' > $@
 
 beam: info/beam.info
 info/beam.info:
