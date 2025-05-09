@@ -1,7 +1,7 @@
 info/*
 !info/toolbox_*
 latest
-!latest/fedora-toolbox.json
+!latest/readme/*
 files
 tmp
 bin

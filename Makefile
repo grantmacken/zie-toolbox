@@ -16,6 +16,8 @@ HEADING1 := \#
 HEADING2 := $(HEADING1)$(HEADING1)
 HEADING3 := $(HEADING2)$(HEADING1)
 
+DASH := -
+DOT := .
 COMMA := ,
 EMPTY:=
 SPACE := $(EMPTY) $(EMPTY)
@@ -36,12 +38,18 @@ TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
-DEPS  := gcc glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-BEAM  := erlang elixir
+DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: info/working.info
+default: working cli-tools build-tools beam
+
+
+clear:
+	rm -f info/*.md
+	buildah rm --all
+	# rm -f .env
 
 latest/fedora-toolbox.json:
 	echo '##[ $@ ]##'
@@ -61,36 +69,29 @@ latest/fedora-toolbox.json:
 	echo -n "WORKING_CONTAINER=" | tee -a .env
 	buildah from $$FROM_REGISTRY:$$FROM_VERSION | tee -a .env
 
-clear:
-	rm -f info/working.info
-	buildah rm --all
-	# rm -f .env
-
-
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(CONTAINER)
-	buildah commit $(CONTAINER) $(TBX_IMAGE)
+	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
 	buildah push $(TBX_IMAGE):latest
 endif
 
-dx: beam gleam nodejs clean
+dx: beam nodejs clean
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='dx toolbox for the gleam lang' \
 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(CONTAINER)
-	buildah commit $(CONTAINER) $(TBX_IMAGE)-dx
+	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)-dx
 	buildah push $(TBX_IMAGE)-dx:latest
 endif
 
 clean:
-	buildah run $(CONTAINER) dnf autoremove -y
-	buildah run $(CONTAINER) rm -rf /tmp/*
-
+	buildah run $(WORKING_CONTAINER) dnf autoremove -y
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 
 .PHONY: help
 help: ## show this help
@@ -99,32 +100,22 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-info/working.info:
+
+working: info/working.md
+info/working.md:
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "Pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 
-xxx:
-# 	# echo '##[ $@ ]##'
-# 	mkdir -p $(dir $@)
-	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
-	REGISTRY=$(shell cat latest/fedora-toolbox.json | jq -r '.Name')
-	VERSION=$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.version')
-	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
-	printf ", version %s\n" $$VERSION | tee -a $@
-	printf "Pulled from registry:  %s\n" $$REGISTRY | tee -a $@
-	buildah pull $$REGISTRY:$$VERSION &> /dev/null
-	echo -n "WORKING_CONTAINER=" | tee .env
-	buildah from $$REGISTRY:$$VERSION | tee -a .env
-
 cli-tools: info/cli.md
 info/cli.md:
+	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
-	buildah run $(CONTAINER) dnf upgrade -y --minimal
+	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal
 	for item in $(CLI)
 	do
-	buildah run $(CONTAINER) dnf install \
+	buildah run $(WORKING_CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
@@ -136,19 +127,19 @@ info/cli.md:
 	# printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
+	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
-	# printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
-deps: info/deps.md
+build-tools: info/deps.md
 info/deps.md:
 	echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
-	buildah run $(CONTAINER) dnf install \
+	buildah run $(WORKING_CONTAINER) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
@@ -157,11 +148,14 @@ info/deps.md:
 		$${item} &>/dev/null
 	done
 	printf "$(HEADING2) %s\n\n" "Development dependencies for make installs" | tee $@
-	buildah run $(CONTAINER) sh -c  'dnf info -q installed $(DEPS) | \
+	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(DEPS) | \
 	grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	paste  - - -  | sort -u ' | \
 	awk -F'\t' '{printf "| %-14s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
@@ -176,14 +170,14 @@ info/host-spawn.md: latest/host-spawn.json
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
 	TARG=/usr/local/bin/host-spawn
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
 	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
 	# close table
 	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
 	do
-	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
+	buildah run $(WORKING_CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
@@ -199,13 +193,13 @@ info/neovim.md:
 	SRC=https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 	printf "\ndownload: %s\n\n" "$$SRC"
 	curl -sSL $${SRC} | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
 	# CHECK:
-	buildah run $(CONTAINER) nvim -v
-	buildah run $(CONTAINER) whereis nvim
-	buildah run $(CONTAINER) which nvim
-	# buildah run $(CONTAINER) printenv
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
+	buildah run $(WORKING_CONTAINER) nvim -v
+	buildah run $(WORKING_CONTAINER) whereis nvim
+	buildah run $(WORKING_CONTAINER) which nvim
+	# buildah run $(WORKING_CONTAINER) printenv
+	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
 	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
 		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
@@ -214,8 +208,8 @@ info/luajit.md:
 	echo '##[ $@ ]##'
 	NAME=$(basename $(notdir $@))
 	printf "\n$(HEADING2) %s\n\n" "$$NAME"
-	buildah run $(CONTAINER) dnf install -y luajit luajit-devel
-	VERSION=$$(buildah run $(CONTAINER) sh -c 'luajit -v')
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel
+	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v')
 	printf "| %-10s |\n" "$$VERSION" | tee -a $@
 
 luarocks: info/luarocks.md
@@ -226,46 +220,46 @@ latest/luarocks.tag_name:
 
 info/luarocks.md: latest/luarocks.tag_name
 	 echo '##[ $@ ]##'
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) mkdir -p /etc/xdg/luarocks
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
 	URL=$$(jq -r '.tarball_url' $<)
 	# echo "name: $${NAME}"
 	# echo "url: $${URL}"
 	mkdir -p files/luarocks
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && ./configure \
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 	--lua-version=5.1 --with-lua-interpreter=luajit \
 	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(CONTAINER) rm -rf /tmp/*
-	buildah run $(CONTAINER) luarocks install luarocks &>/dev/null
-	#Cean up buildah run $(CONTAINER) luarocks show luarocks
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
+	#Cean up buildah run $(WORKING_CONTAINER) luarocks show luarocks
 	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
-	buildah run $(CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
-	buildah run $(CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
+	buildah run $(WORKING_CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
+	buildah run $(WORKING_CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
 	# CHECK:
-#buildah run $(CONTAINER) which luarocks
-	#buildah run $(CONTAINER) whereis luarocks
-	#buildah run $(CONTAINER) luarocks
+#buildah run $(WORKING_CONTAINER) which luarocks
+	#buildah run $(WORKING_CONTAINER) whereis luarocks
+	#buildah run $(WORKING_CONTAINER) luarocks
 
 nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
-	buildah run $(CONTAINER) luarocks install nlua
-	buildah run $(CONTAINER) luarocks show nlua
-	buildah run $(CONTAINER) luarocks config lua_version 5.1
+	buildah run $(WORKING_CONTAINER) luarocks install nlua
+	buildah run $(WORKING_CONTAINER) luarocks show nlua
+	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	## TODO: I think this is redundant as we only have to use the above
 	## @see https://github.com/mfussenegger/nlua
-	buildah run $(CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
-	# buildah run $(CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
-	buildah run $(CONTAINER) which nlua
-	buildah run $(CONTAINER) whereis nlua
+	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
+	buildah run $(WORKING_CONTAINER) which nlua
+	buildah run $(WORKING_CONTAINER) whereis nlua
 	printf "| %-10s | %-13s | %-83s |\n" "nlua" " " "@see https://github.com/mfussenegger/nlua" | tee -a $@
-	buildah run $(CONTAINER) luarocks install busted
+	buildah run $(WORKING_CONTAINER) luarocks install busted
 	printf "| %-10s | %-13s | %-83s |\n" "busted" " " "@see " | tee -a $@
 
 tiktoken: info/tiktoken.info
@@ -274,60 +268,25 @@ info/tiktoken.info:
 	SRC=https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
 	TARG=/usr/local/lib/lua/5.1/tiktoken_core-linux.so
 	# nlua -e 'print(package.)'
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "| %-10s | %-13s | %-83s |\n" "tiktoken" "0.2.3" "The lua module for generating tiktok tokens" | tee -a $@
-	# buildah run $(CONTAINER) exa --tree /usr/local/lib/lua/5.1
-	# buildah run $(CONTAINER) exa --tree /usr/local/share/lua/5.1
+	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
+	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
 ## BEAM
-latest/erlang.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/erlang/otp/releases/latest | 
-	jq '.' > $@
-
-
-erlang: latest/erlang.json
-	echo '##[ $@ ]##'
-	NAME=$$(cat $< | jq -r '.name')
-	URL=$$(cat $< | jq -r '.tarball_url')
-
-latest/elixir.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/elixir-lang/elixir/releases/latest | jq '.' > $@
 
 beam: info/beam.info
-info/beam.info:
-	NAME=$(basename $(notdir $@))
-	printf "\n$(HEADING2) %s\n\n" "$$NAME" | tee $@
+info/beam.info: otp elixir rebar3 gleam
+	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
 	Installed in this toolbox are the Erlang and Elixir programming languages.
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
-	# printf "\n%s\n\n" "To get up to date Beam tooling we install from the fedora rawhide registry" | tee -a $@
-	# buildah run $(CONTAINER) dnf install fedora-repos-rawhide -y &>/dev/null
-	# RAWHIDE_VER=$$(cat info/working.info | grep RAWHIDE | cut -d= -f2)
-	# echo "RAWHIDE_VER=$${RAWHIDE_VER}"
-	for item in $(BEAM)
-	do
-	buildah run $(CONTAINER) dnf install --assumeyes $${item} &>/dev/null
-	# buildah run $(CONTAINER) dnf install --disablerepo=* --enablerepo=rawhide --releasever=42 --assumeyes $${item}
-	done
-	buildah run $(CONTAINER) dnf -y info installed $(BEAM) |
-	grep -oP '(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)' |
-	paste - - - | tee $@
-	buildah run $(CONTAINER) sh -c 'erl -version' | tee -a $@
-	echo -n 'OTP Release: '
-	buildah run $(CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." | tee -a  $@
-	echo -n 'Elixir: ' && buildah run $(CONTAINER) sh -c 'elixir --version'
-	echo -n 'Mix: ' && buildah run $(CONTAINER) sh -c 'mix --version'
-	SRC=https://s3.amazonaws.com/rebar3-nightly/rebar3
-	TARG=/usr/local/bin/rebar3
-	buildah add --chmod 755 $(CONTAINER) $${SRC} $${TARG} &>/dev/null
-	echo -n 'Rebar3: ' && buildah run $(CONTAINER) sh -c 'rebar3 --version'
+	
+
+
 
 ##[[ NODEJS ]]##
 latest/nodejs.tagname:
@@ -348,30 +307,102 @@ info/nodejs.md: latest/nodejs.tagname
 	printf "download TARGET: %s\n" "$${TARGET}"
 	mkdir -p $${TARGET}
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755  $(CONTAINER) files/$${NAME} &>/dev/null
+	buildah add --chmod 755  $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
 	cat << EOF | tee -a $@
 	Gleam can be compiled to javascript and run in the nodejs runtime.
-	This toolbox contains the latest nodejs runtime version, 
+	This toolbox contains the latest nodejs runtime version,
 	sourced from [node org](https://nodejs.org/download/release/$${VERSION})
 	EOF
+	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	cat info/otp.md | tee -a $@
+	cat info/elixir.md | tee -a $@
+	cat info/rebar3.md | tee -a $@
+	cat info/gleam.info | tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 ##[[ OTP ]]##
-latest/otp.version:
+latest/otp.json:
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/erlang/otp/releases/latest' |
-	jq -r '.tag_name' | cut -d- -f2 > $@
+	wget -q -O - 'https://api.github.com/repos/erlang/otp/releases/latest' > $@
 
-otp: info/otp.info
-info/otp.info: latest/otp.version
+otp: info/otp.md
+info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
-	NAME=$(basename $(notdir $@))
-	VER=$$(cat $<)
-	SRC=https://github.com/erlang/otp/releases/download/OTP-$${VER}/otp_src_$${VER}.tar.gz
-	printf "download URL: %s\n" "$${SRC}"
-	TARGET=files/$${NAME}/usr/local
-	printf "download TARGET: %s\n" "$${TARGET}"
-	mkdir -p $${TARGET}
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	TAGNAME=$(shell jq -r '.tag_name' $<)
+	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
+	SRC=https://github.com/erlang/otp/releases/download/$${TAGNAME}/otp_src_$${VERSION}.tar.gz
+	mkdir -p files/otp && wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/otp
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+	--prefix=/usr/local \
+	--without-javac \
+	--without-odbc \
+	--without-debugger \
+	--without-observer \
+	--without-wxwidgets \
+	--without-cdv \
+	--without-et'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	# check:
+	buildah run $(WORKING_CONTAINER) sh -c 'ls /usr/local/bin'
+	printf "| %-8s | %-7s | %-83s |\n" "OTP" "$$VERSION" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
+
+reset-otp:
+	rm -f info/otp.md
+
+latest/elixir.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/elixir-lang/elixir/releases/latest | jq '.' > $@
+
+elixir: info/elixir.md
+info/elixir.md: latest/elixir.json
+	echo '##[ $@ ]##'
+	# using precompiled binaries
+	TAGNAME=$(shell jq -r '.tag_name' $<)
+	OTP=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." |
+	tr -d '"' > otp.version
+	echo "OTP: $$(cat otp.version)"
+	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$(shell cat otp.version).zip
+	echo "download URL: $${SRC}"
+	wget -q $${SRC}
+	mkdir -p files/elixir/usr/local
+	unzip elixir-otp-$(shell cat otp.version).zip -d files/elixir/usr/local
+	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
+	ELIXIR_VER=$(shell buildah run $(WORKING_CONTAINER) elixir -v | grep -oP 'Elixir \K.+' | cut -d' ' -f1)
+	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$${ELIXIR_VER}" "Elixir, a dynamic, functional language" | tee -a $@
+	MIX_VER=$(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	printf "| %-8s | %-7s | %-83s |\n" "mix" "$${MIX_VER}" "Mix, elixir build tool" | tee -a $@
+
+latest/rebar3.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - https://api.github.com/repos/erlang/rebar3/releases/latest | jq '.' > $@
+
+rebar3: info/rebar3.md
+info/rebar3.md: latest/rebar3.json
+	echo '##[ $@ ]##'
+	# buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/rebar3
+	VER=$(shell jq -r '.tag_name' $<)
+	SRC=$(shell jq -r '.assets[].browser_download_url' $<)
+	TARG=/usr/local/bin/rebar3
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
+	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')
+	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$$VER" "$${SUM}" | tee -a $@
+
+.PHONY: check
+check:
+	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')
+	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "VERSION" "" | tee -a $@
+
+check2:
+	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	printf "| %-14s | %-7s | %-83s |\n" "OTP" "27" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
 
 ##[[ GLEAM ]]##
 latest/gleam.download:
@@ -379,7 +410,6 @@ latest/gleam.download:
 	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
 	jq  -r '.assets[].browser_download_url' |
 	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
-
 
 gleam: info/gleam.info
 info/gleam.info: latest/gleam.download
@@ -390,12 +420,14 @@ info/gleam.info: latest/gleam.download
 	SRC=$$(cat $<)
 	printf " - source: %s \n" "$${SRC}" | tee -a $@
 	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET}
-	buildah add --chmod 755 $(CONTAINER) files/$${NAME} &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
+
+xxxxx:
 	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
 	cat << EOF | tee -a $@
 	The main developer experience language this toolbox provides for, is for the Gleam language.
 	EOF
-	buildah run $(CONTAINER) gleam --help  | tee -a $@
+	buildah run $(WORKING_CONTAINER) gleam --help  | tee -a $@
 
 
 
