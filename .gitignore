@@ -1,7 +1,7 @@
+.env
 info/*
-!info/toolbox_*
-latest
-!latest/readme/*
+!info/readme/*
+latest/
 files
 tmp
 bin

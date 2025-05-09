@@ -25,4 +25,6 @@ jobs:
             password: ${{ github.token }}
         - uses: actions/checkout@v4
         - name: Toolbox Builds
-          run: make
+          run: |
+            make .env
+            make
