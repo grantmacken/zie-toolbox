@@ -272,18 +272,6 @@ info/tiktoken.info:
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-## BEAM
-# elixir rebar3 gleam
-
-beam: info/beam.info
-info/beam.info: otp
-	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
-	cat << EOF | tee -a $@
-	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	Installed in this toolbox are the Erlang and Elixir programming languages.
-	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
-	This tooling is used to develop with the Gleam programming language.
-	EOF
 
 
 ##[[ NODEJS ]]##
@@ -319,7 +307,18 @@ info/nodejs.md: latest/nodejs.tagname
 	cat info/gleam.info | tee -a $@
 	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
-##[[ OTP ]]##
+## BEAM
+# elixir rebar3 gleam
+
+beam: info/beam.info
+info/beam.info: otp elixir 
+	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
+	cat << EOF | tee -a $@
+	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
+	Installed in this toolbox are the Erlang and Elixir programming languages.
+	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
+	This tooling is used to develop with the Gleam programming language.
+	EOF
 
 
 latest/otp.version:
@@ -358,7 +357,7 @@ info/otp.md: latest/otp.json
 	--without-observer \
 	--without-odbc \
 	--without-wx'
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	# check:
 	buildah run $(WORKING_CONTAINER) sh -c 'ls /usr/local/bin'
@@ -371,14 +370,16 @@ reset-otp:
 latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/elixir-lang/elixir/releases/latest | jq '.' > $@
+	wget -q --show-progress --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O- | jq '.' > $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
 	TAGNAME=$(shell jq -r '.tag_name' $<)
+	echo -n 'tag_name' && echo "$${TAGNAME}"
 	OTP=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+	echo -n 'OTP version' && echo "$${OTP}"
 	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." |
 	tr -d '"' > otp.version
 	echo "OTP: $$(cat otp.version)"
@@ -411,8 +412,8 @@ info/rebar3.md: latest/rebar3.json
 
 .PHONY: check
 check:
-	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')
-	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "VERSION" "" | tee -a $@
+	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/*.bat
+	# printf "| %-8s | %-7s | %-83s |\n" "rebar3" "VERSION" "" | tee -a $@
 
 check2:
 	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
