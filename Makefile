@@ -103,6 +103,7 @@ help: ## show this help
 
 working: info/working.md
 info/working.md:
+	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
