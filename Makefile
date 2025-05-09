@@ -45,7 +45,6 @@ REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 default: working cli-tools build-tools beam
 
-
 clear:
 	rm -f info/*.md
 	buildah rm --all
@@ -320,14 +319,24 @@ info/nodejs.md: latest/nodejs.tagname
 	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
 ##[[ OTP ]]##
-latest/otp.json:
+
+
+latest/otp.version:
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/erlang/otp/releases/latest' > $@
+	echo -n "OTP-" > $@
+	wget -q -O- https://www.erlang.org/downloads |
+	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee -a $@
+
+latest/otp.json: latest/otp.version
+	echo '##[ $@ ]##'
+	TAG_NAME=$(shell cat $<)
+	echo "$${TAG_NAME}"
+	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
+	jq  '[ .[] | select(.tag_name == "$(shell cat $<)") ]' > $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	TAGNAME=$(shell jq -r '.tag_name' $<)
 	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
 	SRC=https://github.com/erlang/otp/releases/download/$${TAGNAME}/otp_src_$${VERSION}.tar.gz
@@ -350,6 +359,7 @@ info/otp.md: latest/otp.json
 
 reset-otp:
 	rm -f info/otp.md
+	rm -f latest/otp.json
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
