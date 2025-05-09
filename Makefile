@@ -319,27 +319,30 @@ info/beam.info: otp elixir
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
+	printf "| %-8s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
+	printf "| %-8s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	cat info/otp.md | tee -a $@
 
 
 latest/otp.version:
 	mkdir -p $(dir $@)
-	echo -n "OTP-" > $@
 	wget -q -O- https://www.erlang.org/downloads |
-	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee -a $@
+	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee $@
 
 latest/otp.json: latest/otp.version
 	echo '##[ $@ ]##'
 	TAG_NAME=$(shell cat $<)
 	echo "$${TAG_NAME}"
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq  '[ .[] | select(.tag_name == "$(shell cat $<)") ] | .[0]' > $@
+	jq -r '.[] | select(.tag_name | endswith("'$(shell cat $<)'"))' > $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
+	# select the gzip browser_download_url that contains the src
+	SRC=$$(jq -r ".assets[] | select(.browser_download_url | contains(\"otp_src\")) | .browser_download_url" $<)
 	TAGNAME=$(shell jq -r '.tag_name' $<)
 	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
-	SRC=https://github.com/erlang/otp/releases/download/$${TAGNAME}/otp_src_$${VERSION}.tar.gz
 	mkdir -p files/otp && wget -q --show-progress --timeout=10 --tries=3  $${SRC} -O- | tar xz --strip-components=1 -C files/otp
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -356,7 +359,7 @@ info/otp.md: latest/otp.json
 	--without-megaco \
 	--without-observer \
 	--without-odbc \
-	--without-wx'
+	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	# check:
@@ -377,15 +380,10 @@ info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
 	TAGNAME=$(shell jq -r '.tag_name' $<)
-	echo -n 'tag_name' && echo "$${TAGNAME}"
-	OTP=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
-	echo -n 'OTP version' && echo "$${OTP}"
-	buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt()." |
-	tr -d '"' > otp.version
-	echo "OTP: $$(cat otp.version)"
-	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$(shell cat otp.version).zip
+	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR}.zip
 	echo "download URL: $${SRC}"
-	wget -q $${SRC}
+	wget-q --show-progress --timeout=10 --tries=3 $${SRC}
 	mkdir -p files/elixir/usr/local
 	unzip elixir-otp-$(shell cat otp.version).zip -d files/elixir/usr/local
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
