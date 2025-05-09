@@ -273,9 +273,10 @@ info/tiktoken.info:
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
 ## BEAM
+# elixir rebar3 gleam
 
 beam: info/beam.info
-info/beam.info: otp elixir rebar3 gleam
+info/beam.info: otp
 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -344,13 +345,19 @@ info/otp.md: latest/otp.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 	--prefix=/usr/local \
-	--without-javac \
-	--without-odbc \
-	--without-debugger \
-	--without-observer \
-	--without-wx \
+	--without-asn1 \
 	--without-cdv \
-	--without-et'
+	--without-snmp \
+	--without-cosEvent \
+	--without-debugger \
+	--without-dialyzer \
+	--without-et \
+	--without-hipe \
+	--without-javac \
+	--without-megaco \
+	--without-observer \
+	--without-odbc \
+	--without-wx'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	# check:
