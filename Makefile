@@ -332,7 +332,7 @@ latest/otp.json: latest/otp.version
 	TAG_NAME=$(shell cat $<)
 	echo "$${TAG_NAME}"
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq  '[ .[] | select(.tag_name == "$(shell cat $<)") ]' > $@
+	jq  '[ .[] | select(.tag_name == "$(shell cat $<)") ] | .[0]' > $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
@@ -340,7 +340,7 @@ info/otp.md: latest/otp.json
 	TAGNAME=$(shell jq -r '.tag_name' $<)
 	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
 	SRC=https://github.com/erlang/otp/releases/download/$${TAGNAME}/otp_src_$${VERSION}.tar.gz
-	mkdir -p files/otp && wget $${SRC} -q -O- | tar xz --strip-components=1 -C files/otp
+	mkdir -p files/otp && wget -q --show-progress --timeout=10 --tries=3  $${SRC} -O- | tar xz --strip-components=1 -C files/otp
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 	--prefix=/usr/local \
