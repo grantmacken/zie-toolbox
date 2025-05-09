@@ -100,7 +100,6 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-
 working: info/working.md
 info/working.md:
 	mkdir -p $(dir $@)
@@ -285,8 +284,6 @@ info/beam.info: otp elixir rebar3 gleam
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
-	
-
 
 
 ##[[ NODEJS ]]##
@@ -342,7 +339,7 @@ info/otp.md: latest/otp.json
 	--without-odbc \
 	--without-debugger \
 	--without-observer \
-	--without-wxwidgets \
+	--without-wx \
 	--without-cdv \
 	--without-et'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install'
