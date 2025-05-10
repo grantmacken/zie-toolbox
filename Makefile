@@ -43,7 +43,7 @@ BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools beam
+default: working cli-tools build-tools otp elixir
 
 clear:
 	rm -f info/*.md
@@ -311,7 +311,7 @@ info/nodejs.md: latest/nodejs.tagname
 # elixir rebar3 gleam
 
 beam: info/beam.info
-info/beam.info: otp elixir 
+info/beam.info: otp elixir
 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -321,7 +321,6 @@ info/beam.info: otp elixir
 	EOF
 	printf "| %-8s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-8s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	cat info/otp.md | tee -a $@
 
 latest/otp.version:
 	mkdir -p $(dir $@)
@@ -364,14 +363,11 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	printf "| %-8s | %-7s | %-83s |\n" "OTP" "$$VERSION" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
 
-reset-otp:
-	rm -f info/otp.md
-	rm -f latest/otp.json
-
 latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q --show-progress --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O- | jq '.' > $@
+	wget -q --show-progress --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O- |
+	jq '.' > $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
