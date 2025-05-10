@@ -322,6 +322,8 @@ info/beam.info: otp elixir
 	printf "| %-8s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-8s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 
+## keep this 
+
 latest/otp.version:
 	mkdir -p $(dir $@)
 	wget -q -O- https://www.erlang.org/downloads |
@@ -374,7 +376,9 @@ info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
 	TAGNAME=$(shell jq -r '.tag_name' $<)
+	#  remove qutes from MAJOR
 	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+	MAJOR=$$(echo $${MAJOR} | tr -d '"')
 	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR}.zip
 	echo "download URL: $${SRC}"
 	wget -q --show-progress --timeout=10 --tries=3 $${SRC}
