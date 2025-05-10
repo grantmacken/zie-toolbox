@@ -381,9 +381,9 @@ info/elixir.md: latest/elixir.json
 	MAJOR=$$(echo $${MAJOR} | tr -d '"')
 	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR}.zip
 	echo "download URL: $${SRC}"
-	wget -q --show-progress --timeout=10 --tries=3 $${SRC}
+	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
-	unzip elixir-otp-$(shell cat otp.version).zip -d files/elixir/usr/local
+	unzip elixir.zip -d files/elixir/usr/local
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	ELIXIR_VER=$(shell buildah run $(WORKING_CONTAINER) elixir -v | grep -oP 'Elixir \K.+' | cut -d' ' -f1)
 	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$${ELIXIR_VER}" "Elixir, a dynamic, functional language" | tee -a $@
