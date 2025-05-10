@@ -323,7 +323,6 @@ info/beam.info: otp elixir
 	printf "| %-8s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
 	cat info/otp.md | tee -a $@
 
-
 latest/otp.version:
 	mkdir -p $(dir $@)
 	wget -q -O- https://www.erlang.org/downloads |
@@ -343,7 +342,8 @@ info/otp.md: latest/otp.json
 	SRC=$$(jq -r ".assets[] | select(.browser_download_url | contains(\"otp_src\")) | .browser_download_url" $<)
 	TAGNAME=$(shell jq -r '.tag_name' $<)
 	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
-	mkdir -p files/otp && wget -q --show-progress --timeout=10 --tries=3  $${SRC} -O- | tar xz --strip-components=1 -C files/otp
+	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
+	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 	--prefix=/usr/local \
@@ -362,8 +362,6 @@ info/otp.md: latest/otp.json
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	# check:
-	buildah run $(WORKING_CONTAINER) sh -c 'ls /usr/local/bin'
 	printf "| %-8s | %-7s | %-83s |\n" "OTP" "$$VERSION" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
 
 reset-otp:
@@ -383,7 +381,7 @@ info/elixir.md: latest/elixir.json
 	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
 	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR}.zip
 	echo "download URL: $${SRC}"
-	wget-q --show-progress --timeout=10 --tries=3 $${SRC}
+	wget -q --show-progress --timeout=10 --tries=3 $${SRC}
 	mkdir -p files/elixir/usr/local
 	unzip elixir-otp-$(shell cat otp.version).zip -d files/elixir/usr/local
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
