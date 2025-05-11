@@ -43,7 +43,7 @@ BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools otp elixir rebar3 gleam
+default: working cli-tools build-tools beam
 
 clear:
 	rm -f info/*.md
@@ -309,9 +309,11 @@ sssssssxxxx:
 
 ## BEAM
 # elixir rebar3 gleam
+#
+beam_tr = printf "| %-8s | %-7s | %-83s |\n" "$(1)" "$(2)" "$(3)"
 
-beam: info/beam.info
-info/beam.info: otp elixir
+beam: info/beam.md
+info/beam.md: otp elixir rebar3 gleam
 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -319,8 +321,13 @@ info/beam.info: otp elixir
 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
 	This tooling is used to develop with the Gleam programming language.
 	EOF
-	printf "| %-8s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-8s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	$(call beam_tr,"Name","Version","Summary") | tee  $@
+	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
+	cat info/otp.md | tee -a $@
+	cat info/elixir.md | tee -a $@
+	cat info/rebar3.md | tee -a $@
+	cat info/gleam.info | tee -a $@
+	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
 
 ## keep this 
 
@@ -410,11 +417,6 @@ info/rebar3.md: latest/rebar3.json
 	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
 	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$(ver)" "$(sum)" | tee -a $@
 
-.PHONY: check
-check:
-	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/*.bat
-	# printf "| %-8s | %-7s | %-83s |\n" "rebar3" "VERSION" "" | tee -a $@
-
 check2:
 	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
 	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
@@ -427,8 +429,8 @@ latest/gleam.download:
 	jq  -r '.assets[].browser_download_url' |
 	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
 
-gleam: info/gleam.info
-info/gleam.info: latest/gleam.download
+gleam: info/gleam.md
+info/gleam.md: latest/gleam.download
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
 	$(eval src := $(shell cat $<))
