@@ -43,7 +43,7 @@ BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools otp elixir rebar3 
+default: working cli-tools build-tools otp elixir rebar3 gleam
 
 clear:
 	rm -f info/*.md
@@ -404,11 +404,10 @@ latest/rebar3.json:
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
 	echo '##[ $@ ]##'
-	# buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/rebar3
 	$(eval ver := $(shell jq -r '.tag_name' $<))
 	$(eval src := $(shell jq -r '.assets[].browser_download_url' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(src) /usr/local/bin/rebar3 &>/dev/null
-	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')))
+	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
 	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$(ver)" "$(sum)" | tee -a $@
 
 .PHONY: check
@@ -431,13 +430,13 @@ latest/gleam.download:
 gleam: info/gleam.info
 info/gleam.info: latest/gleam.download
 	mkdir -p $(dir $@)
-	NAME=$(basename $(notdir $@))
-	TARGET=files/$${NAME}/usr/local/bin
-	mkdir -p $${TARGET}
-	SRC=$$(cat $<)
-	printf " - source: %s \n" "$${SRC}" | tee -a $@
-	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET}
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
+	mkdir -p files/gleam/usr/local/bin
+	$(eval src := $(shell cat $<))
+	printf " - source: %s \n" "$(src)"
+	wget $(src) -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
+	$(eval gleam_ver := $(shell buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2))
+	printf "| %-8s | %-7s | %-83s |\n" "gleam" "$(ver)" "functional typesafe language" | tee -a $@
 
 xxxxx:
 	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
