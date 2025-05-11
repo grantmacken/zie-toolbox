@@ -394,7 +394,7 @@ info/elixir.md: latest/elixir.json
 	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
 	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
 	$(eval mix_ver := $(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1))
-	printf "| %-8s | %-7s | %-83s |\n" "mix" "$${MIX_VER}" "Mix, elixir build tool" | tee -a $@
+	printf "| %-8s | %-7s | %-83s |\n" "mix" "$(mix_ver)" "Mix, elixir build tool" | tee -a $@
 
 latest/rebar3.json:
 	echo '##[ $@ ]##'
