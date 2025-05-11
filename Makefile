@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools nodejs
+default: working cli-tools build-tools otp rebar3 elixir gleam nodejs
 
 clear:
 	rm -f info/*.md
@@ -351,7 +351,7 @@ info/otp.md: latest/otp.json
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	$(call tr ,OTP,"$(otp_ver)","the Erlang Open Telecom Platform OTP",$@)
+	$(call tr ,OTP,$(otp_ver),the Erlang Open Telecom Platform OTP,$@)
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -380,10 +380,10 @@ info/elixir.md: latest/elixir.json
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
 	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
-	$(call tr,Elixir,"$(elixir_ver)","Elixir programming language", $@)
+	$(call tr,Elixir,$(elixir_ver),Elixir programming language, $@)
 	# printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
 	$(eval mix_ver := $(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1))
-	$(call tr,Mix,"$(mix_ver)","Elixir build tool", $@)
+	$(call tr,Mix,$(mix_ver),Elixir build tool, $@)
 	# printf "| %-8s | %-7s | %-83s |\n" "mix" "$(mix_ver)" "Mix, elixir build tool" | tee -a $@
 
 latest/rebar3.json:
@@ -394,11 +394,11 @@ latest/rebar3.json:
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
 	echo '##[ $@ ]##'
-	$(eval ver := $(shell jq -r '.tag_name' $<))
-	$(eval src := $(shell jq -r '.assets[].browser_download_url' $<))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(src) /usr/local/bin/rebar3 &>/dev/null
-	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
-	$(call tr,Rebar3,"$(ver)","$(sum)",$@)
+	$(eval rebar_ver := $(shell jq -r '.tag_name' $<))
+	$(eval rebar_src := $(shell jq -r '.assets[].browser_download_url' $<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $(rebar_src) /usr/local/bin/rebar3 &>/dev/null
+	$(eval rebar_sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
+	$(call tr,Rebar3,$(rebar_ver),$(rebar_sum),$@)
 
 
 ##[[ GLEAM ]]##
@@ -412,12 +412,11 @@ gleam: info/gleam.md
 info/gleam.md: latest/gleam.download
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
-	$(eval src := $(shell cat $<))
-	printf " - source: %s \n" "$(src)"
-	wget $(src) -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
+	$(eval gleam_src := $(shell cat $<))
+	wget $(gleam_src) -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
 	$(eval gleam_ver := $(shell buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2))
-	$(call tr,Gleam,"$(gleam_ver)","Gleam programming language", $@)
+	$(call tr,Gleam,$(gleam_ver),Gleam programming language,$@)
 
 xxxxx:
 	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
