@@ -348,7 +348,7 @@ latest/otp.json: latest/otp.version
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	$(eval otp_src := $(shell $(call bdu,otp_sr,$<)))
 	$(eval otp_ver := $(shell jq -r '.tag_name' $< | cut -d- -f2))
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $(otp_src) -O- |
@@ -371,7 +371,7 @@ info/otp.md: latest/otp.json
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	$(call tr ,otp,"$${otp_ver}","the Erlang Open Telecom Platform (OTP)",$@)
+	$(call tr ,OTP,"$(otp_ver)","the Erlang Open Telecom Platform (OTP)",$@)
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -387,11 +387,11 @@ info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
 	$(eval tag_name := $(shell jq -r '.tag_name' $<))
-	echo -n "TAGNAME: "
-	echo "$(tag_name)"
+	# echo -n "TAGNAME: "
+	# echo "$(tag_name)"
 	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
-	echo -n "MAJOR: "
-	echo "$(major)"
+	# echo -n "MAJOR: "
+	# echo "$(major)"
 	$(eval src := $(call elixir_download,$(tag_name),$(major)))
 	echo "download URL: $(src)"
 	wget -q --timeout=10 --tries=3 $(src) -O elixir.zip
@@ -400,9 +400,11 @@ info/elixir.md: latest/elixir.json
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
 	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
-	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
+	$(call tr,Elixir,"$(elixir_ver)","Elixir programming language", $@)
+	# printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
 	$(eval mix_ver := $(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1))
-	printf "| %-8s | %-7s | %-83s |\n" "mix" "$(mix_ver)" "Mix, elixir build tool" | tee -a $@
+	$(call tr,Mix,"$(mix_ver)","Elixir build tool", $@)
+	# printf "| %-8s | %-7s | %-83s |\n" "mix" "$(mix_ver)" "Mix, elixir build tool" | tee -a $@
 
 latest/rebar3.json:
 	echo '##[ $@ ]##'
