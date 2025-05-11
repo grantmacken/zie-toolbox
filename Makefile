@@ -42,8 +42,12 @@ DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel read
 BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
+
+tr = printf "| %-8s | %-7s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
+bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
+
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools beam
+default: working cli-tools build-tools $(BEAM)
 
 clear:
 	rm -f info/*.md
@@ -123,15 +127,14 @@ info/cli.md:
 		$${item} &>/dev/null
 	done
 	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	# printf "| %-13s | %-7s | %-83s |\n" "--- " "-------" "----------------------------" | tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	$(call tr,Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
-	printf "| %-13s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	$(call tr,"----","-------","----------------------------",$@)
 
 build-tools: info/deps.md
 info/deps.md:
@@ -310,10 +313,9 @@ sssssssxxxx:
 ## BEAM
 # elixir rebar3 gleam
 #
-beam_tr = printf "| %-8s | %-7s | %-83s |\n" "$(1)" "$(2)" "$(3)"
 
 beam: info/beam.md
-info/beam.md: otp elixir rebar3 gleam
+info/beam.md: 
 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -326,7 +328,7 @@ info/beam.md: otp elixir rebar3 gleam
 	cat info/otp.md | tee -a $@
 	cat info/elixir.md | tee -a $@
 	cat info/rebar3.md | tee -a $@
-	cat info/gleam.info | tee -a $@
+	cat info/gleam.md | tee -a $@
 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
 
 ## keep this 
@@ -337,20 +339,19 @@ latest/otp.version:
 	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee $@
 
 latest/otp.json: latest/otp.version
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	TAG_NAME=$(shell cat $<)
-	echo "$${TAG_NAME}"
+	# echo "$${TAG_NAME}"
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
 	jq -r '.[] | select(.tag_name | endswith("'$(shell cat $<)'"))' > $@
+
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
-	# select the gzip browser_download_url that contains the src
-	SRC=$$(jq -r ".assets[] | select(.browser_download_url | contains(\"otp_src\")) | .browser_download_url" $<)
-	TAGNAME=$(shell jq -r '.tag_name' $<)
-	VERSION=$(shell jq -r '.tag_name' $< | cut -d- -f2)
-	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
+	$(eval otp_src := $(shell $(call bdu,otp_sr,$<)))
+	$(eval otp_ver := $(shell jq -r '.tag_name' $< | cut -d- -f2))
+	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $(otp_src) -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -370,7 +371,7 @@ info/otp.md: latest/otp.json
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	printf "| %-8s | %-7s | %-83s |\n" "OTP" "$$VERSION" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
+	$(call tr ,otp,"$${otp_ver}","the Erlang Open Telecom Platform (OTP)",$@)
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
