@@ -272,8 +272,6 @@ info/tiktoken.info:
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-
-
 ##[[ NODEJS ]]##
 latest/nodejs.tagname:
 	echo '##[ $@ ]##'
@@ -294,6 +292,8 @@ info/nodejs.md: latest/nodejs.tagname
 	mkdir -p $${TARGET}
 	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
+
+sssssssxxxx:
 	cat << EOF | tee -a $@
 	Gleam can be compiled to javascript and run in the nodejs runtime.
 	This toolbox contains the latest nodejs runtime version,
@@ -371,23 +371,29 @@ latest/elixir.json:
 	wget -q --show-progress --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O- |
 	jq '.' > $@
 
+elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
+get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
-	TAGNAME=$(shell jq -r '.tag_name' $<)
-	#  remove qutes from MAJOR
-	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
-	MAJOR=$$(echo $${MAJOR} | tr -d '"')
-	SRC=https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR}.zip
-	echo "download URL: $${SRC}"
+	$(eval tag_name := $(shell jq -r '.tag_name' $<))
+	echo -n "TAGNAME: "
+	echo "$(tag_name)"
+	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
+	echo -n "MAJOR: "
+	echo "$(major)"
+	$(eval SRC=$(call elixir_download,$(tag_name),$(major)))
+	echo "download URL: $(SRC)"
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
-	ELIXIR_VER=$(shell buildah run $(WORKING_CONTAINER) elixir -v | grep -oP 'Elixir \K.+' | cut -d' ' -f1)
-	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$${ELIXIR_VER}" "Elixir, a dynamic, functional language" | tee -a $@
-	MIX_VER=$(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
+	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
+	printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
+	$(eval mix_ver := $(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1))
 	printf "| %-8s | %-7s | %-83s |\n" "mix" "$${MIX_VER}" "Mix, elixir build tool" | tee -a $@
 
 latest/rebar3.json:
