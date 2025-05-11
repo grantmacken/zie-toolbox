@@ -384,9 +384,9 @@ info/elixir.md: latest/elixir.json
 	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
 	echo -n "MAJOR: "
 	echo "$(major)"
-	$(eval SRC=$(call elixir_download,$(tag_name),$(major)))
-	echo "download URL: $(SRC)"
-	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
+	$(eval src := $(call elixir_download,$(tag_name),$(major)))
+	echo "download URL: $(src)"
+	wget -q --timeout=10 --tries=3 $(src) -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
