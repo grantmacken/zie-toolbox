@@ -47,7 +47,9 @@ tr = printf "| %-8s | %-7s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools $(BEAM)
+default: working cli-tools
+
+# build-tools $(BEAM)
 
 clear:
 	rm -f info/*.md
@@ -127,7 +129,7 @@ info/cli.md:
 		$${item} &>/dev/null
 	done
 	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	$(call tr,Name","Version","Summary",$@)
+	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
