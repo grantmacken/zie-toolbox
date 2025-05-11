@@ -138,7 +138,7 @@ info/cli.md:
 
 build-tools: info/deps.md
 info/deps.md:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
 	buildah run $(WORKING_CONTAINER) dnf install \
@@ -183,7 +183,7 @@ info/host-spawn.md: latest/host-spawn.json
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
-##[[ NEOVIM ]]##
+##[[ EDITOR ]]##
 
 neovim: info/neovim.md
 info/neovim.md:
@@ -371,7 +371,7 @@ info/otp.md: latest/otp.json
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	$(call tr ,OTP,"$(otp_ver)","the Erlang Open Telecom Platform (OTP)",$@)
+	$(call tr ,OTP,"$(otp_ver)","the Erlang Open Telecom Platform OTP",$@)
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -418,12 +418,8 @@ info/rebar3.md: latest/rebar3.json
 	$(eval src := $(shell jq -r '.assets[].browser_download_url' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(src) /usr/local/bin/rebar3 &>/dev/null
 	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
-	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$(ver)" "$(sum)" | tee -a $@
+	$(call tr,Rebar3,"$(ver)","$(sum)",$@)
 
-check2:
-	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "OTP" "27" "the Erlang Open Telecom Platform (OTP)" | tee -a $@
 
 ##[[ GLEAM ]]##
 latest/gleam.download:
@@ -441,7 +437,7 @@ info/gleam.md: latest/gleam.download
 	wget $(src) -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
 	$(eval gleam_ver := $(shell buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2))
-	printf "| %-8s | %-7s | %-83s |\n" "gleam" "$(ver)" "functional typesafe language" | tee -a $@
+	$(call tr,Gleam,"$(gleam_ver)","Gleam programming language", $@)
 
 xxxxx:
 	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
