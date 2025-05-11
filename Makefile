@@ -43,13 +43,11 @@ BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 
-tr = printf "| %-8s | %-7s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
+tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools
-
-# build-tools $(BEAM)
+default: working cli-tools build-tools $(BEAM)
 
 clear:
 	rm -f info/*.md
@@ -134,7 +132,7 @@ info/cli.md:
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
-	   awk -F'\t' '{printf "| %-13s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
+	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	   tee -a $@
 	$(call tr,"----","-------","----------------------------",$@)
 
@@ -152,14 +150,14 @@ info/deps.md:
 		$${item} &>/dev/null
 	done
 	printf "$(HEADING2) %s\n\n" "Development dependencies for make installs" | tee $@
-	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(DEPS) | \
 	grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	paste  - - -  | sort -u ' | \
-	awk -F'\t' '{printf "| %-14s | %-7s | %-83s |\n", $$1, $$2, $$3}' | \
+	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
+	$(call tr,"----","-------","----------------------------",$@)
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
