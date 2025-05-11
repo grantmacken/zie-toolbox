@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools $(BEAM)
+default: working cli-tools build-tools nodejs
 
 clear:
 	rm -f info/*.md
@@ -275,23 +275,6 @@ info/tiktoken.info:
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-##[[ NODEJS ]]##
-latest/nodejs.tagname:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' |
-	jq '.tag_name' |  tr -d '"' > $@
-
-nodejs: info/nodejs.md
-info/nodejs.md: latest/nodejs.tagname
-	# echo '##[ $@ ]##'
-	# printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
-	$(eval node_ver := $(shell cat $<))
-	mkdir -p files/nodejs/usr/local
-	wget https://nodejs.org/download/release/$(node_ver)/node-$(node_ver)-linux-x64.tar.gz -q -O- |
-	tar xz --strip-components=1 -C files/nodejs/usr/local
-	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
-	$(call tr,Nodejs,"$(node_ver)","Nodejs runtime", $@)
 
 sssssssxxxx:
 	cat << EOF | tee -a $@
@@ -444,4 +427,21 @@ xxxxx:
 	buildah run $(WORKING_CONTAINER) gleam --help  | tee -a $@
 
 
+##[[ NODEJS ]]##
+latest/nodejs.tagname:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' |
+	jq '.tag_name' |  tr -d '"' > $@
+
+nodejs: info/nodejs.md
+info/nodejs.md: latest/nodejs.tagname
+	# echo '##[ $@ ]##'
+	# printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
+	$(eval node_ver := $(shell cat $<))
+	mkdir -p files/nodejs/usr/local
+	wget https://nodejs.org/download/release/$(node_ver)/node-$(node_ver)-linux-x64.tar.gz -q -O- |
+	tar xz --strip-components=1 -C files/nodejs/usr/local
+	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
+	$(call tr,Nodejs,$(node_ver),Nodejs runtime, $@)
 
