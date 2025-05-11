@@ -39,7 +39,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
-BEAM  := otp rebar3 elixir gleam
+BEAM  := otp rebar3 elixir gleam nodejs
 # cargo
 REMOVE := default-editor vim-minimal
 
@@ -285,16 +285,13 @@ latest/nodejs.tagname:
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.tagname
 	# echo '##[ $@ ]##'
-	printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
-	NAME=$(basename $(notdir $@))
-	VERSION=$(shell cat $<)
-	SRC=https://nodejs.org/download/release/$${VERSION}/node-$${VERSION}-linux-x64.tar.gz
-	printf "download URL: %s\n" "$${SRC}"
-	TARGET=files/$${NAME}/usr/local
-	printf "download TARGET: %s\n" "$${TARGET}"
-	mkdir -p $${TARGET}
-	wget $${SRC} -q -O- | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755  $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
+	# printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
+	$(eval node_ver := $(shell cat $<))
+	mkdir -p files/nodejs/usr/local
+	wget https://nodejs.org/download/release/$(node_ver)/node-$(node_ver)-linux-x64.tar.gz -q -O- |
+	tar xz --strip-components=1 -C files/nodejs/usr/local
+	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
+	$(call tr,Nodejs,"$(node_ver)","Nodejs runtime", $@)
 
 sssssssxxxx:
 	cat << EOF | tee -a $@
