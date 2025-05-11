@@ -43,7 +43,7 @@ BEAM  := otp rebar3 elixir gleam
 # cargo
 REMOVE := default-editor vim-minimal
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools otp elixir
+default: working cli-tools build-tools otp elixir rebar3 
 
 clear:
 	rm -f info/*.md
@@ -388,7 +388,7 @@ info/elixir.md: latest/elixir.json
 	echo "download URL: $(src)"
 	wget -q --timeout=10 --tries=3 $(src) -O elixir.zip
 	mkdir -p files/elixir/usr/local
-	unzip elixir.zip -d files/elixir/usr/local
+	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
 	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
@@ -405,12 +405,11 @@ rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
 	echo '##[ $@ ]##'
 	# buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/rebar3
-	VER=$(shell jq -r '.tag_name' $<)
-	SRC=$(shell jq -r '.assets[].browser_download_url' $<)
-	TARG=/usr/local/bin/rebar3
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
-	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')
-	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$$VER" "$${SUM}" | tee -a $@
+	$(eval ver := $(shell jq -r '.tag_name' $<))
+	$(eval src := $(shell jq -r '.assets[].browser_download_url' $<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $(src) /usr/local/bin/rebar3 &>/dev/null
+	$(eval sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+')))
+	printf "| %-8s | %-7s | %-83s |\n" "rebar3" "$(ver)" "$(sum)" | tee -a $@
 
 .PHONY: check
 check:
