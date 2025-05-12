@@ -192,7 +192,7 @@ xxxx:
 ##[[ EDITOR ]]##
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-nvim_ver = $(shell buildah run $(WORKING_CONTAINER) nvim -v | grep -oP 'NVIM \K.+' | cut -d'-' -f1)
+nvimVersion = buildah run $(WORKING_CONTAINER) nvim --version
 
 neovim: info/neovim.md
 info/neovim.md:
@@ -201,24 +201,23 @@ info/neovim.md:
 	mkdir -p files/neovim/usr/local
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
-	#buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
-	# buildah run $(WORKING_CONTAINER) nvim --version
+	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
+	$(call nvimVersion)
 	#$(eval nvim_ver := $(shell buildah run $(WORKING_CONTAINER) nvim --version | grep -oP 'NVIM \K.+' | cut -d'-' -f1))
 	$(call tr,
 	Neovim,
-	$(shell buildah run $(WORKING_CONTAINER) nvim --version | grep -oP 'NVIM \K.+' | cut -d'-' -f1),
+	$(call buildah run $(WORKING_CONTAINER) nvim --version | grep -oP 'NVIM \K.+' | cut -d'-' -f1),
 	The text editor with a focus on extensibility and usability,
 	$@)
 
-
-xxssaxx:
-	buildah run $(WORKING_CONTAINER) nvim -v
-	buildah run $(WORKING_CONTAINER) whereis nvim
-	buildah run $(WORKING_CONTAINER) which nvim
-	# buildah run $(WORKING_CONTAINER) printenv
-	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-	printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
-		"$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
+# xxssaxx:
+# buildah run $(WORKING_CONTAINER) nvim -v
+# buildah run $(WORKING_CONTAINER) whereis nvim
+# buildah run $(WORKING_CONTAINER) which nvim
+# # buildah run $(WORKING_CONTAINER) printenv
+# VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
+# printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
+# "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
 luajit: info/luajit.md
 info/luajit.md:
