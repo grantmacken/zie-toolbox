@@ -38,7 +38,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
-DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel
+DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
 # cargo
 REMOVE := default-editor vim-minimal
@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working host-spawn neovim luajit luarocks 
+default: working build-tools luajit luarocks 
 
 # cli-tools build-tools otp
 
@@ -218,21 +218,23 @@ luajit: info/luajit.md
 info/luajit.md:
 	echo '##[ $@ ]##'
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 luarocks: info/luarocks.md
 
 latest/luarocks.json:
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0]'  > $@
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	mkdir -p files/luarocks
-	wget -q --timeout=10 --tries=3  $(shell jq -r '.tarball_url' $<) -O- | 
+	URL=$(shell jq -r '.tarball_url' $<)
+	echo "URL: $${URL}"
+	wget -q --timeout=10 --tries=3  -O- $${URL} | 
 	tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
@@ -243,8 +245,8 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
 	#Cean up buildah run $(WORKING_CONTAINER) luarocks show luarocks
 	# printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
-	buildah run $(WORKING_CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
-	buildah run $(WORKING_CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
+	buildah run $(WORKING_CONTAINER) find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;
+	buildah run $(WORKING_CONTAINER) rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~
 	# CHECK:
 	buildah run $(WORKING_CONTAINER) which luarocks
 	buildah run $(WORKING_CONTAINER) whereis luarocks
