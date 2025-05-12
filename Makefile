@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working host-spawn
+default: working neovim
 
 # cli-tools build-tools otp
 
@@ -195,15 +195,18 @@ xxxx:
 neovim: info/neovim.md
 info/neovim.md:
 	echo '##[ $@ ]##'
-	NAME=$(basename $(notdir $@))
-	TARGET=files/$${NAME}/usr/local
-	mkdir -p $${TARGET}
-	printf "\n$(HEADING2) %s\n\n" "$$NAME"
-	SRC=https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-	printf "\ndownload: %s\n\n" "$$SRC"
-	curl -sSL $${SRC} | tar xz --strip-components=1 -C $${TARGET}
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/$${NAME} &>/dev/null
-	# CHECK:
+	mkdir -p files/neovim/usr/local
+	curl -sSL https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz |
+	tar xz --strip-components=1 -C files/neovim/usr/local
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
+	$(eval nvim_ver := $(shell buildah run $(WORKING_CONTAINER) nvim -v | grep -oP 'NVIM \K.+' | cut -d'-' -f1))
+	$(call tr,Neovim,$(nvim_ver),The text editor with a focus on extensibility and usability,$@)
+
+
+CHECK:
+	nvim -v | grep -oP 'NVIM \K.+' | cut -d'-' -f1 
+
+xxssaxx:
 	buildah run $(WORKING_CONTAINER) nvim -v
 	buildah run $(WORKING_CONTAINER) whereis nvim
 	buildah run $(WORKING_CONTAINER) which nvim
