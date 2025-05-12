@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working build-tools luajit luarocks 
+default: working build-tools luajit luarocks nlua
 
 # cli-tools build-tools otp
 
@@ -192,7 +192,6 @@ xxxx:
 ##[[ EDITOR ]]##
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-nvimVersion := buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
 
 neovim: info/neovim.md
 info/neovim.md:
@@ -232,10 +231,8 @@ latest/luarocks.json:
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	mkdir -p files/luarocks
-	URL=$(shell jq -r '.tarball_url' $<)
-	echo "URL: $${URL}"
-	wget -q --timeout=10 --tries=3  -O- $${URL} | 
-	tar xz --strip-components=1 -C files/luarocks &>/dev/null
+	URL=$$(jq -r '.tarball_url' $<)
+	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
