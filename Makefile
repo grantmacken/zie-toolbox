@@ -219,7 +219,7 @@ info/luajit.md:
 	echo '##[ $@ ]##'
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel &>/dev/null
-	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d+'  )
+	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 luarocks: info/luarocks.md
@@ -227,7 +227,7 @@ luarocks: info/luarocks.md
 latest/luarocks.tag_name:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0].name'  > $@
+	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0]'  > $@
 
 info/luarocks.md: latest/luarocks.tag_name
 	echo '##[ $@ ]##'
