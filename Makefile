@@ -192,7 +192,7 @@ xxxx:
 ##[[ EDITOR ]]##
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-nvimVersion = buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
+nvimVersion != buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
 
 neovim: info/neovim.md
 info/neovim.md:
