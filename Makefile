@@ -248,9 +248,10 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;
 	buildah run $(WORKING_CONTAINER) rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~
 	# CHECK:
-	buildah run $(WORKING_CONTAINER) which luarocks
-	buildah run $(WORKING_CONTAINER) whereis luarocks
-	buildah run $(WORKING_CONTAINER) luarocks
+	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
+	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)')
+	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
+	$(call tr,$$NAME,$$VER,$$SUM,$@)
 
 nlua: info/nlua.info
 info/nlua.info:
