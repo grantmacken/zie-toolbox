@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools otp rebar3 elixir gleam nodejs
+default: working cli-tools build-tools otp
 
 clear:
 	rm -f info/*.md
@@ -276,40 +276,22 @@ info/tiktoken.info:
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
 
-sssssssxxxx:
-	cat << EOF | tee -a $@
-	Gleam can be compiled to javascript and run in the nodejs runtime.
-	This toolbox contains the latest nodejs runtime version,
-	sourced from [node org](https://nodejs.org/download/release/$${VERSION})
-	EOF
-	printf "| %-14s | %-7s | %-83s |\n" "Name" "Version" "Summary" | tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-	cat info/otp.md | tee -a $@
-	cat info/elixir.md | tee -a $@
-	cat info/rebar3.md | tee -a $@
-	cat info/gleam.info | tee -a $@
-	printf "| %-14s | %-7s | %-83s |\n" "----" "-------" "----------------------------" | tee -a $@
-
-## BEAM
-# elixir rebar3 gleam
-#
-
-beam: info/beam.md
-info/beam.md: 
-	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
-	cat << EOF | tee -a $@
-	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	Installed in this toolbox are the Erlang and Elixir programming languages.
-	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
-	This tooling is used to develop with the Gleam programming language.
-	EOF
-	$(call beam_tr,"Name","Version","Summary") | tee  $@
-	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
-	cat info/otp.md | tee -a $@
-	cat info/elixir.md | tee -a $@
-	cat info/rebar3.md | tee -a $@
-	cat info/gleam.md | tee -a $@
-	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
+# beam: info/beam.md
+# info/beam.md: 
+# 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
+# 	cat << EOF | tee -a $@
+# 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
+# 	Installed in this toolbox are the Erlang and Elixir programming languages.
+# 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
+# 	This tooling is used to develop with the Gleam programming language.
+# 	EOF
+# 	$(call beam_tr,"Name","Version","Summary") | tee  $@
+# 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
+# 	cat info/otp.md | tee -a $@
+# 	cat info/elixir.md | tee -a $@
+# 	cat info/rebar3.md | tee -a $@
+# 	cat info/gleam.md | tee -a $@
+# 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
 
 ## keep this 
 
@@ -318,12 +300,14 @@ latest/otp.version:
 	wget -q -O- https://www.erlang.org/downloads |
 	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee $@
 
-latest/otp.json: latest/otp.version
+latest_otp_version = wget -q -O- https://www.erlang.org/downloads | \
+	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+'
+
+latest/otp.json:
 	# echo '##[ $@ ]##'
-	TAG_NAME=$(shell cat $<)
-	# echo "$${TAG_NAME}"
+	$(eval otp_tag := $(shell $(call latest_otp_version)))
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq -r '.[] | select(.tag_name | endswith("'$(shell cat $<)'"))' > $@
+	jq -r '.[] | select(.tag_name | endswith("'$(otp_tag)'"))' > $@
 
 
 otp: info/otp.md
