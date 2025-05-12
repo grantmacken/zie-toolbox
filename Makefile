@@ -203,7 +203,7 @@ info/neovim.md:
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
 	# $(call nvimVersion)
-	$(call tr,Neovim,$(call nvimVersion),The text editor with a focus on extensibility and usability,$@)
+	$(call tr,Neovim,$(nvimVersion),The text editor with a focus on extensibility and usability,$@)
 
 # xxssaxx:
 # buildah run $(WORKING_CONTAINER) nvim -v
