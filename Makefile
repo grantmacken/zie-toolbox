@@ -171,11 +171,11 @@ latest/host-spawn.json:
 
 info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
+	mkdir -p $(dir $@)
 	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
 	echo "download URL: $(hs_src)"
 	# direct add
-	# buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
 	$(eval hs_ver := $(shell jq -r '.tag_name' $<))
 	$(call tr,host-spawn,$(hs_ver),run host cli commands inside the toolbox,$@)
 
