@@ -203,8 +203,7 @@ info/neovim.md:
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
-	$(call tr
-	$(strip Neovim),$${VERSION},The text editor with a focus on extensibility and usability,$@)
+	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
 
 # xxssaxx:
 # buildah run $(WORKING_CONTAINER) nvim -v
@@ -219,9 +218,9 @@ luajit: info/luajit.md
 info/luajit.md:
 	echo '##[ $@ ]##'
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel &>/dev/null
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v')
-	$(call tr,luajit,$(shell echo "$$VERSION"),The LuaJIT compiler, $@)
+	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 luarocks: info/luarocks.md
 
