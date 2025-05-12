@@ -202,8 +202,8 @@ info/neovim.md:
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
-	buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
-	# $(call tr,Neovim,$(shell $(NvimVersion)),The text editor with a focus on extensibility and usability,$@)
+	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
+	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
 
 # xxssaxx:
 # buildah run $(WORKING_CONTAINER) nvim -v
@@ -220,7 +220,7 @@ info/luajit.md:
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v')
-	printf "| %-10s |\n" "$$VERSION" | tee -a $@
+	$(call tr,luajit,$(shell echo "$$VERSION"),The LuaJIT compiler, $@)
 
 luarocks: info/luarocks.md
 
