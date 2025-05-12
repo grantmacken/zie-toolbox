@@ -192,7 +192,7 @@ xxxx:
 ##[[ EDITOR ]]##
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-nvimVersion != buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
+NvimVersion := buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1
 
 neovim: info/neovim.md
 info/neovim.md:
@@ -203,7 +203,7 @@ info/neovim.md:
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
 	# $(call nvimVersion)
-	$(call tr,Neovim,$(nvimVersion),The text editor with a focus on extensibility and usability,$@)
+	$(call tr,Neovim,$(shell $(NvimVersion)),The text editor with a focus on extensibility and usability,$@)
 
 # xxssaxx:
 # buildah run $(WORKING_CONTAINER) nvim -v
