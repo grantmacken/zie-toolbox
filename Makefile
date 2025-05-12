@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working host-spawn neovim luajit
+default: working host-spawn neovim luajit luarocks 
 
 # cli-tools build-tools otp
 
@@ -219,7 +219,7 @@ info/luajit.md:
 	echo '##[ $@ ]##'
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit luajit-devel &>/dev/null
-	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v')
+	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d+'  )
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 luarocks: info/luarocks.md
