@@ -226,13 +226,16 @@ luarocks: info/luarocks.md
 latest/luarocks.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0]'  > $@
+	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq '.[0]'  > $@
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	mkdir -p files/luarocks
-	URL=$$(jq -r '.tarball_url' $<)
-	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks
+	echo $$(shell jq -r '.tarball_url' $<)
+
+
+sdssdsssd:
+	wget -q --timeout=10 --tries=3 $(shell jq -r '.tarball_url) -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
@@ -248,7 +251,7 @@ info/luarocks.md: latest/luarocks.json
 	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
 	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)')
 	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
-	$(call tr,$$NAME,$$VER,$$SUM,$@)
+	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
 nlua: info/nlua.info
 info/nlua.info:
