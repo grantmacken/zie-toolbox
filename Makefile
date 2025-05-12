@@ -47,7 +47,9 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools otp
+default: working host-spawn
+
+cli-tools build-tools otp
 
 clear:
 	rm -f info/*.md
@@ -170,11 +172,16 @@ latest/host-spawn.json:
 info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	SRC=$$(jq  -r '.assets[].browser_download_url' $< | grep -oP '.+x86_64$$')
-	TARG=/usr/local/bin/host-spawn
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
+	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
+	echo "download URL: $(hs_src)"
+	# direct add
+	# buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
+	$(eval hs_ver := $(shell jq -r '.tag_name' $<))
+	$(call tr,host-spawn,$(hs_ver),run host cli commands inside the toolbox,$@)
+
+xxxx:
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
-	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
+	printf "%s\n" "Host-spawn (version: $${NAME}) " | tee -a $@
 	# close table
 	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
