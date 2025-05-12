@@ -224,37 +224,31 @@ info/luajit.md:
 
 luarocks: info/luarocks.md
 
-latest/luarocks.tag_name:
+latest/luarocks.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0]'  > $@
 
-info/luarocks.md: latest/luarocks.tag_name
+info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
-	NAME=$$(jq -r '.name' $< | sed 's/v//')
-	URL=$$(jq -r '.tarball_url' $<)
-	# echo "name: $${NAME}"
-	# echo "url: $${URL}"
 	mkdir -p files/luarocks
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
+	wget -q --timeout=10 --tries=3  $(shell jq -r '.tarball_url' $<) -O- | 
+	tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
-	--lua-version=5.1 --with-lua-interpreter=luajit \
-	--sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit \
+		--sysconfdir=/etc/xdg --force-config --disable-incdir-check && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
 	#Cean up buildah run $(WORKING_CONTAINER) luarocks show luarocks
-	printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
+	# printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
 	buildah run $(WORKING_CONTAINER) sh -c 'find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;'
 	buildah run $(WORKING_CONTAINER) sh -c 'rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~'
 	# CHECK:
-#buildah run $(WORKING_CONTAINER) which luarocks
-	#buildah run $(WORKING_CONTAINER) whereis luarocks
-	#buildah run $(WORKING_CONTAINER) luarocks
+	buildah run $(WORKING_CONTAINER) which luarocks
+	buildah run $(WORKING_CONTAINER) whereis luarocks
+	buildah run $(WORKING_CONTAINER) luarocks
 
 nlua: info/nlua.info
 info/nlua.info:
