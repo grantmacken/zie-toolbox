@@ -202,12 +202,8 @@ info/neovim.md:
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
-	$(call nvimVersion) 
-	#$(eval nvim_ver := $(shell buildah run $(WORKING_CONTAINER) nvim --version | grep -oP 'NVIM \K.+' | cut -d'-' -f1))
-	$(call tr,Neovim,
-	$(call buildah run $(WORKING_CONTAINER) nvim --version | grep -oP 'NVIM \K.+' | cut -d'-' -f1),
-	The text editor with a focus on extensibility and usability,
-	$@)
+	# $(call nvimVersion)
+	$(call tr,Neovim,$(call nvimVersion),The text editor with a focus on extensibility and usability,$@)
 
 # xxssaxx:
 # buildah run $(WORKING_CONTAINER) nvim -v
@@ -227,13 +223,14 @@ info/luajit.md:
 	printf "| %-10s |\n" "$$VERSION" | tee -a $@
 
 luarocks: info/luarocks.md
+
 latest/luarocks.tag_name:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/luarocks/luarocks/tags' | jq -r '.[0]'  > $@
+	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq -r '.[0].name'  > $@
 
 info/luarocks.md: latest/luarocks.tag_name
-	 echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	NAME=$$(jq -r '.name' $< | sed 's/v//')
