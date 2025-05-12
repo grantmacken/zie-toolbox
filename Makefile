@@ -173,7 +173,6 @@ info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
-	echo "download URL: $(hs_src)"
 	# direct add
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
 	$(eval hs_ver := $(shell jq -r '.tag_name' $<))
@@ -199,14 +198,10 @@ info/neovim.md:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
-	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim
-	buildah run $(WORKING_CONTAINER) ls -al  /usr/local/bin
-xssssxxx:
-	#
-	#buildah run $(WORKING_CONTAINER) ls -alR  /usr/local
-	# $(eval nvim_ver := $(shell buildah run $(WORKING_CONTAINER) nvim -v | grep -oP 'NVIM \K.+' | cut -d'-' -f1))
-	# $(call tr,Neovim,$(nvim_ver),The text editor with a focus on extensibility and usability,$@)
+	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
+	$(eval nvim_ver := $(shell buildah run $(WORKING_CONTAINER) nvim -v | grep -oP 'NVIM \K.+' | cut -d'-' -f1))
+	$(call tr,Neovim,$(nvim_ver),The text editor with a focus on extensibility and usability,$@)
 
 
 xxssaxx:
