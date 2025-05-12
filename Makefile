@@ -49,7 +49,7 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 default: working host-spawn
 
-cli-tools build-tools otp
+# cli-tools build-tools otp
 
 clear:
 	rm -f info/*.md
