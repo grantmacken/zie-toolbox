@@ -233,12 +233,13 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
-	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
+	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit \
-		--sysconfdir=/etc/xdg --force-config --disable-incdir-check && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+
+xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
 	#Cean up buildah run $(WORKING_CONTAINER) luarocks show luarocks
@@ -255,8 +256,11 @@ nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua
-	buildah run $(WORKING_CONTAINER) luarocks show nlua
+	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+' | cut -d" " -f2
+	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
+
+xxxxxsss:
 	## TODO: I think this is redundant as we only have to use the above
 	## @see https://github.com/mfussenegger/nlua
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
