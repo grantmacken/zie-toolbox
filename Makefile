@@ -48,7 +48,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools luajit luarocks
+default: working cli-tools build-tools luajit luarocks tiktoken
 
 # cli-tools build-tools otp
 
@@ -241,11 +241,10 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
-	rm -rf files/luarocks
-	buildah run $(WORKING_CONTAINER) which luarocks | tee files/luarocks.txt
-	$(eval lr_name := $(shell grep -oP '^Lua\w+.+' files/luarocks.txt))
-	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' files/luarocks.txts | cut -d, -f1))
-	$(eval lr_sum := $(shell grep -oP '^Lua\w+,\s\K.+' files/luarocks.txt | cut -d, -f2))
+	buildah run $(WORKING_CONTAINER) luarocks | tee lr.txt
+	$(eval lr_name := $(shell grep -oP '^Lua\w+.+' lr.txt))
+	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' lr.txts | cut -d, -f1))
+	$(eval lr_sum := $(shell grep -oP '^Lua\w+,\s\K.+' lr.txt | cut -d, -f2))
 	$(call tr,$(lr_name),$(lr_ver),$(lr_sum,$@))
 
 xxx:
@@ -289,7 +288,6 @@ latest/tiktoken.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
-
 
 tiktoken: info/tiktoken.info
 info/tiktoken.info: latest/tiktoken.json
