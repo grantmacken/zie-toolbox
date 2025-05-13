@@ -40,6 +40,8 @@ CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxi
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
+DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel 
+pkg-config
 # cargo
 REMOVE := default-editor vim-minimal
 
@@ -228,7 +230,6 @@ latest/luarocks.json:
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq '.[0]'  > $@
 
-grp = grep -oP '$(1)'
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
@@ -243,7 +244,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) which luarocks
 	buildah run $(WORKING_CONTAINER) luarocks --version
-	buildah run $(WORKING_CONTAINER) luarocks | $(call grp,^Lua\w+)
+	# buildah run $(WORKING_CONTAINER) luarocks | $(call grp,^Lua\w+)
 	# buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)'   
 	buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+'
 	# $(call tr,$${NAME},$${VER},$${SUM},$@)
@@ -296,10 +297,12 @@ info/tiktoken.info: latest/tiktoken.json
 	echo '##[ $@ ]##'
 	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	echo "$(tiktoken_src)"
 	echo "$(tiktoken_ver)"
+	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
 	# nlua -e 'print(package.)'
-	# buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
+	# 
 	# printf "| %-10s | %-13s | %-83s |\n" "tiktoken" "0.2.3" "The lua module for generating tiktok tokens" | tee -a $@
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
