@@ -238,7 +238,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
-
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
