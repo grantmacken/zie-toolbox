@@ -230,11 +230,15 @@ latest/luarocks.json:
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
+	buildah run $(WORKING_CONTAINER) ls /tmp
+
+xxxxaasd:
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg --force-config --disable-incdir-check && make && make install' &>/dev/null
