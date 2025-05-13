@@ -241,13 +241,12 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) which luarocks
-	buildah run $(WORKING_CONTAINER) luarocks --version
-	# buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)'
-	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
-	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+') | cut -d',' -f1
-	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
-	$(call tr,$${NAME},$${VER},$${SUM},$@)
+	rm -rf files/luarocks
+	buildah run $(WORKING_CONTAINER) which luarocks | tee files/luarocks.txt
+	$(eval lr_name := $(shell grep -oP '^Lua\w+.+' files/luarocks.txt))
+	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' files/luarocks.txts | cut -d, -f1))
+	$(eval lr_sum := $(shell grep -oP '^Lua\w+,\s\K.+' files/luarocks.txt | cut -d, -f2))
+	$(call tr,$(lr_name),$(lr_ver),$(lr_sum,$@))
 
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
