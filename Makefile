@@ -41,7 +41,6 @@ SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel 
-pkg-config
 # cargo
 REMOVE := default-editor vim-minimal
 
@@ -236,11 +235,11 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
-	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks
+	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) which luarocks
 	buildah run $(WORKING_CONTAINER) luarocks --version
