@@ -242,9 +242,10 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) which luarocks
-	NAME=$(shell buildah run $(WORKING_CONTAINER) luarocks | $(call grp,^Lua\w+))
-	VER=$(shell buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)')
-	SUM=$(shell buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
+	buildah run $(WORKING_CONTAINER) luarocks --version
+	buildah run $(WORKING_CONTAINER) luarocks | $(call grp,^Lua\w+)
+	buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)'        
+	buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+'
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
 xxx:
@@ -291,7 +292,8 @@ latest/tiktoken.json:
 tiktoken: info/tiktoken.info
 info/tiktoken.info: latest/tiktoken.json
 	echo '##[ $@ ]##'
-	SRC=	TARG=/usr/local/lib/lua/5.1/tiktoken_core-linux.so
+	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
+	TARG=/usr/local/lib/lua/5.1/tiktoken_core-linux.so
 	# nlua -e 'print(package.)'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $${TARG} &>/dev/null
 	printf "| %-10s | %-13s | %-83s |\n" "tiktoken" "0.2.3" "The lua module for generating tiktok tokens" | tee -a $@
