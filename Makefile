@@ -231,11 +231,8 @@ latest/luarocks.json:
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	mkdir -p files/luarocks
-	echo $(shell jq -r '.tarball_url' $<)
-
-
-sdssdsssd:
-	wget -q --timeout=10 --tries=3 $(shell jq -r '.tarball_url) -O- | tar xz --strip-components=1 -C files/luarocks
+	URL=$$(jq -r '.tarball_url' $<)
+	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
