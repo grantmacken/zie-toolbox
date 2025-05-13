@@ -47,7 +47,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working build-tools luajit luarocks
+default: working cli-tools build-tools luajit luarocks
 
 # cli-tools build-tools otp
 
@@ -236,9 +236,6 @@ info/luarocks.md: latest/luarocks.json
 	wget $${URL} -q -O- | tar xz --strip-components=1 -C files/luarocks
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) ls /tmp
-
-xxxxaasd:
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg --force-config --disable-incdir-check && make && make install' &>/dev/null
