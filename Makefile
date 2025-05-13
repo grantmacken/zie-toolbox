@@ -243,9 +243,9 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' | tee lr.txt
 	$(eval lr_name := $(shell grep -oP '^Lua\w+.+' lr.txt))
-	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' lr.txts | cut -d, -f1))
+	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1))
 	$(eval lr_sum := $(shell grep -oP '^Lua\w+,\s\K.+' lr.txt | cut -d, -f2))
-	$(call tr,$(lr_name),$(lr_ver),$(lr_sum,$@))
+	$(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
 
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
@@ -291,12 +291,12 @@ latest/tiktoken.json:
 
 tiktoken: info/tiktoken.info
 info/tiktoken.info: latest/tiktoken.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
-	echo "$(tiktoken_src)"
-	echo "$(tiktoken_ver)"
+	# echo "$(tiktoken_src)"
+	# echo "$(tiktoken_ver)"
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
 	# nlua -e 'print(package.)'
 	# 
