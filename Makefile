@@ -243,10 +243,11 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) which luarocks
 	buildah run $(WORKING_CONTAINER) luarocks --version
-	# buildah run $(WORKING_CONTAINER) luarocks | $(call grp,^Lua\w+)
-	# buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)'   
-	buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+'
-	# $(call tr,$${NAME},$${VER},$${SUM},$@)
+	# buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)'
+	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
+	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+') | cut -d',' -f1
+	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
+	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
@@ -283,13 +284,13 @@ xxxxxsss:
 
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
+TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
 
 latest/tiktoken.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
 
-TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
 
 tiktoken: info/tiktoken.info
 info/tiktoken.info: latest/tiktoken.json
