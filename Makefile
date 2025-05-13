@@ -239,6 +239,11 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
+	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
+	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)')
+	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
+	$(call tr,$${NAME},$${VER},$${SUM},$@)
+
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
