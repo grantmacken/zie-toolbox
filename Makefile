@@ -192,24 +192,25 @@ xxxx:
 ##[[ EDITOR ]]##
 editing-tools: neovim luajit luarocks nlua tiktoken
 	echo '##[ $@ ]##'
+	printf "\n$(HEADING2) %s\n\n" "Text Editing"
+	
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
 neovim: info/neovim.md
 info/neovim.md:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
-	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | 
+	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
 	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
-	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
 	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
 
 luajit: info/luajit.md
 info/luajit.md:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
@@ -224,7 +225,7 @@ latest/luarocks.json:
 
 luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
