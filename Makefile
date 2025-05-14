@@ -40,7 +40,7 @@ CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxi
 SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
-DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel 
+DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 # cargo
 REMOVE := default-editor vim-minimal
 
@@ -49,7 +49,9 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: working cli-tools build-tools otp 
+default: working elixir
+
+# cli-tools build-tools otp 
 
 # editing-tools 
 
@@ -310,6 +312,7 @@ latest_otp_version = wget -q -O- https://www.erlang.org/downloads | \
 
 latest/otp.json:
 	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
 	$(eval otp_tag := $(shell $(call latest_otp_version)))
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
 	jq -r '.[] | select(.tag_name | endswith("'$(otp_tag)'"))' > $@
@@ -318,6 +321,7 @@ latest/otp.json:
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
 	$(eval otp_src := $(shell $(call bdu,otp_sr,$<)))
 	$(eval otp_ver := $(shell jq -r '.tag_name' $< | cut -d- -f2))
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $(otp_src) -O- |
@@ -359,8 +363,6 @@ info/elixir.md: latest/elixir.json
 	# echo -n "TAGNAME: "
 	# echo "$(tag_name)"
 	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
-	# echo -n "MAJOR: "
-	# echo "$(major)"
 	$(eval src := $(call elixir_download,$(tag_name),$(major)))
 	echo "download URL: $(src)"
 	wget -q --timeout=10 --tries=3 $(src) -O elixir.zip
@@ -368,12 +370,11 @@ info/elixir.md: latest/elixir.json
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
-	$(eval elixir_ver := $(shell echo "$(elixir_v)" | grep -oP 'Elixir \K.+' | cut -d' ' -f1))
-	$(call tr,Elixir,$(elixir_ver),Elixir programming language, $@)
-	# printf "| %-8s | %-7s | %-83s |\n" "elixir" "$(elixir_ver)" "compiled with Erlang/OTP $(major)" | tee -a $@
-	$(eval mix_ver := $(shell buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1))
-	$(call tr,Mix,$(mix_ver),Elixir build tool, $@)
-	# printf "| %-8s | %-7s | %-83s |\n" "mix" "$(mix_ver)" "Mix, elixir build tool" | tee -a $@
+	$(eva$(echo "$(elixir_v)" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1))
+	VER=$$(buildah run $(WORKING_CONTAINER) elixir -v | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
+	$(call tr,Elixir,${VER},Elixir programming language, $@)
+	VER=$$(buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	$(call tr,Mix,$${VER},Elixir build tool, $@)
 
 latest/rebar3.json:
 	echo '##[ $@ ]##'
