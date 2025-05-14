@@ -48,7 +48,7 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools luajit luarocks tiktoken
+default: working cli-tools build-tools luajit luarocks nlua tiktoken
 
 # cli-tools build-tools otp
 
@@ -242,10 +242,10 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' > lr.txt
-	grep -oP '^Lua\w+' lr.txt
+	$(eval lr_name := $(shell grep -oP '^Lua\w+' lr.txt))
 	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1
 	grep -oP '^Lua\w+\s\K.+' lr.txt |cut -d, -f2
-	# $(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
+	# $(call tr,$(lr_name),x,x,$@)
 
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
@@ -272,7 +272,6 @@ info/nlua.info:
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 	$(call tr,nlua,$(nl_ver),$(nl_sum),$@)
-
 
 xxxxxsss:
 	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
@@ -309,7 +308,7 @@ info/tiktoken.info: latest/tiktoken.json
 
 
 # beam: info/beam.md
-# info/beam.md: 
+# info/beam.md:
 # 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
 # 	cat << EOF | tee -a $@
 # 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
