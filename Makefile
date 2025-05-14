@@ -360,7 +360,7 @@ elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
-	MAJOR=$(call get_otp_version, $(WORKING_CONTAINER))
+	MAJOR=$(call get_otp_version,$(WORKING_CONTAINER))
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
@@ -368,7 +368,7 @@ info/elixir.md: latest/elixir.json
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+')
-	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1))
+	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
@@ -376,24 +376,28 @@ info/elixir.md: latest/elixir.json
 latest/rebar3.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/erlang/rebar3/releases/latest | jq '.' > $@
+	wget -q -O - https://api.github.com/repos/erlang/rebar3/releases/latest > $@
 
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
 	echo '##[ $@ ]##'
-	$(eval rebar_ver := $(shell jq -r '.tag_name' $<))
+	VER=$$(jq -r '.tag_name' $<)
+	SRC=$(shell $(call bdu,rebar3,$<))
+	echo $${SRC}
 	$(eval rebar_src := $(shell jq -r '.assets[].browser_download_url' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(rebar_src) /usr/local/bin/rebar3 &>/dev/null
 	$(eval rebar_sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
 	$(call tr,Rebar3,$(rebar_ver),$(rebar_sum),$@)
 
-
+GLEAM_LATEST := https://api.github.com/repos/gleam-lang/gleam/releases/latest
 ##[[ GLEAM ]]##
-latest/gleam.download:
+latest/gleam.json:
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/gleam-lang/gleam/releases/latest' |
-	jq  -r '.assets[].browser_download_url' |
-	grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
+	wget  -q --show-progress --timeout=10 --tries=3 $(GLEAM_LATEST) -O $@
+
+
+# jq  -r '.assets[].browser_download_url' |
+# grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
 
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.download
