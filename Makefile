@@ -243,35 +243,23 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'luarocks | grep -oP "^Lua.+"')
-	echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1
-	echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2
-	# $(call tr,$(lr_name),x,x,$@)
-
-xxx:
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah run $(WORKING_CONTAINER) luarocks install luarocks &>/dev/null
-	#Cean up buildah run $(WORKING_CONTAINER) luarocks show luarocks
-	# printf "| %-10s | %-13s | %-83s |\n" "luarocks" "$$NAME" "built from source from latest luarocks tag" | tee $@
-	buildah run $(WORKING_CONTAINER) find /usr/local/share/lua/5.1/luarocks/ -type f -name "*.lua~" -exec rm {} \;
-	buildah run $(WORKING_CONTAINER) rm /usr/local/bin/luarocks~ /usr/local/bin/luarocks-admin~
-	# CHECK:
-	NAME=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+')
-	VER=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+\s\K.+(?=,)')
-	SUM=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua\w+,\s\K.+')
+	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
+	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
+	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
 nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) luarocks install nlua
+	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$( buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
-	echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2
-	echo "$${LINE}" |  grep -oP '^nlua.+' nl.txt | cut -d"-" -f3))
+	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
+	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' nl.txt | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
-	# $(call tr,nlua,$(nl_ver),$(nl_sum),$@)
+	$(call tr,nlua,$${NAME},$${SUM},$@)
 
 xxxxxsss:
 	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
