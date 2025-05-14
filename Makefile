@@ -324,9 +324,7 @@ info/otp.md: latest/otp.json
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
-	echo $$SRC
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
-	echo $$VER
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
@@ -349,22 +347,22 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
+ELIXIR_LATEST := https://api.github.com/repos/elixir-lang/elixir/releases/latest
+elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
+get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+
 latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q --show-progress --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O- |
-	jq '.' > $@
-
-elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
-get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
+	wget -q --show-progress --timeout=10 --tries=3 $(ELIXIR_LATEST) -O $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
-	# using precompiled binaries
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	MAJOR=$(call get_otp_version, $(WORKING_CONTAINER))
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
+	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
