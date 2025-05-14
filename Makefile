@@ -302,7 +302,7 @@ info/tiktoken.info: latest/tiktoken.json
 
 ## keep this
 
-beam: otp
+beam: otp elixir 
 	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -311,10 +311,6 @@ beam: otp
 	This tooling is used to develop with the Gleam programming language.
 	EOF
 
-latest/otp.version:
-	mkdir -p $(dir $@)
-	wget -q -O- https://www.erlang.org/downloads |
-	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee $@
 
 latest/otp.json: 
 	# echo '##[ $@ ]##'
@@ -322,7 +318,6 @@ latest/otp.json:
 	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
 	jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
-
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
@@ -332,11 +327,7 @@ info/otp.md: latest/otp.json
 	echo $$SRC
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	echo $$VER
-
-xxx: 
-	$(eval otp_src := $(shell $(call bdu,otp_sr,$<)))
-	$(eval otp_ver := $(shell jq -r '.tag_name' $< | cut -d- -f2))
-	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $(otp_src) -O- |
+	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -356,7 +347,7 @@ xxx:
 	--without-wx' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	$(call tr ,OTP,$(otp_ver),the Erlang Open Telecom Platform OTP,$@)
+	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -378,10 +369,9 @@ info/elixir.md: latest/elixir.json
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
-	$(eval elixir_v := $(shell buildah run $(WORKING_CONTAINER) elixir -v))
-	$(eva$(echo "$(elixir_v)" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1))
-	VER=$$(buildah run $(WORKING_CONTAINER) elixir -v | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
-	$(call tr,Elixir,${VER},Elixir programming language, $@)
+	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+')
+	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1))
+	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
 
