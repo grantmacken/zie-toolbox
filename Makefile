@@ -241,10 +241,9 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' > lr.txt
-	$(eval lr_name := $(shell grep -oP '^Lua\w+' lr.txt))
-	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1
-	grep -oP '^Lua\w+\s\K.+' lr.txt |cut -d, -f2
+	$(eval lr := $(shell buildah run $(WORKING_CONTAINER) luarocks' | grep -oP '^Lua.+'))
+	echo $(lr) | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1
+	echo $(lr) | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2
 	# $(call tr,$(lr_name),x,x,$@)
 
 xxx:
