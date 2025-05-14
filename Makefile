@@ -321,7 +321,7 @@ latest/otp.json:
 	mkdir -p $(dir $@)
 	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq -r '.[] | select(.tag_name | endswith("'${VER}'"))' > $@
+	jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
 
 
 otp: info/otp.md
@@ -371,7 +371,8 @@ elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	# using precompiled binaries
-	$(eval tag_name := $(shell jq -r '.tag_name' $<))
+	TAGNAME=$$(jq -r '.tag_name' $<)
+	MAJOR=$(call get_otp_version, $(WORKING_CONTAINER))
 	# echo -n "TAGNAME: "
 	# echo "$(tag_name)"
 	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
