@@ -190,16 +190,22 @@ xxxx:
 	done
 
 ##[[ EDITOR ]]##
-editing-tools: neovim luajit luarocks nlua tiktoken
+editing-tools: info/editing-tools.md
+info/editing-tools.md: neovim luajit luarocks nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "Text Editing"
-	
+	cat << EOF | tee -a $@
+	The Neovim text editor is available in the toolbox.
+	Luajit is the LuaJIT compiler, which is used by Neovim.
+	Luarocks is the package manager for Lua modules.
+	The nlua cli is a binding for Neovim luajit api.
+	The tiktoken module is a Lua module for generating tiktok tokens used by LLM models.
+	EOF
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
 neovim: info/neovim.md
 info/neovim.md:
-	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
@@ -210,8 +216,6 @@ info/neovim.md:
 
 luajit: info/luajit.md
 info/luajit.md:
-	# echo '##[ $@ ]##'
-	# printf "\n$(HEADING2) %s\n\n" "$$NAME"
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
@@ -231,7 +235,7 @@ info/luarocks.md: latest/luarocks.json
 	URL=$$(jq -r '.tarball_url' $<)
 	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
@@ -243,7 +247,7 @@ info/luarocks.md: latest/luarocks.json
 
 nlua: info/nlua.info
 info/nlua.info:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
 	echo "$${LINE}"
@@ -259,7 +263,7 @@ tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/
 TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
 
 latest/tiktoken.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
 
