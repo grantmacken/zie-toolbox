@@ -48,9 +48,8 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-default: working cli-tools build-tools luajit luarocks nlua tiktoken
 
-# cli-tools build-tools otp
+default: working cli-tools build-tools editing-tools
 
 clear:
 	rm -f info/*.md
@@ -191,6 +190,7 @@ xxxx:
 	done
 
 ##[[ EDITOR ]]##
+editing-tools: neovim luajit luarocks nlua tiktoken
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
@@ -199,20 +199,12 @@ info/neovim.md:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
-	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
+	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- | 
+	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -la /usr/local/bin
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
 	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
-
-# xxssaxx:
-# buildah run $(WORKING_CONTAINER) nvim -v
-# buildah run $(WORKING_CONTAINER) whereis nvim
-# buildah run $(WORKING_CONTAINER) which nvim
-# # buildah run $(WORKING_CONTAINER) printenv
-# VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'nvim -v' | grep -oP 'NVIM \K.+' | cut -d'-' -f1 )
-# printf "| %-10s | %-13s | %-83s |\n" "Neovim"\
-# "$$VERSION" "The text editor with a focus on extensibility and usability" | tee -a $@
 
 luajit: info/luajit.md
 info/luajit.md:
@@ -239,7 +231,7 @@ info/luarocks.md: latest/luarocks.json
 	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
-	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
+	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'luarocks | grep -oP "^Lua.+"')
@@ -252,13 +244,14 @@ nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
-	LINE=$$( buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
+	LINE=$$(buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
+	echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
-	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
-	$(call tr,nlua,$${NAME},$${SUM},$@)
+	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	$(call tr,nlua,$${VER},$${SUM},$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
