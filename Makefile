@@ -382,11 +382,11 @@ rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
 	echo '##[ $@ ]##'
 	VER=$$(jq -r '.tag_name' $<)
+	echo $${VER}
 	SRC=$(shell $(call bdu,rebar3,$<))
 	echo $${SRC}
-	BUILDAH ADD --CHMOD 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
-	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+\Kon.+')
-	$(call tr,Rebar3,$${VER},$${SUM},$@)
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
+	$(call tr,Rebar3,$${VER},the erlang build tool,$@)
 
 GLEAM_LATEST := https://api.github.com/repos/gleam-lang/gleam/releases/latest
 ##[[ GLEAM ]]##
@@ -395,14 +395,10 @@ latest/gleam.json:
 	wget  -q --show-progress --timeout=10 --tries=3 $(GLEAM_LATEST) -O $@
 
 
-# jq  -r '.assets[].browser_download_url' |
-# grep -oP '.+x86_64-unknown-linux-musl.tar.gz$$' > $@
-
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.download
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
-	$(eval gleam_src := $(shell cat $<))
 	SRC=$(shell $(call bdu,linux-musl.tar.gz,$<))
 	echo $${SRC}
 	wget  -q $${SRC} -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
@@ -410,26 +406,17 @@ info/gleam.md: latest/gleam.download
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
-xxxxx:
-	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
-	cat << EOF | tee -a $@
-	The main developer experience language this toolbox provides for, is for the Gleam language.
-	EOF
-	buildah run $(WORKING_CONTAINER) gleam --help  | tee -a $@
-
-
 ##[[ NODEJS ]]##
-latest/nodejs.tagname:
+latest/nodejs.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' |
-	jq '.tag_name' |  tr -d '"' > $@
+	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' > @
 
+# 
 nodejs: info/nodejs.md
-info/nodejs.md: latest/nodejs.tagname
-	# echo '##[ $@ ]##'
-	# printf "\n$(HEADING2) %s\n\n" "Nodejs runtime" | tee $@
-	$(eval node_ver := $(shell cat $<))
+info/nodejs.md: latest/nodejs.json
+	echo '##[ $@ ]##'
+	VER=$$(jq -r '.tag_name' $< )
 	mkdir -p files/nodejs/usr/local
 	wget https://nodejs.org/download/release/$(node_ver)/node-$(node_ver)-linux-x64.tar.gz -q -O- |
 	tar xz --strip-components=1 -C files/nodejs/usr/local
