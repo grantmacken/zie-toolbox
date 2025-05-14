@@ -170,8 +170,7 @@ host-spawn: info/host-spawn.md
 latest/host-spawn.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/1player/host-spawn/releases/latest |
-	jq '.' > $@
+	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O-  $@
 
 info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
@@ -282,34 +281,14 @@ info/tiktoken.info: latest/tiktoken.json
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-
-# beam: info/beam.md
-# info/beam.md:
-# 	printf "\n$(HEADING2) %s\n\n" "BEAM tooling" | tee $@
-# 	cat << EOF | tee -a $@
-# 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-# 	Installed in this toolbox are the Erlang and Elixir programming languages.
-# 	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
-# 	This tooling is used to develop with the Gleam programming language.
-# 	EOF
-# 	$(call beam_tr,"Name","Version","Summary") | tee  $@
-# 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
-# 	cat info/otp.md | tee -a $@
-# 	cat info/elixir.md | tee -a $@
-# 	cat info/rebar3.md | tee -a $@
-# 	cat info/gleam.md | tee -a $@
-# 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
-
-## keep this
-
 beam: otp rebar3 elixir gleam nodejs
 	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	Installed in this toolbox are the Erlang, Elixir and Gleam programming languages.
-	Also installed are the Rebar3 and the Mix build tools.
+	Installed in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
+	Also installed are the latest versions of the Rebar3 and the Mix build tools.
 	This tooling is used to develop with the Gleam programming language so the
-	 nodejs runtime is also installed, as Gleam can compile to javascript as well a erlang.
+	latest nodejs runtime is also installed, as Gleam can compile to javascript as well a erlang.
 	EOF
 
 
@@ -389,19 +368,17 @@ info/rebar3.md: latest/rebar3.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
 	$(call tr,Rebar3,$${VER},the erlang build tool,$@)
 
-GLEAM_LATEST := https://api.github.com/repos/gleam-lang/gleam/releases/latest
 ##[[ GLEAM ]]##
 latest/gleam.json:
 	mkdir -p $(dir $@)
-	wget  -q --show-progress --timeout=10 --tries=3 $(GLEAM_LATEST) -O $@
-
+	wget -q https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
+	jq -r '.assets[] | select(.name | endswith("aarch64-unknown-linux-musl.tar.gz"))' > $@
 
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
-	SRC=$(shell $(call bdu,linux-musl.tar.gz,$<))
-	echo $${SRC}
+	SRC=$$(jq -r '.browser_download_url' $<)
 	wget  -q $${SRC} -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
