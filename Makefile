@@ -265,12 +265,13 @@ info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua
 	buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua' | tee nl.txt
-	$(eval nl_name := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f1))
-	$(eval nl_ver := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f2))
-	$(eval nl_sum := $(shell grep -oP '^nlua.+'  nl.txt | cut -d"-" -f2))
+	$(eval nl_ver := $(shell grep -oP '^nlua.+' nl.txt | cut -d" " -f2))
+	$(eval nl_sum := $(shell grep -oP '^nlua.+' nl.txt | cut -d"-" -f2))
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
+	$(call tr,nlua,$(nl_ver),$(nl_sum),$@)
 
 
 xxxxxsss:
