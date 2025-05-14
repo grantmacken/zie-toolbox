@@ -254,26 +254,12 @@ info/nlua.info:
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$( buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
-	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' nl.txt | cut -d"-" -f3)
+	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 	$(call tr,nlua,$${NAME},$${SUM},$@)
-
-xxxxxsss:
-	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
-	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
-	## TODO: I think this is redundant as we only have to use the above
-	## @see https://github.com/mfussenegger/nlua
-	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
-	buildah run $(WORKING_CONTAINER) which nlua
-	buildah run $(WORKING_CONTAINER) whereis nlua
-	printf "| %-10s | %-13s | %-83s |\n" "nlua" " " "@see https://github.com/mfussenegger/nlua" | tee -a $@
-	buildah run $(WORKING_CONTAINER) luarocks install busted
-	printf "| %-10s | %-13s | %-83s |\n" "busted" " " "@see " | tee -a $@
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
 TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
