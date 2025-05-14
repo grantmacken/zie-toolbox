@@ -242,9 +242,9 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' > lr.txt
-	grep -oP '^Lua\w+.+' lr.txt
+	grep -oP '^Lua\w+' lr.txt
 	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1
-	grep -oP '^Lua\w+,\s\K.+' lr.txt |cut -d, -f2
+	grep -oP '^Lua\w+\s\K.+' lr.txt |cut -d, -f2
 	# $(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
 
 xxx:
@@ -268,6 +268,9 @@ info/nlua.info:
 	$(eval nl_name := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f1))
 	$(eval nl_ver := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f2))
 	$(eval nl_sum := $(shell grep -oP '^nlua.+'  nl.txt | cut -d"-" -f2))
+	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
+	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 
 
 xxxxxsss:
@@ -284,7 +287,6 @@ xxxxxsss:
 	buildah run $(WORKING_CONTAINER) luarocks install busted
 	printf "| %-10s | %-13s | %-83s |\n" "busted" " " "@see " | tee -a $@
 
-
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
 TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
 
@@ -299,12 +301,8 @@ info/tiktoken.info: latest/tiktoken.json
 	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
-	# echo "$(tiktoken_src)"
-	# echo "$(tiktoken_ver)"
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
 	# nlua -e 'print(package.)'
-	# 
-	# printf "| %-10s | %-13s | %-83s |\n" "tiktoken" "0.2.3" "The lua module for generating tiktok tokens" | tee -a $@
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
