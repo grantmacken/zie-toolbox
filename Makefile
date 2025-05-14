@@ -330,7 +330,7 @@ info/otp.md: latest/otp.json
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	echo $$SRC
-	VER=$$(jq -r '.tag_name' $< | cut -d- -f2))
+	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	echo $$VER
 
 xxx: 
@@ -373,12 +373,8 @@ info/elixir.md: latest/elixir.json
 	# using precompiled binaries
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	MAJOR=$(call get_otp_version, $(WORKING_CONTAINER))
-	# echo -n "TAGNAME: "
-	# echo "$(tag_name)"
-	$(eval major := $(call get_otp_version, $(WORKING_CONTAINER)))
-	$(eval src := $(call elixir_download,$(tag_name),$(major)))
-	echo "download URL: $(src)"
-	wget -q --timeout=10 --tries=3 $(src) -O elixir.zip
+	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
+	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
