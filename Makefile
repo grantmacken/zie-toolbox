@@ -265,10 +265,9 @@ nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua
-	buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua' | tee nl.txt
-	$(eval nl := $(shell grep -oP '^nlua.+' nl.txt | cut -d" " -f1))
-	echo $(nl) | grep -oP '^nlua.+' | cut -d" " -f2
-	echo $(nl) |  grep -oP '^nlua.+' nl.txt | cut -d"-" -f3))
+	LINE=$$( buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
+	echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2
+	echo "$${LINE}" |  grep -oP '^nlua.+' nl.txt | cut -d"-" -f3))
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
