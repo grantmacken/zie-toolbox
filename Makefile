@@ -321,13 +321,19 @@ latest/otp.json:
 	mkdir -p $(dir $@)
 	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq -r '.[] | select(.tag_name | endswith("'${VER}'"))' | tee $@
+	jq -r '.[] | select(.tag_name | endswith("'${VER}'"))' > $@
 
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
+	SRC=$(shell $(call bdu,otp_src,$<))
+	echo $$SRC
+	VER=$$(jq -r '.tag_name' $< | cut -d- -f2))
+	echo $$VER
+
+xxx: 
 	$(eval otp_src := $(shell $(call bdu,otp_sr,$<)))
 	$(eval otp_ver := $(shell jq -r '.tag_name' $< | cut -d- -f2))
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $(otp_src) -O- |
