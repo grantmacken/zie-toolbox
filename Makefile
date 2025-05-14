@@ -49,7 +49,7 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: working elixir
+default: working beam
 
 # cli-tools build-tools otp 
 
@@ -300,7 +300,9 @@ info/tiktoken.info: latest/tiktoken.json
 # 	cat info/gleam.md | tee -a $@
 # 	$(call beam_tr,"----","-------","----------------------------") | tee -a $@
 
-## keep this 
+## keep this
+
+beam: otp elixir
 
 latest/otp.version:
 	mkdir -p $(dir $@)
