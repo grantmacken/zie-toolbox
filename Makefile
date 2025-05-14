@@ -191,6 +191,7 @@ xxxx:
 
 ##[[ EDITOR ]]##
 editing-tools: neovim luajit luarocks nlua tiktoken
+	echo '##[ $@ ]##'
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
@@ -214,15 +215,14 @@ info/luajit.md:
 	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
-luarocks: info/luarocks.md
+LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
 
 latest/luarocks.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq '.[0]'  > $@
 
-LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
-
+luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -248,7 +248,7 @@ info/nlua.info:
 	echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
-	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
+	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	$(call tr,nlua,$${VER},$${SUM},$@)
