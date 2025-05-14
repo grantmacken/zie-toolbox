@@ -49,9 +49,9 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: working beam
+default: working cli-tools build-tools beam
 
-# cli-tools build-tools otp 
+# coding-tools: info/coding-tools.md
 
 # editing-tools 
 
@@ -302,22 +302,26 @@ info/tiktoken.info: latest/tiktoken.json
 
 ## keep this
 
-beam: otp elixir
+beam: otp
+	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
+	cat << EOF | tee -a $@
+	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
+	Installed in this toolbox are the Erlang and Elixir programming languages.
+	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
+	This tooling is used to develop with the Gleam programming language.
+	EOF
 
 latest/otp.version:
 	mkdir -p $(dir $@)
 	wget -q -O- https://www.erlang.org/downloads |
 	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' | tee $@
 
-latest_otp_version = wget -q -O- https://www.erlang.org/downloads | \
-	grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+'
-
-latest/otp.json:
+latest/otp.json: 
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	$(eval otp_tag := $(shell $(call latest_otp_version)))
+	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
-	jq -r '.[] | select(.tag_name | endswith("'$(otp_tag)'"))' > $@
+	jq -r '.[] | select(.tag_name | endswith("'${VER}'"))' | tee $@
 
 
 otp: info/otp.md
