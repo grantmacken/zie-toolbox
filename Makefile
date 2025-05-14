@@ -230,7 +230,6 @@ latest/luarocks.json:
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq '.[0]'  > $@
 
 LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
-	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
