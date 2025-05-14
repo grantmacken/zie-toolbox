@@ -243,8 +243,8 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' > lr.txt
 	grep -oP '^Lua\w+.+' lr.txt
-	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1)
-	grep -oP '^Lua\w+,\s\K.+' lr.txt |cut -d, -f2)
+	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1
+	grep -oP '^Lua\w+,\s\K.+' lr.txt |cut -d, -f2
 	# $(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
 
 xxx:
