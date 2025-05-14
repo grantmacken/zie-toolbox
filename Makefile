@@ -241,11 +241,11 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' | tee lr.txt
-	$(eval lr_name := $(shell grep -oP '^Lua\w+.+' lr.txt))
-	$(eval lr_ver := $(shell grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1))
-	$(eval lr_sum := $(shell grep -oP '^Lua\w+,\s\K.+' lr.txt | cut -d, -f2))
-	$(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
+	buildah run $(WORKING_CONTAINER) bash -c 'luarocks' > lr.txt
+	grep -oP '^Lua\w+.+' lr.txt
+	grep -oP '^Lua\w+\s\K.+' lr.txt | cut -d, -f1)
+	grep -oP '^Lua\w+,\s\K.+' lr.txt |cut -d, -f2)
+	# $(call tr,$(lr_name),$(lr_ver),$(lr_sum),$@)
 
 xxx:
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
@@ -264,11 +264,15 @@ nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua
-	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+' | cut -d" " -f2
-	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
-	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
+	buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua' | tee nl.txt
+	$(eval nl_name := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f1))
+	$(eval nl_ver := $(shell grep -oP '^nlua.+'  nl.txt | cut -d" " -f2))
+	$(eval nl_sum := $(shell grep -oP '^nlua.+'  nl.txt | cut -d"-" -f2))
+
 
 xxxxxsss:
+	buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+- \K.+'
+	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1
 	## TODO: I think this is redundant as we only have to use the above
 	## @see https://github.com/mfussenegger/nlua
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
