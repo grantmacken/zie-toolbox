@@ -229,6 +229,8 @@ latest/luarocks.json:
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/luarocks/luarocks/tags' -O- | jq '.[0]'  > $@
 
+LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
+	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
 
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
@@ -239,11 +241,11 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check' &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make bootstrap' &>/dev/null
-	$(eval lr := $(shell buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+'))
-	echo $(lr) | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1
-	echo $(lr) | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'luarocks | grep -oP "^Lua.+"')
+	echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1
+	echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2
 	# $(call tr,$(lr_name),x,x,$@)
 
 xxx:
