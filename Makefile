@@ -302,17 +302,18 @@ info/tiktoken.info: latest/tiktoken.json
 
 ## keep this
 
-beam: otp rebar3 elixir gleam 
+beam: otp rebar3 elixir gleam nodejs
 	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	Installed in this toolbox are the Erlang and Elixir programming languages.
-	Also installed are the Rebar3 build tool and the Mix build tool for Elixir.
-	This tooling is used to develop with the Gleam programming language.
+	Installed in this toolbox are the Erlang, Elixir and Gleam programming languages.
+	Also installed are the Rebar3 and the Mix build tools.
+	This tooling is used to develop with the Gleam programming language so the
+	 nodejs runtime is also installed, as Gleam can compile to javascript as well a erlang.
 	EOF
 
 
-latest/otp.json: 
+latest/otp.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
@@ -396,7 +397,7 @@ latest/gleam.json:
 
 
 gleam: info/gleam.md
-info/gleam.md: latest/gleam.download
+info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
 	SRC=$(shell $(call bdu,linux-musl.tar.gz,$<))
@@ -412,14 +413,13 @@ latest/nodejs.json:
 	mkdir -p $(dir $@)
 	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' > @
 
-# 
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.json
 	echo '##[ $@ ]##'
 	VER=$$(jq -r '.tag_name' $< )
 	mkdir -p files/nodejs/usr/local
-	wget https://nodejs.org/download/release/$(node_ver)/node-$(node_ver)-linux-x64.tar.gz -q -O- |
+	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
 	tar xz --strip-components=1 -C files/nodejs/usr/local
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
-	$(call tr,Nodejs,$(node_ver),Nodejs runtime, $@)
+	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
 
