@@ -302,7 +302,7 @@ info/tiktoken.info: latest/tiktoken.json
 
 ## keep this
 
-beam: otp elixir 
+beam: otp rebar3 elixir gleam 
 	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
 	cat << EOF | tee -a $@
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
@@ -358,11 +358,11 @@ latest/elixir.json:
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
-	echo '##[ $@ ]##'
+	#echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	MAJOR=$(call get_otp_version,$(WORKING_CONTAINER))
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
-	echo $${SRC}
+	#echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
@@ -384,10 +384,9 @@ info/rebar3.md: latest/rebar3.json
 	VER=$$(jq -r '.tag_name' $<)
 	SRC=$(shell $(call bdu,rebar3,$<))
 	echo $${SRC}
-	$(eval rebar_src := $(shell jq -r '.assets[].browser_download_url' $<))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(rebar_src) /usr/local/bin/rebar3 &>/dev/null
-	$(eval rebar_sum := $(shell buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+ \Kon.+'))
-	$(call tr,Rebar3,$(rebar_ver),$(rebar_sum),$@)
+	BUILDAH ADD --CHMOD 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
+	SUM=$$(buildah run $(WORKING_CONTAINER) rebar3 -v | grep -oP '^.+\Kon.+')
+	$(call tr,Rebar3,$${VER},$${SUM},$@)
 
 GLEAM_LATEST := https://api.github.com/repos/gleam-lang/gleam/releases/latest
 ##[[ GLEAM ]]##
