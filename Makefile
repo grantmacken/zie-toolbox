@@ -354,7 +354,7 @@ get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(er
 latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q --show-progress --timeout=10 --tries=3 $(ELIXIR_LATEST) -O $@
+	wget -q --timeout=10 --tries=3 $(ELIXIR_LATEST) -O $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
@@ -367,7 +367,7 @@ info/elixir.md: latest/elixir.json
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
-	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+')
+	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+"')
 	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
@@ -404,10 +404,12 @@ info/gleam.md: latest/gleam.download
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
 	$(eval gleam_src := $(shell cat $<))
-	wget $(gleam_src) -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
+	SRC=$(shell $(call bdu,linux-musl.tar.gz,$<))
+	echo $${SRC}
+	wget  -q $${SRC} -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
-	$(eval gleam_ver := $(shell buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2))
-	$(call tr,Gleam,$(gleam_ver),Gleam programming language,$@)
+	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
+	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 xxxxx:
 	printf "$(HEADING1) %s\n\n" "A bundle LSP server and 'runtime' container images" | tee $@
