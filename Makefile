@@ -76,7 +76,7 @@ latest/fedora-toolbox.json:
 	printf "FROM_VERSION=%s\n" $$FROM_VERSION | tee -a $@
 	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
 	echo -n "WORKING_CONTAINER=" | tee -a .env
-	buildah from $${FROM_REGISTRY}:$${FROM_VERSION}
+	buildah from $${FROM_REGISTRY}:$${FROM_VERSION}  | tee -a .env
 
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
