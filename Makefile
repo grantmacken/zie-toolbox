@@ -76,7 +76,13 @@ latest/fedora-toolbox.json:
 	printf "FROM_VERSION=%s\n" $$FROM_VERSION | tee -a $@
 	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
 	echo -n "WORKING_CONTAINER=" | tee -a .env
-	buildah from $$FROM_REGISTRY:$$FROM_VERSION | tee -a .env
+	working_container=$$(buildah from $${FROM_REGISTRY}:$${FROM_VERSION})
+	echo $${working_container} | tee -a .env
+	echo -n "ARCHITECTURE=" | tee -a .env
+	buildah inspect $${working_container} | jq -r '.config.Labels."org.opencontainers.image.architecture"'
+	build run $${working_container} uname -m | tee -a .env
+
+
 
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
@@ -288,7 +294,7 @@ beam: otp rebar3 elixir gleam nodejs
 	Installed in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
 	Also installed are the latest versions of the Rebar3 and the Mix build tools.
 	This tooling is used to develop with the Gleam programming language so the
-	latest nodejs runtime is also installed, as Gleam can compile to javascript as well a erlang.
+	latest nodejs runtime is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
 
 
@@ -372,7 +378,7 @@ info/rebar3.md: latest/rebar3.json
 latest/gleam.json:
 	mkdir -p $(dir $@)
 	wget -q https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
-	jq -r '.assets[] | select(.name | endswith("aarch64-unknown-linux-musl.tar.gz"))' > $@
+	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
 
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
@@ -385,20 +391,10 @@ info/gleam.md: latest/gleam.json
 	tar xz --strip-components=1 --one-top-level="gleam" -f neovim.tar.gz -C files/gleam/usr/local/bin
 	ls -al files/gleam/usr/local/bin
 	rm -f neovim.tar.gz
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
+	buildah add $(WORKING_CONTAINER) files/gleam &>/dev/null
 	buildah run $(WORKING_CONTAINER) which gleam
-	buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2
-
-ddd:
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam/usr/local/bin/gleam /usr/local/bin/gleam &>/dev/null
-	which gleam
-	VER=$$(buildah run $(WORKING_CONTAINER) sh -c 'gleam --version | cut -d" " -f2')
+	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
-
-
-	# wget -q $${SRC} -O- | 
-	# tar xz --strip-components=1 --one-top-level="gleam" -C files  &>/dev/null
-	# buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam /usr/local/bin/gleam &>/dev/null
 
 ##[[ NODEJS ]]##
 latest/nodejs.json:
