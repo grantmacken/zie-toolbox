@@ -377,12 +377,19 @@ latest/gleam.json:
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
-	mkdir -p files/gleam
+	buildah run $(WORKING_CONTAINER) rm -f files/gleam/usr/local/bin/gleam
+	mkdir -p files/gleam/usr/local/bin
 	SRC=$$(jq -r '.browser_download_url' $<)
 	# echo $${SRC}
-	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 --one-top-level="gleam" --directory files/gleam/usr/local/bin &>/dev/null
+	wget -q --timeout=10 --tries=3 $${SRC} -O neovim.tar.gz
+	tar xz --strip-components=1 --one-top-level="gleam" -f neovim.tar.gz -C files/gleam/usr/local/bin
 	ls -al files/gleam/usr/local/bin
+	rm -f neovim.tar.gz
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
+	buildah run $(WORKING_CONTAINER) which gleam
+	buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2
+
+ddd:
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam/usr/local/bin/gleam /usr/local/bin/gleam &>/dev/null
 	which gleam
 	VER=$$(buildah run $(WORKING_CONTAINER) sh -c 'gleam --version | cut -d" " -f2')
