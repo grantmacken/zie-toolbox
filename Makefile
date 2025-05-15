@@ -377,11 +377,12 @@ latest/gleam.json:
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
-	mkdir -p files/gleam/usr/local/bin
+	mkdir -p files
 	SRC=$$(jq -r '.browser_download_url' $<)
-	wget  -q $${SRC} -O- | tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
-	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
+	wget -q $${SRC} -O- | 
+	tar xz --strip-components=1 --one-top-level="gleam" -C files  &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam /usr/local/bin/gleam &>/dev/null
+	VER=$$(buildah run $(WORKING_CONTAINER) sh -c 'gleam --version | cut -d" " -f2')
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
