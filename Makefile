@@ -170,7 +170,7 @@ host-spawn: info/host-spawn.md
 latest/host-spawn.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O-  $@
+	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
 
 info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
