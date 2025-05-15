@@ -177,7 +177,7 @@ info/host-spawn.md: latest/host-spawn.json
 	mkdir -p $(dir $@)
 	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
-	VER=$$(shell jq -r '.tag_name' $<)
+	VER=$$(jq -r '.tag_name' $<)
 	$(call tr,host-spawn,$${VER},run host cli commands inside the toolbox,$@)
 
 xxxx:
