@@ -379,6 +379,7 @@ info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
 	mkdir -p files
 	SRC=$$(jq -r '.browser_download_url' $<)
+	echo $${SRC}
 	wget -q $${SRC} -O- | 
 	tar xz --strip-components=1 --one-top-level="gleam" -C files  &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam /usr/local/bin/gleam &>/dev/null
@@ -389,7 +390,7 @@ info/gleam.md: latest/gleam.json
 latest/nodejs.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - 'https://api.github.com/repos/nodejs/node/releases/latest' > @
+	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
 
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.json
