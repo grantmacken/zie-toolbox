@@ -49,7 +49,7 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 # gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
 
-default: working cli-tools build-tools beam
+default: working cli-tools host-spawn build-tools beam
 
 # coding-tools: info/coding-tools.md
 
@@ -176,10 +176,9 @@ info/host-spawn.md: latest/host-spawn.json
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
-	# direct add
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
-	$(eval hs_ver := $(shell jq -r '.tag_name' $<))
-	$(call tr,host-spawn,$(hs_ver),run host cli commands inside the toolbox,$@)
+	VER=$$(shell jq -r '.tag_name' $<)
+	$(call tr,host-spawn,$${VER},run host cli commands inside the toolbox,$@)
 
 xxxx:
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
@@ -291,7 +290,6 @@ beam: otp rebar3 elixir gleam nodejs
 	latest nodejs runtime is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
 
-
 latest/otp.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -332,7 +330,7 @@ elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/release
 get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
 
 latest/elixir.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 $(ELIXIR_LATEST) -O $@
 
@@ -354,17 +352,15 @@ info/elixir.md: latest/elixir.json
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
 
 latest/rebar3.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/erlang/rebar3/releases/latest > $@
 
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	VER=$$(jq -r '.tag_name' $<)
-	echo $${VER}
 	SRC=$(shell $(call bdu,rebar3,$<))
-	echo $${SRC}
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
 	$(call tr,Rebar3,$${VER},the erlang build tool,$@)
 
@@ -381,24 +377,21 @@ info/gleam.md: latest/gleam.json
 	mkdir -p files/gleam/usr/local/bin
 	SRC=$$(jq -r '.browser_download_url' $<)
 	# echo $${SRC}
-	wget -q --timeout=10 --tries=3 $${SRC} -O neovim.tar.gz
-	tar xz --strip-components=1 --one-top-level="gleam" -f neovim.tar.gz -C files/gleam/usr/local/bin
-	ls -al files/gleam/usr/local/bin
-	rm -f neovim.tar.gz
+	wget -q --timeout=10 --tries=3 $${SRC} -O- |
+	tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add $(WORKING_CONTAINER) files/gleam &>/dev/null
-	buildah run $(WORKING_CONTAINER) which gleam
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
 latest/nodejs.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
 
 nodejs: info/nodejs.md
 info/nodejs.md: latest/nodejs.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	VER=$$(jq -r '.tag_name' $< )
 	mkdir -p files/nodejs/usr/local
 	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
