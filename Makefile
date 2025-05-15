@@ -76,13 +76,7 @@ latest/fedora-toolbox.json:
 	printf "FROM_VERSION=%s\n" $$FROM_VERSION | tee -a $@
 	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
 	echo -n "WORKING_CONTAINER=" | tee -a .env
-	working_container=$$(buildah from $${FROM_REGISTRY}:$${FROM_VERSION})
-	echo $${working_container} | tee -a .env
-	echo -n "ARCHITECTURE=" | tee -a .env
-	buildah inspect $${working_container} | jq -r '.config.Labels."org.opencontainers.image.architecture"'
-	build run $${working_container} uname -m | tee -a .env
-
-
+	buildah from $${FROM_REGISTRY}:$${FROM_VERSION}
 
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
