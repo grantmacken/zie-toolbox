@@ -152,6 +152,7 @@ info/host-spawn.md: latest/host-spawn.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
 	VER=$$(jq -r '.tag_name' $<)
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
+	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
@@ -285,7 +286,7 @@ info/tiktoken.info: latest/tiktoken.json
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-runtime: otp rebar3 elixir gleam nodejs
+runtimes: otp rebar3 elixir gleam nodejs
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
