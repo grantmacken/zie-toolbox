@@ -26,7 +26,6 @@ include .env
 
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 CONTAINER := fedora-toolbox-working-container
-
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
 CLI_CONTAINER_NAME=tbx-cli-tools
 
@@ -46,10 +45,10 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools host-spawn build-tools coding-tools runtimes
+default: working build-tools runtimes
 
-# coding-tools: info/coding-tools.md
-# editing-tools 
+# cli-tools host-spawn 
+# coding-tools  
 
 clear:
 	rm -f info/*.md
@@ -333,20 +332,18 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
-ELIXIR_LATEST := https://api.github.com/repos/elixir-lang/elixir/releases/latest
 elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
-get_otp_version = $(shell buildah run $(1) erl -noshell -eval "erlang:display(erlang:system_info(otp_release)), halt().")
 
 latest/elixir.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3 $(ELIXIR_LATEST) -O $@
+	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	#echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
-	MAJOR=$(call get_otp_version,$(WORKING_CONTAINER))
+	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval 'erlang:display(erlang:system_info(otp_release)), halt().')
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
 	#echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
