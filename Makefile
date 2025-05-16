@@ -178,18 +178,30 @@ info/host-spawn.md: latest/host-spawn.json
 	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
 	VER=$$(jq -r '.tag_name' $<)
-	$(call tr,host-spawn,$${VER},run host cli commands inside the toolbox,$@)
-
-xxxx:
-	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee $@
-	printf "%s\n" "Host-spawn (version: $${NAME}) " | tee -a $@
-	# close table
-	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a $@
+	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
+	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee info/host-spawn-info.md
+	cat << EOF | tee -a host-spawn-info.md
+	The host-spawn tool is a wrapper around the toolbox command that allows you to run 
+	commands on your host machine from inside the toolbox.
+	EOF
+	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a host-spawn-info.md
 	for item in $(SPAWN)
 	do
 	buildah run $(WORKING_CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" "$${item}" | tee -a $@
+	printf " - %s\n" "$${item}" | tee -a host-spawn-info.md
 	done
+	cat << EOF | tee -a host-spawn-info.md
+	These executables are available on my Fedora silverblue host system, however
+	if these exexecutables are not available in your host system, adjust the SPAWN varialble
+	in the Makefile to include the executables you want to use.
+	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
+	EOF
+
+
+xxxx:
+	printf "%s\n" "Host-spawn (version: $${NAME}) " | tee -a $@
+	# close table
+	
 
 ##[[ EDITOR ]]##
 editing-tools: info/editing-tools.md
