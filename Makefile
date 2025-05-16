@@ -37,7 +37,6 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-SPAWN := firefox flatpak podman buildah skopeo systemctl rpm-ostree dconf
 DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
@@ -47,12 +46,9 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-# gcc-c++ gettext-devel  libevent-devel  openssl-devel  readline-devel
-
-default: working cli-tools host-spawn build-tools beam
+default: working cli-tools host-spawn build-tools coding-tools runtimes
 
 # coding-tools: info/coding-tools.md
-
 # editing-tools 
 
 clear:
@@ -117,7 +113,7 @@ info/working.md:
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "Pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 
-cli-tools: info/cli.md
+cli-tools: info/cli.md 
 info/cli.md:
 	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
@@ -142,6 +138,33 @@ info/cli.md:
 	   tee -a $@
 	$(call tr,"----","-------","----------------------------",$@)
 
+## HOST-SPAWN
+host-spawn: info/host-spawn.md
+latest/host-spawn.json:
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
+
+info/host-spawn.md: latest/host-spawn.json
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
+	VER=$$(jq -r '.tag_name' $<)
+	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	cat << EOF | tee -a host-spawn-info.md
+	The host-spawn tool is a wrapper around the toolbox command that allows you to run
+	commands on your host machine from inside the toolbox.
+	To use the host-spawn tool, either run the following command: `host-spawn <command>`
+	Or just `host-spawm` with no argument and this will pop you into you host shell.
+	When doing this remember to pop back into the toolbox with `exit`.
+	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
+	EOF
+
 build-tools: info/deps.md
 info/deps.md:
 	# echo '##[ $@ ]##'
@@ -165,56 +188,26 @@ info/deps.md:
 	tee -a $@
 	$(call tr,"----","-------","----------------------------",$@)
 
-## HOST-SPAWN
-host-spawn: info/host-spawn.md
-latest/host-spawn.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
-
-info/host-spawn.md: latest/host-spawn.json
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
-	VER=$$(jq -r '.tag_name' $<)
-	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
-	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee info/host-spawn-info.md
-	cat << EOF | tee -a host-spawn-info.md
-	The host-spawn tool is a wrapper around the toolbox command that allows you to run 
-	commands on your host machine from inside the toolbox.
-	EOF
-	printf "\n%s\n" "The following host executables can be used from this toolbox" | tee -a host-spawn-info.md
-	for item in $(SPAWN)
-	do
-	buildah run $(WORKING_CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
-	printf " - %s\n" "$${item}" | tee -a host-spawn-info.md
-	done
-	cat << EOF | tee -a host-spawn-info.md
-	These executables are available on my Fedora silverblue host system, however
-	if these exexecutables are not available in your host system, adjust the SPAWN varialble
-	in the Makefile to include the executables you want to use.
-	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
-	EOF
-
-
-xxxx:
-	printf "%s\n" "Host-spawn (version: $${NAME}) " | tee -a $@
-	# close table
-	
 
 ##[[ EDITOR ]]##
-editing-tools: info/editing-tools.md
-info/editing-tools.md: neovim luajit luarocks nlua tiktoken
-	echo '##[ $@ ]##'
-	printf "\n$(HEADING2) %s\n\n" "Text Editing"
+coding-tools: info/coding-tools.md
+info/coding-tools.md: neovim luajit luarocks nlua tiktoken
+	# echo '##[ $@ ]##'
+	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
 	cat << EOF | tee -a $@
-	The Neovim text editor is available in the toolbox.
-	Luajit is the LuaJIT compiler, which is used by Neovim.
-	Luarocks is the package manager for Lua modules.
-	The nlua cli is a binding for Neovim luajit api.
+	Included in this toolbox are the latest releases of the Neovim text editor,
+	LuaJIT compiler, Luarocks package manager, nlua cli and tiktoken lua module.
+	The tooling for coding is build around the highly configurable and extensible Neovim text editor.
 	The tiktoken module is a Lua module for generating tiktok tokens used by LLM models.
 	EOF
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	cat info/neovim.md | tee -a $@
+	cat info/luajit.md | tee -a $@
+	cat info/luarocks.md | tee -a $@
+	cat info/nlua.info | tee -a $@
+	cat info/tiktoken.info | tee -a $@
+	$(call tr,"----","-------","----------------------------",$@)
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
@@ -292,14 +285,16 @@ info/tiktoken.info: latest/tiktoken.json
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
 
-beam: otp rebar3 elixir gleam nodejs
-	printf "\n$(HEADING2) %s\n\n" "BEAM lang tools" | tee $@
+runtime: otp rebar3 elixir gleam nodejs
+	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
+	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
+	The Erlang programming language is a general-purpose, concurrent, functional programming language
+	and **runtime** system. It is used to build massively scalable soft real-time systems with high availability.
 	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	Installed in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
-	Also installed are the latest versions of the Rebar3 and the Mix build tools.
-	This tooling is used to develop with the Gleam programming language so the
-	latest nodejs runtime is also installed, as Gleam can compile to javascript as well a Erlang.
+	The included Elixir and Gleam programming languages also run on the BEAM.
+	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
+	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
 
 latest/otp.json:
