@@ -45,7 +45,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools runtimes
+default: working cli-tools build-tools coding-tools runtimes
 
 # cli-tools host-spawn 
 # coding-tools  
@@ -104,7 +104,7 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-working: info/intro.md info/working.md
+working: info/intro.md info/in-the-box.md info/working.md
 
 info/intro.md:
 	mkdir -p $(dir $@)
@@ -114,11 +114,23 @@ info/intro.md:
 	Unfamiliar with Toolbox? Check out the 
 	[Toolbox documentation](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox/).
 	This toolbox is generated on [github actions](https://github.com/grantmacken/zie-toolbox/actions/)
-	weekly and is based on the latest Fedora Toolbox image. 
-	This is my current working toolbox that fit my current coding requirements. 
+	weekly. This is my current working toolbox that fit my current coding requirements. 
 	If it might not be your cup of tea, clone the repo and read and adjust the 
 	Makefile to suit your own whims.
 	EOF
+
+info/in-the-box.md:
+	mkdir -p $(dir $@)
+	printf "\n\$(HEADING1) %s\n\n" "In The Box" | tee  $@
+	cat << EOF | tee -a $@
+	The idea here is to have a **long running** personal development toolbox containing the tools I require.
+	The main tool categories are:
+	 - CLI tools
+	 - Build tool
+	 - Coding tools
+	 - BEAM and Nodejs Runtimes and associated languages
+	EOF
+
 
 info/working.md:
 	mkdir -p $(dir $@)
@@ -127,11 +139,11 @@ info/working.md:
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "Pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 
-cli-tools: info/cli.md 
+cli-tools: info/cli.md
 info/cli.md:
 	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal
+	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
 	for item in $(CLI)
 	do
 	buildah run $(WORKING_CONTAINER) dnf install \
@@ -142,7 +154,7 @@ info/cli.md:
 		-y \
 		$${item} &>/dev/null
 	done
-	printf "$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
