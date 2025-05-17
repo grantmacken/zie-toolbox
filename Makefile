@@ -340,11 +340,11 @@ latest/elixir.json:
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
 elixir: info/elixir.md
-info/elixir.md: latest/elixir.json
+info/elixir.md: latest/elixir.json latest/otp.json
 	#echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
-	MAJOR=$$(echo $${TAGNAME} | grep -oP 'OTP-\K\d+')
+	MAJOR=$$(jq -r '.tag_name' latest/otp.json | grep -oP 'OTP-\K\d+')
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
