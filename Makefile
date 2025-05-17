@@ -343,9 +343,10 @@ elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	#echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
-	MAJOR=$$(buildah run $(WORKING_CONTAINER) erl -noshell -eval 'erlang:display(erlang:system_info(otp_release)), halt().')
+	echo $${TAGNAME}
+	MAJOR=$$(echo $${TAGNAME} | grep -oP 'OTP-\K\d+')
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
-	#echo $${SRC}
+	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
