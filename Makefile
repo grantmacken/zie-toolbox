@@ -104,7 +104,22 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-working: info/working.md
+working: info/intro/md info/working.md
+
+info/intro.md:
+	mkdir -p $(dir $@)
+	printf "$(HEADING1) %s\n\n" "Zie Toolbox" | tee  $@
+	cat << EOF | tee -a $@
+	Toolbox is a tool that helps you create and manage development environments in containers.
+	Unfamiliar with Toolbox? Check out the 
+	[Toolbox documentation](https://docs.fedoraproject.org/en-US/fedora-silverblue/toolbox/).
+	This toolbox is generated on [github actions](https://github.com/grantmacken/zie-toolbox/actions/)
+	weekly and is based on the latest Fedora Toolbox image. 
+	This is my current working toolbox that fit my current coding requirements. 
+	If it might not be your cup of tea, clone the repo and read and adjust the 
+	Makefile to suit your own whims.
+	EOF
+
 info/working.md:
 	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
