@@ -104,7 +104,7 @@ help: ## show this help
 	sort |
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
-working: info/intro/md info/working.md
+working: info/intro.md info/working.md
 
 info/intro.md:
 	mkdir -p $(dir $@)
