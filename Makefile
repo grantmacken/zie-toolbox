@@ -123,26 +123,25 @@ info/intro.md:
 
 info/in-the-box.md:
 	mkdir -p $(dir $@)
-	printf "\n\$(HEADING1) %s\n\n" "In The Box" | tee  $@
+	printf "\n$(HEADING2) %s\n\n" "In The Box" | tee  $@
 	cat << EOF | tee -a $@
 	The idea here is to have a **long running** personal development toolbox containing the tools I require.
 	The main tool categories are:
-	 - CLI tools
-	 - Build tool
-	 - Coding tools
-	 - BEAM and Nodejs Runtimes and associated languages
 	EOF
-
+	printf "\n - CLI tools\n" | tee -a $@
+	printf "\n - Build tools\n" | tee -a $@
+	printf "\n - Coding tools\n" | tee -a $@
+	printf "\n - BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 
 info/working.md:
 	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
-	printf "Pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
+	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 
-cli-tools: info/cli.md
-info/cli.md:
+cli-tools: info/cli-tools.md
+info/cli-tools.md:
 	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
 	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
@@ -162,9 +161,7 @@ info/cli.md:
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
-	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
-	   tee -a $@
-	$(call tr,"----","-------","----------------------------",$@)
+	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md

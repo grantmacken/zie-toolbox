@@ -38,7 +38,8 @@ jobs:
             cat info/intro.md  > README.md
             cat info/working.md >> README.md
             cat info/in-the-box.md >> README.md
-            cat info/cli.md >> README.md
+            cat info/cli-tools.md >> README.md
+            cat info/build-tools.md >> README.md
             git commit README.md -m "Update README"
             git push origin HEAD:main
           env:
