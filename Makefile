@@ -209,7 +209,7 @@ info/host-spawn.md: latest/host-spawn.json
 	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
 	EOF
 
-coding-tools:
+coding-tools: info/coding-tools.md
 info/coding-tools.md: neovim luajit luarocks nlua tiktoken
 	# echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
