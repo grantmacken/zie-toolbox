@@ -36,16 +36,25 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-DEPS  := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
 BEAM  := otp rebar3 elixir gleam nodejs
-DEPS := gcc gcc-c++ glibc-devel ncurses-devel openssl-devel libevent-devel readline-devel gettext-devel luajit-devel
+DEPS := autoconf \
+		gcc \
+		gcc-c++ \
+		gettext-devel \
+		glibc-devel \
+		libevent-devel \
+		luajit-devel \
+		ncurses-devel \
+		openssl-devel \
+		readline-devel \
+		zlib-devel
 # cargo
 REMOVE := default-editor vim-minimal
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools 
+default: working cli-tools build-tools host-spawn coding-tools
 
 clear:
 	rm -f info/*.md
@@ -213,7 +222,7 @@ info/host-spawn.md: latest/host-spawn.json
 coding-tools: info/coding-tools.md
 info/coding-tools.md: neovim luajit  luarocks ##nlua tiktoken
 	echo '##[ $@ ]##'
-	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
+	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	cat << EOF | tee -a $@
 	The tooling for coding is built around the highly configurable and extensible Neovim text editor.
 	Included in this toolbox are the latest releases of the Neovim text editor,
@@ -268,9 +277,9 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	# check
-	which luarocks
-	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'luarocks | grep -oP "^Lua.+"')
+	# check: exit if fail
+	buildah run $(WORKING_CONTAINER) luarocks --version
+	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
