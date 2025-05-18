@@ -47,8 +47,6 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 default: working cli-tools build-tools host-spawn coding-tools 
 
-xxx: runtimes
-
 clear:
 	rm -f info/*.md
 	buildah rm --all
@@ -163,7 +161,7 @@ info/cli-tools.md:
 
 build-tools: info/build-tools.md
 info/build-tools.md:
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
 	buildah run $(WORKING_CONTAINER) dnf install \
@@ -186,21 +184,23 @@ info/build-tools.md:
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
 latest/host-spawn.json:
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
 
 info/host-spawn.md: latest/host-spawn.json
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
-	VER=$$(jq -r '.tag_name' $<)
+	SRC=$(shell $(call bdu,x86_64,$<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
+	# check
+	buildah run $(WORKING_CONTAINER) host-spawn --version
+	VER=$$(buildah run $(WORKING_CONTAINER) host-spawn --version)
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
-	cat << EOF | tee -a host-spawn-info.md
+	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
 	To use the host-spawn tool, either run the following command: `host-spawn <command>`
@@ -211,7 +211,7 @@ info/host-spawn.md: latest/host-spawn.json
 
 coding-tools: info/coding-tools.md
 info/coding-tools.md: neovim luajit luarocks nlua tiktoken
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Neovim text editor,
