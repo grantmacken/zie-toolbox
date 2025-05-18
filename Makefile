@@ -191,8 +191,8 @@ info/host-spawn.md: latest/host-spawn.json
 	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
 	EOF
 
-build-tools: info/deps.md
-info/deps.md:
+build-tools: info/build-tools.md
+info/build-tools.md:
 	# echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
@@ -212,7 +212,6 @@ info/deps.md:
 	paste  - - -  | sort -u ' | \
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
-	$(call tr,"----","-------","----------------------------",$@)
 
 
 ##[[ EDITOR ]]##
