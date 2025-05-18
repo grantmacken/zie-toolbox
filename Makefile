@@ -234,8 +234,8 @@ info/coding-tools.md: neovim luajit  luarocks ##nlua tiktoken
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
 	info/luarocks.md | tee -a $@
-	cat info/nlua.info | tee -a $@
-	# cat info/tiktoken.info | tee -a $@
+	cat info/nlua.md | tee -a $@
+	cat info/tiktoken.md | tee -a $@
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
@@ -287,8 +287,8 @@ info/luarocks.md: latest/luarocks.json
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
-nlua: info/nlua.info
-info/nlua.info:
+nlua: info/nlua.md
+info/nlua.md:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
@@ -309,8 +309,8 @@ latest/tiktoken.json:
 	mkdir -p $(dir $@)
 	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
 
-tiktoken: info/tiktoken.info
-info/tiktoken.info: latest/tiktoken.json
+tiktoken: info/tiktoken.md
+info/tiktoken.md: latest/tiktoken.json
 	# echo '##[ $@ ]##'
 	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
