@@ -45,7 +45,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools
+default: working cli-tools build-tools host-spawn 
 
 xxx: coding-tools runtimes
 
@@ -213,8 +213,6 @@ info/build-tools.md:
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
 
-
-##[[ EDITOR ]]##
 coding-tools: info/coding-tools.md
 info/coding-tools.md: neovim luajit luarocks nlua tiktoken
 	# echo '##[ $@ ]##'
