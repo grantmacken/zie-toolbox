@@ -354,9 +354,9 @@ info/otp.md: latest/otp.json
 	--without-megaco \
 	--without-observer \
 	--without-odbc \
-	--without-wx' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	--without-wx && make' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make instal'
+	which erl
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
 elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
@@ -367,15 +367,15 @@ latest/elixir.json:
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
 elixir: info/elixir.md
-info/elixir.md: latest/elixir.json latest/otp.json
+info/elixir.md: latest/elixir.json
 	#echo '##[ $@ ]##'
+	mkdir -p files/elixir/usr/local
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
 	MAJOR=$$(jq -r '.tag_name' latest/otp.json | grep -oP 'OTP-\K\d+')
 	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
-	mkdir -p files/elixir/usr/local
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+"')
