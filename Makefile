@@ -355,7 +355,7 @@ info/otp.md: latest/otp.json
 	--without-observer \
 	--without-odbc \
 	--without-wx && make' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make instal'
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make install'
 	which erl
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
@@ -373,7 +373,7 @@ info/elixir.md: latest/elixir.json
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
 	MAJOR=$$(jq -r '.tag_name' latest/otp.json | grep -oP 'OTP-\K\d+')
-	SRC=$(call elixir_download,$${TAGNAME},$${MAJOR})
+	SRC=$(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR})
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
