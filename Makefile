@@ -204,13 +204,13 @@ info/host-spawn.md: latest/host-spawn.json
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
 	To use the host-spawn tool, either run the following command: `host-spawn <command>`
-	Or just `host-spawm` with no argument and this will pop you into you host shell.
-	When doing this remember to pop back into the toolbox with `exit`.
-	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
+	Or just call host-spawm with no argument and this will pop you into you host shell.
+	When doing this remember to pop back into the toolbox with exit.
 	EOF
+	printf "\nCheckout the %s for more information.\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luajit luarocks nlua tiktoken
+info/coding-tools.md: neovim luajit ## luarocks nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
 	cat << EOF | tee -a $@
@@ -223,10 +223,9 @@ info/coding-tools.md: neovim luajit luarocks nlua tiktoken
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
-	cat info/luarocks.md | tee -a $@
-	cat info/nlua.info | tee -a $@
-	cat info/tiktoken.info | tee -a $@
-	$(call tr,"----","-------","----------------------------",$@)
+	# cat info/luarocks.md | tee -a $@
+	# cat info/nlua.info | tee -a $@
+	# cat info/tiktoken.info | tee -a $@
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
 
