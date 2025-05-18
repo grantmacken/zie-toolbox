@@ -200,7 +200,7 @@ info/host-spawn.md: latest/host-spawn.json
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
-	echo > $@
+	echo >> $@
 	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
