@@ -233,8 +233,8 @@ info/coding-tools.md: neovim luajit  luarocks ##nlua tiktoken
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
-	# cat info/luarocks.md | tee -a $@
-	# cat info/nlua.info | tee -a $@
+	info/luarocks.md | tee -a $@
+	cat info/nlua.info | tee -a $@
 	# cat info/tiktoken.info | tee -a $@
 
 NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
@@ -255,7 +255,9 @@ info/neovim.md:
 luajit: info/luajit.md
 info/luajit.md:
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
-	VERSION=$$(buildah run $(WORKING_CONTAINER) sh -c 'luajit -v' | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}'  )
+	# check: exit if fail
+	buildah run $(WORKING_CONTAINER) luajit -v
+	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
@@ -289,7 +291,7 @@ nlua: info/nlua.info
 info/nlua.info:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
-	LINE=$$(buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
+	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
 	echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
