@@ -233,7 +233,7 @@ info/coding-tools.md: neovim luajit  luarocks ##nlua tiktoken
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
-	info/luarocks.md | tee -a $@
+	cat info/luarocks.md | tee -a $@
 	cat info/nlua.md | tee -a $@
 	cat info/tiktoken.md | tee -a $@
 
