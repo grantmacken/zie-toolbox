@@ -45,9 +45,9 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn 
+default: working cli-tools build-tools host-spawn coding-tools 
 
-xxx: coding-tools runtimes
+xxx: runtimes
 
 # cli-tools host-spawn 
 # coding-tools  
@@ -163,33 +163,6 @@ info/cli-tools.md:
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
-## HOST-SPAWN
-host-spawn: info/host-spawn.md
-latest/host-spawn.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
-
-info/host-spawn.md: latest/host-spawn.json
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
-	VER=$$(jq -r '.tag_name' $<)
-	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
-	$(call tr,"----","-------","----------------------------",$@)
-	$(call tr,"Name","Version","Summary",$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	cat << EOF | tee -a host-spawn-info.md
-	The host-spawn tool is a wrapper around the toolbox command that allows you to run
-	commands on your host machine from inside the toolbox.
-	To use the host-spawn tool, either run the following command: `host-spawn <command>`
-	Or just `host-spawm` with no argument and this will pop you into you host shell.
-	When doing this remember to pop back into the toolbox with `exit`.
-	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
-	EOF
 
 build-tools: info/build-tools.md
 info/build-tools.md:
@@ -213,7 +186,33 @@ info/build-tools.md:
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
 
-coding-tools: info/coding-tools.md
+## HOST-SPAWN
+host-spawn: info/host-spawn.md
+latest/host-spawn.json:
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q https://api.github.com/repos/1player/host-spawn/releases/latest -O $@
+
+info/host-spawn.md: latest/host-spawn.json
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	$(eval hs_src := $(shell $(call bdu,x86_64,$<)))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $(hs_src) /usr/local/bin/host-spawn &>/dev/null
+	VER=$$(jq -r '.tag_name' $<)
+	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
+	cat << EOF | tee -a host-spawn-info.md
+	The host-spawn tool is a wrapper around the toolbox command that allows you to run
+	commands on your host machine from inside the toolbox.
+	To use the host-spawn tool, either run the following command: `host-spawn <command>`
+	Or just `host-spawm` with no argument and this will pop you into you host shell.
+	When doing this remember to pop back into the toolbox with `exit`.
+	Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more information.
+	EOF
+
+coding-tools:
 info/coding-tools.md: neovim luajit luarocks nlua tiktoken
 	# echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@

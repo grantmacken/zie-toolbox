@@ -41,6 +41,7 @@ jobs:
             cat info/cli-tools.md >> README.md
             cat info/build-tools.md >> README.md
             cat info/host-spawn.md >> README.md
+            cat info/coding-tools.md >> README.md
             git commit README.md -m "Update README"
             git push origin HEAD:main
           env:
