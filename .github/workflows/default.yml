@@ -36,7 +36,9 @@ jobs:
         - name: Build Readme and Commit Changes
           run: |
             cat info/intro.md  > README.md
-            cat info/working.md > README.md
+            cat info/working.md >> README.md
+            cat info/in-the-box.md >> README.md
+            cat info/cli.md >> README.md
             git commit README.md -m "Update README"
             git push origin HEAD:main
           env:
