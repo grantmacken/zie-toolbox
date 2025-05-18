@@ -211,13 +211,13 @@ info/host-spawn.md: latest/host-spawn.json
 	printf "\nCheckout the %s for more information.\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luajit ## luarocks nlua tiktoken
+info/coding-tools.md: neovim luajit  luarocks ##nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available fo coding in the toolbox" | tee $@
 	cat << EOF | tee -a $@
+	The tooling for coding is built around the highly configurable and extensible Neovim text editor.
 	Included in this toolbox are the latest releases of the Neovim text editor,
 	LuaJIT compiler, Luarocks package manager, nlua cli and tiktoken lua module.
-	The tooling for coding is build around the highly configurable and extensible Neovim text editor.
 	The tiktoken module is a Lua module for generating tiktok tokens used by LLM models.
 	EOF
 	$(call tr,"Name","Version","Summary",$@)
