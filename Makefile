@@ -200,6 +200,7 @@ info/host-spawn.md: latest/host-spawn.json
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
+	echo > $@
 	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
@@ -237,6 +238,8 @@ info/neovim.md:
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
 	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
+	# check: exit if fail
+	buildah run $(WORKING_CONTAINER) nvim --version
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
 	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
 
