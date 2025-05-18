@@ -49,9 +49,6 @@ default: working cli-tools build-tools host-spawn coding-tools
 
 xxx: runtimes
 
-# cli-tools host-spawn 
-# coding-tools  
-
 clear:
 	rm -f info/*.md
 	buildah rm --all
@@ -235,6 +232,7 @@ NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-li
 
 neovim: info/neovim.md
 info/neovim.md:
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
@@ -258,7 +256,7 @@ latest/luarocks.json:
 
 luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
@@ -268,6 +266,8 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	# check
+	which luarocks
 	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'luarocks | grep -oP "^Lua.+"')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
@@ -276,7 +276,7 @@ info/luarocks.md: latest/luarocks.json
 
 nlua: info/nlua.info
 info/nlua.info:
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) bash -c 'luarocks show nlua | grep -oP "^nlua.+"')
 	echo "$${LINE}"
