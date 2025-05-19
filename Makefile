@@ -59,8 +59,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools 
-
+default: working build-tools runtimes
 # cli-tools build-tools host-spawn coding-tools runtimes
 
 clear:
@@ -340,8 +339,10 @@ info/tiktoken.md: latest/tiktoken.json
 	# nlua -e 'print(package.)'
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
-
-runtimes: otp rebar3 elixir gleam nodejs
+# rebar3 elixir gleam nodejs
+##[[ RUNTIMES ]]##
+runtimes: info/runtimes.md
+info/runtimes.md: otp 
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -365,26 +366,35 @@ info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
+	echo $${SRC}
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
+	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
-	--prefix=/usr/local \
-	--without-asn1 \
-	--without-cdv \
-	--without-snmp \
-	--without-cosEvent \
-	--without-debugger \
-	--without-dialyzer \
-	--without-et \
-	--without-hipe \
-	--without-javac \
-	--without-megaco \
-	--without-observer \
-	--without-odbc \
-	--without-wx && make' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make install'
+	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
+	buildah run $(WORKING_CONTAINER) sh -c './configure \
+		--prefix=/usr/local \
+		--enable-threads \
+		--enable-shared-zlib \
+		--enable-ssl=dynamic-ssl-lib \
+		--enable-jit \
+		--without-asn1 \
+		--without-cdv \
+		--without-snmp \
+		--without-cosEvent \
+		--without-debugger \
+		--without-dialyzer \
+		--without-et \
+		--without-hipe \
+		--without-javac \
+		--without-megaco \
+		--without-observer \
+		--without-odbc \
+		--without-wx'
+
+xaaaaxxx:
+	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
