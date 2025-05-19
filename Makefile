@@ -54,7 +54,9 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools runtimes
+default: working 
+
+# cli-tools build-tools host-spawn coding-tools runtimes
 
 clear:
 	rm -f info/*.md
@@ -137,12 +139,23 @@ info/in-the-box.md:
 	printf "\n - Coding tools\n" | tee -a $@
 	printf "\n - BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 
+info/readme.md:
+	mkdir -p $(dir $@)
+	printf "\n$(HEADING2) %s\n\n" "README.md" | tee  $@
+	cat << EOF | tee -a $@
+	To get started with the toolbox, run the following command:
+	\`\`\`bash
+	toolbox enter
+	\`\`\`
+	EOF
+
 info/working.md:
 	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
+	buildah run $(WORKING_CONTAINER) printenv 
 
 cli-tools: info/cli-tools.md
 info/cli-tools.md:
@@ -166,7 +179,6 @@ info/cli-tools.md:
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
-
 
 build-tools: info/build-tools.md
 info/build-tools.md:
@@ -292,7 +304,7 @@ info/nlua.md:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
-	echo "$${LINE}"
+	# echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
@@ -333,7 +345,7 @@ runtimes: otp rebar3 elixir gleam nodejs
 	EOF
 
 latest/otp.json:
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
 	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
@@ -341,7 +353,7 @@ latest/otp.json:
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
@@ -364,7 +376,8 @@ info/otp.md: latest/otp.json
 	--without-odbc \
 	--without-wx && make' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make install'
-	which erl
+	echo -n 'checking otp version...'
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
 elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
