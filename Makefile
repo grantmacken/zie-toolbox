@@ -368,7 +368,7 @@ info/otp.md: latest/otp.json
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	echo $${SRC}
-	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
+	# VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
@@ -397,6 +397,8 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) make install
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	VER=$$(buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell)
+	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
 xaaaaxxx:
 	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
