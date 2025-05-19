@@ -35,7 +35,7 @@ CLI_CONTAINER_NAME=tbx-cli-tools
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
-CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
+CLI   := bat direnv eza fd-find fzf gh jq ripgrep stow wl-clipboard yq zoxide
 BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := autoconf \
 		automake \
@@ -46,6 +46,7 @@ DEPS := autoconf \
 		glibc-devel \
 		libevent-devel \
 		luajit-devel \
+		make \
 		ncurses-devel \
 		openssl-devel \
 		perl-devel \
