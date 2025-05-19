@@ -423,7 +423,7 @@ info/elixir.md: latest/elixir.json
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
-	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir &>/dev/null
 	echo -n 'checking elixir version...'
 	buildah run $(WORKING_CONTAINER) elixir --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
