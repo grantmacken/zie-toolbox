@@ -161,7 +161,7 @@ info/working.md:
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 	buildah config \
 		--env LANG="C.UTF-8" \
-	    --env CPPFLAGS="-D_BSD_SOURCE" \
+	    --env CPPFLAGS="-D_DEFAULT_SOURCE" \
 		--workingdir /tmp $(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
@@ -354,6 +354,9 @@ info/runtimes.md: otp
 	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
 	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	cat info/otp.md | tee -a $@
 
 latest/otp.json:
 	echo '##[ $@ ]##'
@@ -368,7 +371,7 @@ info/otp.md: latest/otp.json
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	echo $${SRC}
-	# VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
+	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
@@ -392,16 +395,9 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-observer \
 		--without-odbc \
-		--without-wx'
-	buildah run $(WORKING_CONTAINER) make
-	buildah run $(WORKING_CONTAINER) make install
-	echo -n 'checking otp version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	VER=$$(buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell)
-	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
-
-xaaaaxxx:
-	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
+		--without-wx' &>/dev/null
+	buildah run $(WORKING_CONTAINER) make -j$(shell nproc) &>/dev/null
+	buildah run $(WORKING_CONTAINER) make install &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
@@ -419,6 +415,7 @@ info/elixir.md: latest/elixir.json
 	mkdir -p files/elixir/usr/local
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	MAJOR=$$(jq -r '.tag_name' latest/otp.json | grep -oP 'OTP-\K\d+')
 	SRC=$(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR})
 	echo $${SRC}
