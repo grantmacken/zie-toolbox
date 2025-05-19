@@ -165,6 +165,7 @@ info/working.md:
 		--workingdir /tmp $(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
+	buildah run $(WORKING_CONTAINER) nproc
 
 cli-tools: info/cli-tools.md
 info/cli-tools.md:
@@ -357,6 +358,8 @@ info/runtimes.md: otp
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/otp.md | tee -a $@
+	cat info/elixir.md | tee -a $@
+'
 
 latest/otp.json:
 	echo '##[ $@ ]##'
@@ -400,7 +403,7 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) make install &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	$(call tr ,OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
+	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
 elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
 
@@ -411,7 +414,7 @@ latest/elixir.json:
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
-	#echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p files/elixir/usr/local
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
@@ -422,10 +425,12 @@ info/elixir.md: latest/elixir.json
 	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
 	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
 	buildah add $(WORKING_CONTAINER) files/elixir &>/dev/null
-	LINE=$$(buildah run $(WORKING_CONTAINER) sh -c 'elixir --version | grep -oP "^Elixir.+"')
+	echo -n 'checking elixir version...'
+	buildah run $(WORKING_CONTAINER) elixir --version
+	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
 	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
-	VER=$$(buildah run $(WORKING_CONTAINER) mix -v | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
 
 latest/rebar3.json:
