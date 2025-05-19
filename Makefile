@@ -155,8 +155,8 @@ info/working.md:
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
-	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
-	buildah config --workingdir /tmp
+	buildah config --env LANG="C.UTF-8" CPPFLAGS="-D_BSD_SOURCE" $(WORKING_CONTAINER)
+	buildah config --workingdir /tmp $(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) printenv
 
 
