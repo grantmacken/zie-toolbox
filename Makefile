@@ -163,7 +163,8 @@ info/working.md:
 		--env LANG="C.UTF-8" \
 	    --env CPPFLAGS="-D_BSD_SOURCE" \
 		--workingdir /tmp $(WORKING_CONTAINER)
-	buildah run $(WORKING_CONTAINER) pwd && printenv
+	buildah run $(WORKING_CONTAINER) pwd
+	buildah run $(WORKING_CONTAINER) printenv
 
 cli-tools: info/cli-tools.md
 info/cli-tools.md:
