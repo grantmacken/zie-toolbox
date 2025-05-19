@@ -372,7 +372,7 @@ info/otp.md: latest/otp.json
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
+	# buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
 	buildah run $(WORKING_CONTAINER) sh -c './configure \
 		--prefix=/usr/local \
 		--enable-threads \
@@ -392,6 +392,10 @@ info/otp.md: latest/otp.json
 		--without-observer \
 		--without-odbc \
 		--without-wx'
+	buildah run $(WORKING_CONTAINER) make
+	buildah run $(WORKING_CONTAINER) make install
+	echo -n 'checking otp version...'
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 
 xaaaaxxx:
 	buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
