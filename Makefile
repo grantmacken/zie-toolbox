@@ -38,6 +38,8 @@ TBX_CONTAINER_NAME=zie-toolbox
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := autoconf \
+		automake \
+		binutils \
 		gcc \
 		gcc-c++ \
 		gettext-devel \
@@ -46,6 +48,8 @@ DEPS := autoconf \
 		luajit-devel \
 		ncurses-devel \
 		openssl-devel \
+		perl-devel \
+		pkgconf \
 		readline-devel \
 		zlib-devel
 # cargo
@@ -54,7 +58,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working 
+default: working
 
 # cli-tools build-tools host-spawn coding-tools runtimes
 
