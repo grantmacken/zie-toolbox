@@ -344,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 # rebar3 elixir gleam nodejs
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: otp rebar3 gleam
+info/runtimes.md: otp rebar3 elixir gleam
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -373,7 +373,6 @@ info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
-	echo $${SRC}
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
@@ -405,8 +404,6 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
-elixir_download = $(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$(1)/elixir-otp-$(2))
-
 latest/elixir.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -415,16 +412,14 @@ latest/elixir.json:
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
-	mkdir -p files/elixir/usr/local
 	TAGNAME=$$(jq -r '.tag_name' $<)
-	echo $${TAGNAME}
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	MAJOR=$$(jq -r '.tag_name' latest/otp.json | grep -oP 'OTP-\K\d+')
-	SRC=$(addsuffix .zip,https://github.com/elixir-lang/elixir/releases/download/$${TAGNAME}/elixir-otp-$${MAJOR})
+	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	echo $${SRC}
-	wget -q --timeout=10 --tries=3 $${SRC} -O elixir.zip
-	unzip elixir.zip -d files/elixir/usr/local &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir &>/dev/null
+	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
+	tar xz --strip-components=1 -C files/elixir &>/dev/null
+	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
+	buildah run $(WORKING_CONTAINER) make
 	echo -n 'checking elixir version...'
 	buildah run $(WORKING_CONTAINER) elixir --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
