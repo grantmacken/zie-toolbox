@@ -465,8 +465,9 @@ info/gleam.md: latest/gleam.json
 	TARGET=files/gleam/usr/local/bin
 	mkdir -p $${TARGET}
 	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET} &>/dev/null
+	ls -al $${TARGET}
 	buildah add --chmod 755 $(CONTAINER) files/gleam &>/dev/null
-	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
