@@ -344,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 # rebar3 elixir gleam nodejs
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: otp elixir
+info/runtimes.md: otp rebar3 gleam
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -358,7 +358,8 @@ info/runtimes.md: otp elixir
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/otp.md | tee -a $@
-	cat info/elixir.md | tee -a $@
+	cat info/rebar3.md | tee -a $@
+	cat info/gleam.md | tee -a $@
 
 latest/otp.json:
 	echo '##[ $@ ]##'
@@ -435,7 +436,7 @@ info/elixir.md: latest/elixir.json
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/erlang/rebar3/releases/latest > $@
+	wget -q  https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
 
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
