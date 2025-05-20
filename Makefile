@@ -344,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 # rebar3 elixir gleam nodejs
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: gleam
+info/runtimes.md: otp rebar3 elixir gleam nodejs
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -355,10 +355,6 @@ info/runtimes.md: gleam
 	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
 	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
-
-#otp rebar3 elixir gleam nodejs
-
-ssss:
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/otp.md | tee -a $@
@@ -384,7 +380,6 @@ info/otp.md: latest/otp.json
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	# buildah run $(WORKING_CONTAINER) sh -c './otp_build autoconf'
 	buildah run $(WORKING_CONTAINER) sh -c './configure \
 		--prefix=/usr/local \
 		--enable-threads \
@@ -392,7 +387,7 @@ info/otp.md: latest/otp.json
 		--enable-ssl=dynamic-ssl-lib \
 		--enable-jit \
 		--enable-kernel-poll \
-			--without-debugger \
+		--without-debugger \
 		--without-observer \
 		--without-wx \
 		--without-et \
@@ -461,7 +456,6 @@ files/gleam.tar: latest/gleam.json
 	mkdir -p $(dir $@)
 	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
 	SRC=$$(jq -r '.browser_download_url' $<)
-	echo $${SRC}
 	wget $${SRC} -q -O- | gzip -d > $@
 
 info/gleam.md: files/gleam.tar
@@ -469,18 +463,6 @@ info/gleam.md: files/gleam.tar
 	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /usr/local/bin/gleam && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
-	echo -n 'checking gleam version...'
-	buildah run $(WORKING_CONTAINER) gleam --version
-
-	
-	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
-	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/gleam
-	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/gleam
-
-xxxx:
-	ls -al $${TARGET}
-	buildah add --chmod 755 $(CONTAINER) files/gleam &>/dev/null
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
