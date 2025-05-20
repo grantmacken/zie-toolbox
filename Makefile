@@ -458,13 +458,12 @@ latest/gleam.json:
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
-	mkdir -p files/gleam/usr/local/bin
-	TARGET=files/$${NAME}/usr/local/bin
+	TARGET=files/gleam/usr/local/bin
 	mkdir -p $${TARGET}
 	SRC=$$(jq -r '.browser_download_url' $<)
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
+	tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET} &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking gleam version...'
