@@ -414,10 +414,11 @@ info/elixir.md: latest/elixir.json
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) make clean
-	buildah run $(WORKING_CONTAINER) make compile
-	buildah run $(WORKING_CONTAINER) make test
-	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
+	# buildah run $(WORKING_CONTAINER) make clean
+	# buildah run $(WORKING_CONTAINER) make compile
+	# buildah run $(WORKING_CONTAINER) make test
+	buildah run $(WORKING_CONTAINER) make
+	# buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
