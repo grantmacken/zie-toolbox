@@ -344,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 # rebar3 elixir gleam nodejs
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: otp rebar3 elixir gleam nodejs
+info/runtimes.md: gleam
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -355,6 +355,10 @@ info/runtimes.md: otp rebar3 elixir gleam nodejs
 	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
 	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
 	EOF
+
+#otp rebar3 elixir gleam nodejs
+
+ssss:
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/otp.md | tee -a $@
@@ -455,11 +459,14 @@ gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
 	mkdir -p files/gleam/usr/local/bin
+	TARGET=files/$${NAME}/usr/local/bin
+	mkdir -p $${TARGET}
 	SRC=$$(jq -r '.browser_download_url' $<)
 	echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
