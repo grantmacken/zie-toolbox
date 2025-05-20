@@ -451,6 +451,7 @@ info/rebar3.md: latest/rebar3.json
 
 ##[[ GLEAM ]]##
 latest/gleam.json:
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
 	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
@@ -458,14 +459,14 @@ latest/gleam.json:
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
-	TARGET=files/gleam/usr/local/bin
-	mkdir -p $${TARGET}
+	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
 	SRC=$$(jq -r '.browser_download_url' $<)
 	echo $${SRC}
-	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET} &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	TARGET=files/gleam/usr/local/bin
+	mkdir -p $${TARGET}
+	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET} &>/dev/null
+	buildah add --chmod 755 $(CONTAINER) files/gleam &>/dev/null
+	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
