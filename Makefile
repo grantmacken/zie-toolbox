@@ -385,7 +385,6 @@ info/otp.md: latest/otp.json
 		--enable-shared-zlib \
 		--enable-ssl=dynamic-ssl-lib \
 		--enable-jit \
-		--without-asn1 \
 		--without-cdv \
 		--without-snmp \
 		--without-cosEvent \
@@ -423,7 +422,7 @@ info/elixir.md: latest/elixir.json
 	buildah run $(WORKING_CONTAINER) make install
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
-	buildah run $(WORKING_CONTAINER) eerl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
 	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
