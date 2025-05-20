@@ -385,24 +385,20 @@ info/otp.md: latest/otp.json
 		--enable-shared-zlib \
 		--enable-ssl=dynamic-ssl-lib \
 		--enable-jit \
-		--without-cdv \
-		--without-snmp \
-		--without-cosEvent \
-		--without-debugger \
-		--without-dialyzer \
-		--without-et \
-		--without-hipe \
-		--without-javac \
-		--without-megaco \
+		--enable-kernel-poll \
+			--without-debugger \
 		--without-observer \
-		--without-odbc \
-		--without-wx' &>/dev/null
+		--without-wx \
+		--without-et \
+		--without-megaco \
+		--without-cosEvent \
+		--without-odbc' &>/dev/null
 	buildah run $(WORKING_CONTAINER) make -j$(shell nproc) &>/dev/null
 	buildah run $(WORKING_CONTAINER) make install &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
-
+# --without-javac
 latest/elixir.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -418,8 +414,10 @@ info/elixir.md: latest/elixir.json
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) make
-	buildah run $(WORKING_CONTAINER) make install
+	buildah run $(WORKING_CONTAINER) make clean
+	buildah run $(WORKING_CONTAINER) make compile
+	buildah run $(WORKING_CONTAINER) make test
+	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
