@@ -412,13 +412,13 @@ info/elixir.md: latest/elixir.json
 	echo $${SRC}
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp/*'
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
 	# buildah run $(WORKING_CONTAINER) make clean
 	# buildah run $(WORKING_CONTAINER) make compile
 	# buildah run $(WORKING_CONTAINER) make test
 	buildah run $(WORKING_CONTAINER) make
-	# buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
+	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
@@ -428,6 +428,7 @@ info/elixir.md: latest/elixir.json
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp/*'
 
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
