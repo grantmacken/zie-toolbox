@@ -418,7 +418,7 @@ info/elixir.md: latest/elixir.json
 	echo $${SRC}
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp/*'
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
 	# buildah run $(WORKING_CONTAINER) make clean
 	# buildah run $(WORKING_CONTAINER) make compile
@@ -457,14 +457,27 @@ latest/gleam.json:
 	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
 
 gleam: info/gleam.md
-info/gleam.md: latest/gleam.json
+files/gleam.tar: latest/gleam.json
 	mkdir -p $(dir $@)
 	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
 	SRC=$$(jq -r '.browser_download_url' $<)
 	echo $${SRC}
-	TARGET=files/gleam/usr/local/bin
-	mkdir -p $${TARGET}
-	wget $${SRC} -q -O- | tar xz --strip-components=1 --one-top-level="gleam" -C $${TARGET} &>/dev/null
+	wget $${SRC} -q -O- | gzip -d > $@
+
+info/gleam.md: files/gleam.tar
+	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /usr/local/bin/gleam && mkdir -p /tmp'
+	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
+	echo -n 'checking gleam version...'
+	buildah run $(WORKING_CONTAINER) gleam --version
+
+	
+	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/gleam
+	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/gleam
+
+xxxx:
 	ls -al $${TARGET}
 	buildah add --chmod 755 $(CONTAINER) files/gleam &>/dev/null
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
