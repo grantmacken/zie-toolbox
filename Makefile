@@ -344,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 # rebar3 elixir gleam nodejs
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: otp rebar3 elixir gleam
+info/runtimes.md: otp rebar3 elixir gleam nodejs
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -359,7 +359,9 @@ info/runtimes.md: otp rebar3 elixir gleam
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/otp.md | tee -a $@
 	cat info/rebar3.md | tee -a $@
+	cat info/elixir.md | tee -a $@
 	cat info/gleam.md | tee -a $@
+	cat info/nodejs.md | tee -a $@
 
 latest/otp.json:
 	echo '##[ $@ ]##'
@@ -417,11 +419,11 @@ info/elixir.md: latest/elixir.json
 	# buildah run $(WORKING_CONTAINER) make clean
 	# buildah run $(WORKING_CONTAINER) make compile
 	# buildah run $(WORKING_CONTAINER) make test
-	buildah run $(WORKING_CONTAINER) make
-	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	buildah run $(WORKING_CONTAINER) make &>/dev/null
+	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local &>/dev/null
+	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
 	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
@@ -452,13 +454,14 @@ latest/gleam.json:
 gleam: info/gleam.md
 info/gleam.md: latest/gleam.json
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) rm -f files/gleam/usr/local/bin/gleam
 	mkdir -p files/gleam/usr/local/bin
 	SRC=$$(jq -r '.browser_download_url' $<)
 	# echo $${SRC}
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin
-	buildah add $(WORKING_CONTAINER) files/gleam &>/dev/null
+	tar xz --strip-components=1 --one-top-level="gleam" -C files/gleam/usr/local/bin/gleam
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/gleam &>/dev/null
+	echo -n 'checking gleam version...'
+	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
