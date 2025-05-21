@@ -146,16 +146,6 @@ info/in-the-box.md:
 	printf "\n - Coding tools\n" | tee -a $@
 	printf "\n - BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 
-info/readme.md:
-	mkdir -p $(dir $@)
-	printf "\n$(HEADING2) %s\n\n" "README.md" | tee  $@
-	cat << EOF | tee -a $@
-	To get started with the toolbox, run the following command:
-	\`\`\`bash
-	toolbox enter
-	\`\`\`
-	EOF
-
 info/working.md:
 	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
@@ -238,11 +228,11 @@ info/host-spawn.md: latest/host-spawn.json
 	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
-	To use the host-spawn tool, either run the following command: `host-spawn <command>`
+	To use the host-spawn tool, either run the following command: host-spawn <command>
 	Or just call host-spawm with no argument and this will pop you into you host shell.
 	When doing this remember to pop back into the toolbox with exit.
 	EOF
-	printf "\nCheckout the %s for more information.\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
+	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
 info/coding-tools.md: neovim luajit  luarocks nlua tiktoken
