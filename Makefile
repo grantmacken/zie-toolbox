@@ -59,8 +59,13 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools runtimes
-# cli-tools build-tools host-spawn coding-tools runtimes
+default: working cli-tools build-tools host-spawn coding-tools runtimes clean
+
+clean:
+	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
+	buildah run $(WORKING_CONTAINER) dnf autoremove -y
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp
+	buildah run $(WORKING_CONTAINER) mkdir /tmp
 
 clear:
 	rm -f info/*.md
@@ -105,9 +110,7 @@ ifdef GITHUB_ACTIONS
 	buildah push $(TBX_IMAGE)-dx:latest
 endif
 
-clean:
-	buildah run $(WORKING_CONTAINER) dnf autoremove -y
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+
 
 .PHONY: help
 help: ## show this help
@@ -224,7 +227,7 @@ info/host-spawn.md: latest/host-spawn.json
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,x86_64,$<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
-	# check
+	echo -n 'checking host-spawn version...'
 	buildah run $(WORKING_CONTAINER) host-spawn --version
 	VER=$$(buildah run $(WORKING_CONTAINER) host-spawn --version)
 	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
@@ -269,7 +272,7 @@ info/neovim.md:
 	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
 	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
-	# check: exit if fail
+	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
 	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
@@ -277,7 +280,7 @@ info/neovim.md:
 luajit: info/luajit.md
 info/luajit.md:
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
-	# check: exit if fail
+	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
 	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
@@ -301,7 +304,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	# check: exit if fail
+	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
@@ -318,8 +321,8 @@ info/nlua.md:
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
-	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
 	$(call tr,nlua,$${VER},$${SUM},$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
@@ -341,7 +344,7 @@ info/tiktoken.md: latest/tiktoken.json
 	# nlua -e 'print(package.)'
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
-# rebar3 elixir gleam nodejs
+
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
 info/runtimes.md: otp rebar3 elixir gleam nodejs
@@ -357,10 +360,10 @@ info/runtimes.md: otp rebar3 elixir gleam nodejs
 	EOF
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
-	cat info/otp.md | tee -a $@
+	cat info/otp.md    | tee -a $@
 	cat info/rebar3.md | tee -a $@
 	cat info/elixir.md | tee -a $@
-	cat info/gleam.md | tee -a $@
+	cat info/gleam.md  | tee -a $@
 	cat info/nodejs.md | tee -a $@
 
 latest/otp.json:
@@ -462,7 +465,6 @@ info/gleam.md: files/gleam.tar
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /usr/local/bin/gleam && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin/
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
 	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
