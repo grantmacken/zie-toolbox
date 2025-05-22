@@ -61,7 +61,7 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 
 default: working build-tools otp
 
-cli-tools host-spawn coding-tools runtimes clean
+#cli-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
