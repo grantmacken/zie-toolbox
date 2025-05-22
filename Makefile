@@ -37,7 +37,7 @@ CLI_CONTAINER_NAME=tbx-cli-tools
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
-CLI   := bat direnv eza fd-find fzf gh jq ripgrep stow wl-clipboard yq zoxide
+CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := autoconf \
 		automake \
@@ -48,7 +48,6 @@ DEPS := autoconf \
 		glibc-devel \
 		libevent-devel \
 		luajit-devel \
-		make \
 		ncurses-devel \
 		openssl-devel \
 		perl-devel \
@@ -61,9 +60,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools runtimes
-
-#cli-tools host-spawn coding-tools runtimes clean
+default: working cli-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
@@ -397,7 +394,7 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc'
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(nproc) && make -j$(nproc) install'
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(nproc) && make -j$(nproc) install' &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
