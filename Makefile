@@ -61,7 +61,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools otp
+default: working build-tools runtimes
 
 #cli-tools host-spawn coding-tools runtimes clean
 
@@ -397,7 +397,7 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc'
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install'
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(nproc) && make -j$(nproc) install'
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
@@ -416,12 +416,8 @@ info/elixir.md: latest/elixir.json
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	# buildah run $(WORKING_CONTAINER) make clean
-	# buildah run $(WORKING_CONTAINER) make compile
-	# buildah run $(WORKING_CONTAINER) make test
-	buildah run $(WORKING_CONTAINER) cd /tmp; make &>/dev/null
-	buildah run $(WORKING_CONTAINER) cd /tmp; make install PREFIX=/usr/local &>/dev/null
-	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp && cd /tmp && \
+		make -j$(nproc) && make -j$(nproc) install' &>/dev/null
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
@@ -430,8 +426,6 @@ info/elixir.md: latest/elixir.json
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
-	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
-	buildah config --workingdir / $(WORKING_CONTAINER)
 
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
