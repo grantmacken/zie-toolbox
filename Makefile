@@ -306,7 +306,7 @@ info/nlua.md:
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
 	# echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
-	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"- " -f3)
+	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
