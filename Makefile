@@ -63,8 +63,7 @@ default: working cli-tools host-spawn build-tools coding-tools runtimes clean
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp
-	buildah run $(WORKING_CONTAINER) mkdir /tmp
+	buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
 
 clear:
 	rm -f info/*.md
@@ -241,7 +240,7 @@ neovim: info/neovim.md
 latest/neovim.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q 'https://api.github.com/repos/neovim/neovim/releases/latest' -O  $@
+	wget -q --timeout=10 --tries=3 'https://api.github.com/repos/neovim/neovim/releases/latest' -O  $@
 
 info/neovim.md: latest/neovim.json
 	echo '##[ $@ ]##'
@@ -400,8 +399,6 @@ latest/elixir.json:
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
-	buildah config --workingdir /tmp $(WORKING_CONTAINER)
-	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	echo $${SRC}
@@ -411,8 +408,8 @@ info/elixir.md: latest/elixir.json
 	# buildah run $(WORKING_CONTAINER) make clean
 	# buildah run $(WORKING_CONTAINER) make compile
 	# buildah run $(WORKING_CONTAINER) make test
-	buildah run $(WORKING_CONTAINER) make &>/dev/null
-	buildah run $(WORKING_CONTAINER) make install PREFIX=/usr/local &>/dev/null
+	buildah run $(WORKING_CONTAINER) cd /tmp; make &>/dev/null
+	buildah run $(WORKING_CONTAINER) cd /tmp; make install PREFIX=/usr/local &>/dev/null
 	# buildah run $(WORKING_CONTAINER) ls -al /usr/local/bin
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
