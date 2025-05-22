@@ -364,16 +364,13 @@ latest/otp.json:
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
-	buildah config --workingdir /tmp $(WORKING_CONTAINER)
-	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
-	buildah run $(WORKING_CONTAINER) rm -Rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c './configure \
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp; ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -387,8 +384,8 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc' &>/dev/null
-	buildah run $(WORKING_CONTAINER) make -j$(shell nproc) &>/dev/null
-	buildah run $(WORKING_CONTAINER) make install &>/dev/null
+	buildah run $(WORKING_CONTAINER) cd /tmp; make -j$(shell nproc) &>/dev/null
+	buildah run $(WORKING_CONTAINER) cd /tmp; make install &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
