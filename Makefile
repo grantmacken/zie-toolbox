@@ -306,7 +306,7 @@ info/nlua.md:
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
 	# echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
-	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
+	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"- " -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
 	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
@@ -353,11 +353,19 @@ info/runtimes.md: otp rebar3 elixir gleam nodejs
 	cat info/gleam.md  | tee -a $@
 	cat info/nodejs.md | tee -a $@
 
-latest/otp.json:
+
+latest/erlang.downloads:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	VER=$$(wget -q https://www.erlang.org/downloads -O- | grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+')
-	wget -q -O - https://api.github.com/repos/erlang/otp/releases |
+	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O $@ 
+
+
+latest/otp.json: latest/erlang.downloads
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
+	echo $${VER}
+	wget  -q --timeout=10 --tries=3  https://api.github.com/repos/erlang/otp/releases -O- |
 	jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
 
 otp: info/otp.md
