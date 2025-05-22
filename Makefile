@@ -236,15 +236,9 @@ info/host-spawn.md: latest/host-spawn.json
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luajit  luarocks nlua tiktoken
+info/coding-tools.md: neovim luajit luarocks nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
-	cat << EOF | tee -a $@
-	The tooling for coding is built around the highly configurable and extensible Neovim text editor.
-	Included in this toolbox are the latest releases of the Neovim text editor,
-	LuaJIT compiler, Luarocks package manager, nlua cli and tiktoken lua module.
-	The tiktoken module is a Lua module for generating tiktok tokens used by LLM models.
-	EOF
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
@@ -263,11 +257,12 @@ latest/neovim.json:
 info/neovim.md: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	mkdir -p files/neovim/usr/local
 	SRC=$(shell $(call bdu,linux-x86_64.tar.gz,$<))
+	echo $${SRC}
+	VER=$$(jq -r '.tag_name' $<)
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
+	tar xz --strip-components=1 -C files/neovim &>/dev/null
+	buildah add --chmod 755 --contextdir /usr/local $(WORKING_CONTAINER) files/neovim &>/dev/null
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
 	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
