@@ -59,8 +59,9 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools runtimes clean
+default: working cli-tools neovim
 
+## build-tools coding-tools runtimes clean host-spawn 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y
@@ -252,14 +253,19 @@ info/coding-tools.md: neovim luajit  luarocks nlua tiktoken
 	cat info/nlua.md | tee -a $@
 	cat info/tiktoken.md | tee -a $@
 
-NEOVIM_SRC := https://github.com/neovim/neovim/releases/download/nightly/nvim-linux-x86_64.tar.gz
-
+##[[ NEOVIM ]]##
 neovim: info/neovim.md
-info/neovim.md:
+latest/neovim.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q 'https://api.github.com/repos/neovim/neovim/releases/latest' -O  $@
+
+info/neovim.md: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/neovim/usr/local
-	wget -q --timeout=10 --tries=3 $(NEOVIM_SRC) -O- |
+	SRC=$(shell $(call bdu,linux-x86_64.tar.gz,$<))
+	wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/neovim/usr/local &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	echo -n 'checking neovim version...'
