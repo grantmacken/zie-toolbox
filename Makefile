@@ -59,7 +59,10 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools host-spawn build-tools coding-tools runtimes clean
+default: working build-tools otp
+
+cli-tools host-spawn coding-tools runtimes clean
+
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y
@@ -353,31 +356,32 @@ info/runtimes.md: otp rebar3 elixir gleam nodejs
 	cat info/gleam.md  | tee -a $@
 	cat info/nodejs.md | tee -a $@
 
-
 latest/erlang.downloads:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O $@ 
+	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O |
+	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
+	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
 
-
-latest/otp.json: latest/erlang.downloads
+latest/otp.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
-	echo $${VER}
-	wget  -q --timeout=10 --tries=3  https://api.github.com/repos/erlang/otp/releases -O- |
-	jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
+	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
+
+# jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	SRC=$(shell $(call bdu,otp_src,$<))
-	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
+	TAGNAME=$$(jq -r '.tag_name' $<)
+	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
+	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
+	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp; ./configure \
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp; ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -396,9 +400,9 @@ info/otp.md: latest/otp.json
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
-	buildah config --workingdir / $(WORKING_CONTAINER)
 
-# --without-javac
+# --without-javac/eval
+#  :
 latest/elixir.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -433,7 +437,7 @@ info/elixir.md: latest/elixir.json
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q  https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
+	wget --timeout=10 --tries=3 https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
 
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
@@ -447,7 +451,7 @@ info/rebar3.md: latest/rebar3.json
 latest/gleam.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget -q https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
+	wget --timeout=10 --tries=3 https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
 	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
 
 gleam: info/gleam.md
