@@ -24,8 +24,10 @@ SPACE := $(EMPTY) $(EMPTY)
 
 include .env
 
+
+WORKING_CONTAINER ?= fedora-toolbox-working-container
+
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
-CONTAINER := fedora-toolbox-working-container
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
 CLI_CONTAINER_NAME=tbx-cli-tools
 
