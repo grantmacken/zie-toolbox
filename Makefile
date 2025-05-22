@@ -156,7 +156,7 @@ info/working.md:
 	buildah config \
 		--env LANG="C.UTF-8" \
 	    --env CPPFLAGS="-D_DEFAULT_SOURCE" \
-		--workingdir /tmp $(WORKING_CONTAINER)
+		--workingdir / $(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
 	buildah run $(WORKING_CONTAINER) nproc
@@ -257,18 +257,21 @@ latest/neovim.json:
 info/neovim.md: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	mkdir -p files/neovim
+	TARGET=files/neovim/usr/local
+	mkdir -p $${TARGET}
 	SRC=$(shell $(call bdu,linux-x86_64.tar.gz,$<))
 	echo $${SRC}
 	VER=$$(jq -r '.tag_name' $<)
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 -C files/neovim &>/dev/null
+	tar xz --strip-components=1 -C $${TARGET} &>/dev/null
 	ls -al files/neovim
-	buildah add --chmod 755 --contextdir /usr/local $(WORKING_CONTAINER) files/neovim &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim
+	buildah run $(WORKING_CONTAINER) whereis nvim
+	buildah run $(WORKING_CONTAINER) which nvim
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
-	$(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
+	#VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
+	# $(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
 
 luajit: info/luajit.md
 info/luajit.md:
