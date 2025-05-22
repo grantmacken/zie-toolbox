@@ -59,9 +59,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools neovim
-
-## build-tools coding-tools runtimes clean host-spawn 
+default: working cli-tools host-spawn build-tools coding-tools runtimes clean
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y
@@ -110,15 +108,6 @@ ifdef GITHUB_ACTIONS
 	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)-dx
 	buildah push $(TBX_IMAGE)-dx:latest
 endif
-
-
-
-.PHONY: help
-help: ## show this help
-	cat $(MAKEFILE_LIST) |
-	grep -oP '^[a-zA-Z_-]+:.*?## .*$$' |
-	sort |
-	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 working: info/intro.md info/in-the-box.md info/working.md
 
@@ -266,12 +255,12 @@ info/neovim.md: latest/neovim.json
 	tar xz --strip-components=1 -C $${TARGET} &>/dev/null
 	ls -al files/neovim
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim
+	echo -n 'checking neovim locations...'
 	buildah run $(WORKING_CONTAINER) whereis nvim
-	buildah run $(WORKING_CONTAINER) which nvim
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	#VERSION=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+' | cut -d'-' -f1)
-	# $(call tr,Neovim,$${VERSION},The text editor with a focus on extensibility and usability,$@)
+	VER=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+')
+	$(call tr,Neovim,$${VER},The text editor with a focus on extensibility and usability,$@)
 
 luajit: info/luajit.md
 info/luajit.md:
@@ -291,11 +280,12 @@ latest/luarocks.json:
 luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
+	buildah config --workingdir /tmp $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
 	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
@@ -307,6 +297,8 @@ info/luarocks.md: latest/luarocks.json
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
+	buildah config --workingdir / $(WORKING_CONTAINER)
+	
 
 nlua: info/nlua.md
 info/nlua.md:
@@ -372,6 +364,8 @@ latest/otp.json:
 otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
+	buildah config --workingdir /tmp $(WORKING_CONTAINER)
+	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
 	mkdir -p $(dir $@)
 	SRC=$(shell $(call bdu,otp_src,$<))
 	VER=$$(jq -r '.tag_name' $< | cut -d- -f2)
@@ -398,6 +392,8 @@ info/otp.md: latest/otp.json
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
+	buildah config --workingdir / $(WORKING_CONTAINER)
+
 # --without-javac
 latest/elixir.json:
 	# echo '##[ $@ ]##'
@@ -407,12 +403,13 @@ latest/elixir.json:
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
+	buildah config --workingdir /tmp $(WORKING_CONTAINER)
+	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	echo $${SRC}
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
 	# buildah run $(WORKING_CONTAINER) make clean
 	# buildah run $(WORKING_CONTAINER) make compile
@@ -428,7 +425,8 @@ info/elixir.md: latest/elixir.json
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp/*'
+	buildah run $(WORKING_CONTAINER) find . -mindepth 1 -delete
+	buildah config --workingdir / $(WORKING_CONTAINER)
 
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
