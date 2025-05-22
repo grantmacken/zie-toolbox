@@ -415,9 +415,9 @@ info/elixir.md: latest/elixir.json
 	echo $${SRC}
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp && cd /tmp && \
-		make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
@@ -430,7 +430,7 @@ info/elixir.md: latest/elixir.json
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget --timeout=10 --tries=3 https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
+	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
 
 rebar3: info/rebar3.md
 info/rebar3.md: latest/rebar3.json
