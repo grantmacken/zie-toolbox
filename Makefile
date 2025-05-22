@@ -257,11 +257,13 @@ latest/neovim.json:
 info/neovim.md: latest/neovim.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
+	mkdir -p files/neovim
 	SRC=$(shell $(call bdu,linux-x86_64.tar.gz,$<))
 	echo $${SRC}
 	VER=$$(jq -r '.tag_name' $<)
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/neovim &>/dev/null
+	ls -al files/neovim
 	buildah add --chmod 755 --contextdir /usr/local $(WORKING_CONTAINER) files/neovim &>/dev/null
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
