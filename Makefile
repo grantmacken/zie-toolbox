@@ -397,11 +397,10 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc'
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC)' &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install'
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
+	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
 
 latest/elixir.json:
 	# echo '##[ $@ ]##'
