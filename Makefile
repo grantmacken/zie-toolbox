@@ -417,7 +417,7 @@ info/elixir.md: latest/elixir.json
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp && cd /tmp && \
-		make -j$(nproc) && make -j$(nproc) install' &>/dev/null
+		make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
