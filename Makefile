@@ -90,6 +90,8 @@ latest/fedora-toolbox.json:
 	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
 	echo -n "WORKING_CONTAINER=" | tee -a .env
 	buildah from $${FROM_REGISTRY}:$${FROM_VERSION}  | tee -a .env
+	echo -n "NPROC=" | tee -a .env
+	buildah run $(WORKING_CONTAINER) nproc | tee -a .env
 
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
 ifdef GITHUB_ACTIONS
@@ -144,10 +146,7 @@ info/working.md:
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
-	buildah config \
-		--env LANG="C.UTF-8" \
-	    --env CPPFLAGS="-D_DEFAULT_SOURCE" \
-		--workingdir / $(WORKING_CONTAINER)
+	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
 	buildah run $(WORKING_CONTAINER) nproc
@@ -300,7 +299,6 @@ info/luarocks.md: latest/luarocks.json
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	buildah config --workingdir / $(WORKING_CONTAINER)
-	
 
 nlua: info/nlua.md
 info/nlua.md:
@@ -375,13 +373,15 @@ info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	TAGNAME=$$(jq -r '.tag_name' $<)
+	echo $${TAGNAME}
 	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
 	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
 	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
+	echo $${SRC}
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp; ./configure \
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -394,15 +394,13 @@ info/otp.md: latest/otp.json
 		--without-et \
 		--without-megaco \
 		--without-cosEvent \
-		--without-odbc' &>/dev/null
-	buildah run $(WORKING_CONTAINER) cd /tmp; make -j$(shell nproc) &>/dev/null
-	buildah run $(WORKING_CONTAINER) cd /tmp; make install &>/dev/null
+		--without-odbc'
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC)' &>/dev/null
+	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make install' &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$${VER},the Erlang Open Telecom Platform OTP,$@)
 
-# --without-javac/eval
-#  :
 latest/elixir.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
