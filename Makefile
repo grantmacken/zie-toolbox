@@ -35,8 +35,8 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-# autoconf automake binutils
-DEPS := gcc-c++ \ # deps include: gcc glibc libstdc++ 
+# autoconf automake binutils # deps include: gcc glibc libstdc++ 
+DEPS := gcc-c++ \
 		gettext-devel \
 		glibc-devel \
 		libevent-devel \
