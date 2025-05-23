@@ -292,7 +292,7 @@ info/luarocks.md: latest/luarocks.json
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--disable-incdir-check'
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
