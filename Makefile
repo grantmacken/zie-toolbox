@@ -45,7 +45,6 @@ DEPS := autoconf \
 		gcc-c++ \
 		gettext-devel \
 		glibc-devel \
-		luajit-devel \
 		libevent-devel \
 		ncurses-devel \
 		openssl-devel \
@@ -147,7 +146,6 @@ info/working.md:
 	buildah config \
 		--env LANG="C.UTF-8" \
 		--env CPPFLAGS="-D_DEFAULT_SOURCE" \
-		--env LUA_INCDIR="/usr/include/luajit-2.1" \
 		$(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
@@ -267,7 +265,7 @@ info/neovim.md: latest/neovim.json
 
 luajit: info/luajit.md
 info/luajit.md:
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
 	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
@@ -295,7 +293,7 @@ info/luarocks.md: latest/luarocks.json
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--with-lua-include=/usr/include/luajit-2.1 \'
+		--with-lua-include=/usr/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
