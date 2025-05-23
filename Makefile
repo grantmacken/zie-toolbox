@@ -291,12 +291,11 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /usr/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
-		CPPFLAGS="-I/usr/include/luajit-2.1" \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--disable-incdir-check'
+		--with-lua-include=/usr/include/luajit-2.1 \'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
