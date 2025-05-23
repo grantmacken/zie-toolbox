@@ -283,26 +283,24 @@ info/luarocks.md: latest/luarocks.json
 	echo $${SRC}
 	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
 	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /tmp && ls -al /etc/xdg/luarocks'
-
-
-xxxx:
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /tmp'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--disable-incdir-check' &>/dev/null 
+		--disable-incdir-check'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
+	echo "$${LINE}"
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
-	buildah config --workingdir / $(WORKING_CONTAINER)
 
 nlua: info/nlua.md
 info/nlua.md:
