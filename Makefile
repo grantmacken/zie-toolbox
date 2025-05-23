@@ -483,3 +483,8 @@ info/nodejs.md: latest/nodejs.json
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
 	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
 
+
+test:
+	echo '##[ $@ ]##'
+	gh api /user/packages/container/${container}/versions 
+
