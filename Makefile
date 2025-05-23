@@ -45,8 +45,8 @@ DEPS := autoconf \
 		gcc-c++ \
 		gettext-devel \
 		glibc-devel \
-		libevent-devel \
 		luajit-devel \
+		libevent-devel \
 		ncurses-devel \
 		openssl-devel \
 		perl-devel \
@@ -144,7 +144,11 @@ info/working.md:
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
-	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
+	buildah config \
+		--env LANG="C.UTF-8" \
+		--env CPPFLAGS="-D_DEFAULT_SOURCE" \
+		--env LUA_INCDIR="/usr/include/luajit-2.1" \
+		$(WORKING_CONTAINER)
 	buildah run $(WORKING_CONTAINER) pwd
 	buildah run $(WORKING_CONTAINER) printenv
 	buildah run $(WORKING_CONTAINER) nproc
