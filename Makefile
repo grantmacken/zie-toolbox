@@ -36,7 +36,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 # autoconf automake binutils # deps include: gcc glibc libstdc++ 
-DEPS := gcc-c++ \
+DEPS := autoconf automake gcc gcc-c++ \
 		gettext-devel \
 		glibc-devel \
 		libevent-devel \
