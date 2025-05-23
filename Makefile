@@ -31,18 +31,12 @@ FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
 CLI_CONTAINER_NAME=tbx-cli-tools
 
-# IMAGE    :=  ghcr.io/grantmacken/tbx-cli-tools:latest
-# CONTAINER := tbx-cli-tools-working-container
-
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-DEPS := autoconf \
-		automake \
-		binutils \
-		gcc \
-		gcc-c++ \
+# autoconf automake binutils
+DEPS := gcc-c++ \ # deps include: gcc glibc libstdc++ 
 		gettext-devel \
 		glibc-devel \
 		libevent-devel \
@@ -58,7 +52,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools host-spawn coding-tools runtimes clean
+default: working cli-tools build-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
@@ -282,23 +276,19 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	SRC=$$(jq -r '.tarball_url' $<)
-	echo $${SRC}
 	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
-	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /tmp && ls -al /etc/xdg/luarocks'
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /usr/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--with-lua-include=/usr/include/luajit-2.1'
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap'
+		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
-	echo "$${LINE}"
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
