@@ -280,7 +280,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
-	SRC=$$(jq -r '.[0].tarball_url' $<)
+	SRC=$$(jq -r '.tarball_url' $<)
 	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
