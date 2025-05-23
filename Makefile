@@ -38,7 +38,6 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
-BEAM  := otp rebar3 elixir gleam nodejs
 DEPS := autoconf \
 		automake \
 		binutils \
@@ -270,8 +269,6 @@ info/luajit.md:
 	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
-LUAROCKS_CONFIGURE_OPTIONS := --lua-version=5.1 --with-lua-interpreter=luajit --sysconfdir=/etc/xdg --force-config --disable-incdir-check
-
 latest/luarocks.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -280,15 +277,18 @@ latest/luarocks.json:
 luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) rm -rf /tmp/*
-	buildah config --workingdir /tmp $(WORKING_CONTAINER)
+	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp /etc/xdg/luarocks'
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	URL=$$(jq -r '.tarball_url' $<)
 	wget -q --timeout=10 --tries=3 $${URL} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) mkdir -p /etc/xdg/luarocks &>/dev/null 
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure $(LUAROCKS_CONFIGURE_OPTIONS)' &>/dev/null 
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+		--lua-version=5.1 \
+		--with-lua-interpreter=luajit \
+		--sysconfdir=/etc/xdg \
+		--force-config \
+		--disable-incdir-check' &>/dev/null 
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
