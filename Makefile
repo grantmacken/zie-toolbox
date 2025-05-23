@@ -289,8 +289,9 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /tmp && ls -al /etc/xdg/luarocks'
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /tmp'
+	buildah run $(WORKING_CONTAINER) sh -c 'ls -al /usr/include/luajit-2.1'
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+		CPPFLAGS="-I/usr/include/luajit-2.1" \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
@@ -486,5 +487,6 @@ info/nodejs.md: latest/nodejs.json
 
 test:
 	echo '##[ $@ ]##'
-	gh api /user/packages/container/${container}/versions 
+	gh api /user/packages/container/zie-toolbox/versions
+
 
