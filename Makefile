@@ -210,7 +210,7 @@ info/host-spawn.md: latest/host-spawn.json
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
 	commands on your host machine from inside the toolbox.
 	To use the host-spawn tool, either run the following command: host-spawn <command>
-	Or just call host-spawm with no argument and this will pop you into you host shell.
+	Or just call host-spawn with no argument and this will pop you into you host shell.
 	When doing this remember to pop back into the toolbox with exit.
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
@@ -464,9 +464,5 @@ info/nodejs.md: latest/nodejs.json
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
 	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
 
-
-test:
-	echo '##[ $@ ]##'
-	gh api /user/packages/container/zie-toolbox/versions
 
 
