@@ -240,11 +240,9 @@ info/neovim.md: latest/neovim.json
 	TARGET=files/neovim/usr/local
 	mkdir -p $${TARGET}
 	SRC=$(shell $(call bdu,linux-x86_64.tar.gz,$<))
-	echo $${SRC}
 	VER=$$(jq -r '.tag_name' $<)
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C $${TARGET} &>/dev/null
-	ls -al files/neovim
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim
 	echo -n 'checking neovim locations...'
 	buildah run $(WORKING_CONTAINER) whereis nvim
@@ -300,7 +298,7 @@ info/nlua.md:
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua &>/dev/null
 	$(call tr,nlua,$${VER},$${SUM},$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
@@ -364,11 +362,9 @@ info/otp.md: latest/otp.json
 	mkdir -p $(dir $@)
 	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp'
 	TAGNAME=$$(jq -r '.tag_name' $<)
-	echo $${TAGNAME}
 	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
 	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
 	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
-	echo $${SRC}
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
