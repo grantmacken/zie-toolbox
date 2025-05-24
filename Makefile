@@ -37,7 +37,7 @@ TBX_CONTAINER_NAME=zie-toolbox
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 # autoconf automake binutils # deps include: gcc glibc libstdc++ 
 ## Split DEPS into specific build requirements
-COMMON_DEPS := gcc gcc-c++ make cmake git curl wget unzip
+COMMON_DEPS := gcc gcc-c++ make cmake
 ERLANG_DEPS := ncurses-devel openssl-devel
 LUA_DEPS := readline-devel
 # ELIXIR_DEPS := # Elixir uses pre-built OTP, no extra deps needed
@@ -58,7 +58,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools-common
+default: working build-tools-common otp
 
 # cli-toolsbuild-tools host-spawn coding-tools runtimes clean
 
@@ -374,12 +374,28 @@ latest/erlang.downloads:
 	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
 
+otp-deps: build-tools-common $(addprefix dep-install-,$(ERLANG_DEPS))
+
+$(addprefix dep-install-,$(ERLANG_DEPS)):
+	@item=$(patsubst dep-install-%,%,$@); \
+	echo "Installing Erlang dependency $$item..."; \
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$$item
+
+
+
+
 latest/otp.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
 
-otp: info/otp.md
+otp: otp-deps info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
