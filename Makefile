@@ -385,7 +385,7 @@ info/otp.md: latest/otp.json
 		--without-et \
 		--without-megaco \
 		--without-cosEvent \
-		--without-odbc'
+		--without-odbc' &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
