@@ -42,7 +42,6 @@ ERLANG_DEPS := ncurses-devel openssl-devel
 LUA_DEPS := readline-devel
 # ELIXIR_DEPS := # Elixir uses pre-built OTP, no extra deps needed
 
-
 DEPS := autoconf automake gcc gcc-c++ \
 		gettext-devel \
 		glibc-devel \
@@ -234,7 +233,7 @@ info/host-spawn.md: latest/host-spawn.json
 	echo >> $@
 	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
-commands on your host machine from inside the toolbox.
+	commands on your host machine from inside the toolbox.
 	To use the host-spawn tool, either run the following command: host-spawn <command>
 	Or just call host-spawn with no argument and this will pop you into you host shell.
 	When doing this remember to pop back into the toolbox with exit.
