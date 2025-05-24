@@ -281,7 +281,7 @@ info/luajit.md:
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
-VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
+	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 latest/luarocks.json:
