@@ -5,12 +5,16 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
+# MAKEFLAGS += --jobs=$(shell nproc)
+
 unexport MAKEFLAGS
 
 .SUFFIXES:            # Delete the default suffixes
 .ONESHELL:            # All lines of the recipe will be given to a single invocation of the shell
 .DELETE_ON_ERROR:
 .SECONDARY:
+# .NOTPARALLEL: .env working info/working.md
+
 
 HEADING1 := \#
 HEADING2 := $(HEADING1)$(HEADING1)
@@ -32,6 +36,13 @@ TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 # autoconf automake binutils # deps include: gcc glibc libstdc++ 
+## Split DEPS into specific build requirements
+COMMON_DEPS := gcc gcc-c++ make cmake git curl wget unzip
+ERLANG_DEPS := ncurses-devel openssl-devel
+LUA_DEPS := readline-devel
+# ELIXIR_DEPS := # Elixir uses pre-built OTP, no extra deps needed
+
+
 DEPS := autoconf automake gcc gcc-c++ \
 		gettext-devel \
 		glibc-devel \
@@ -48,7 +59,23 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools runtimes clean
+default: working build-tools-common
+
+# cli-toolsbuild-tools host-spawn coding-tools runtimes clean
+
+build-tools-common: $(addprefix dep-install-,$(COMMON_DEPS))
+
+$(addprefix dep-install-,$(COMMON_DEPS)):
+	@item=$(patsubst dep-install-%,%,$@); \
+	echo "Installing common dependency $$item..."; \
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$$item
+
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
@@ -207,7 +234,7 @@ info/host-spawn.md: latest/host-spawn.json
 	echo >> $@
 	cat << EOF | tee -a $@
 	The host-spawn tool is a wrapper around the toolbox command that allows you to run
-	commands on your host machine from inside the toolbox.
+commands on your host machine from inside the toolbox.
 	To use the host-spawn tool, either run the following command: host-spawn <command>
 	Or just call host-spawn with no argument and this will pop you into you host shell.
 	When doing this remember to pop back into the toolbox with exit.
@@ -255,7 +282,7 @@ info/luajit.md:
 	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
-	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
+VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 latest/luarocks.json:
