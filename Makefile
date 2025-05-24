@@ -48,9 +48,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools
-
-# runtimes clean
+default: working cli-tools build-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
@@ -364,6 +362,7 @@ otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp'
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	echo $${TAGNAME}
 	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
@@ -373,7 +372,7 @@ info/otp.md: latest/otp.json
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && ./configure \
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -387,7 +386,7 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc'
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(nproc) && make -j$(nproc) install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
