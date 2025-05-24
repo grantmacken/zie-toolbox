@@ -67,17 +67,16 @@ latest/fedora-toolbox.json:
 
 .env: latest/fedora-toolbox.json
 	echo '##[ $@ ]##'
-	FROM_REGISTRY=$(shell cat $< | jq -r '.Name')
-	FROM_VERSION=$(shell cat $< | jq -r '.Labels.version')
-	FROM_NAME=$(shell cat $< | jq -r '.Labels.name')
-	printf "FROM_NAME=%s\n" $$FROM_NAME | tee $@
-	printf "FROM_REGISTRY=%s\n" $$FROM_REGISTRY | tee -a $@
-	VERSION=$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.version')
-	printf "FROM_VERSION=%s\n" $$FROM_VERSION | tee -a $@
-	buildah pull $$FROM_REGISTRY:$$FROM_VERSION &> /dev/null
-	echo -n "WORKING_CONTAINER=" | tee -a .env
-	buildah from $${FROM_REGISTRY}:$${FROM_VERSION}  | tee -a .env
-	echo -n "NPROC=" | tee -a .env
+	FROM_REGISTRY=$$(cat $< | jq -r '.Name'); \
+	FROM_VERSION=$$(cat $< | jq -r '.Labels.version'); \
+	FROM_NAME=$$(cat $< | jq -r '.Labels.name'); \
+	printf "FROM_NAME=%s\n" "$$FROM_NAME" | tee $@; \
+	printf "FROM_REGISTRY=%s\n" "$$FROM_REGISTRY" | tee -a $@; \
+	printf "FROM_VERSION=%s\n" "$$FROM_VERSION" | tee -a $@; \
+	buildah pull "$$FROM_REGISTRY:$$FROM_VERSION" &> /dev/null; \
+	echo -n "WORKING_CONTAINER=" | tee -a .env; \
+	buildah from "$${FROM_REGISTRY}:$${FROM_VERSION}" | tee -a .env; \
+	echo -n "NPROC=" | tee -a .env; \
 	buildah run $(WORKING_CONTAINER) nproc | tee -a .env
 
 xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
@@ -154,8 +153,8 @@ info/cli-tools.md:
 		--skip-broken \
 		--no-allow-downgrade \
 		-y \
-		$${item} &>/dev/null
-	done
+		$${item}  || { echo "Failed to install $${item}"; exit 1; }; \ 
+	done &>/dev/null
 	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
@@ -270,7 +269,7 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	SRC=$$(jq -r '.tarball_url' $<)
-	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
+	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
@@ -353,8 +352,6 @@ latest/otp.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
-
-# jq -r '.[] | select(.tag_name | endswith("'$${VER}'"))' > $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
@@ -466,6 +463,4 @@ info/nodejs.md: latest/nodejs.json
 	buildah run $(WORKING_CONTAINER) node --version
 	VER=$$(buildah run $(WORKING_CONTAINER) node --version | sed 's/^v//g')
 	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
-
-
 
