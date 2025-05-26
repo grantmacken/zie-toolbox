@@ -346,28 +346,13 @@ latest/erlang.downloads:
 	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
 
-otp-deps: build-tools-common $(addprefix dep-install-,$(ERLANG_DEPS))
-
-$(addprefix dep-install-,$(ERLANG_DEPS)):
-	@item=$(patsubst dep-install-%,%,$@); \
-	echo "Installing Erlang dependency $$item..."; \
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$$item
-
-
-
 
 latest/otp.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
 
-otp: otp-deps info/otp.md
+otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
