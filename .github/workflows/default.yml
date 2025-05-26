@@ -27,7 +27,9 @@ jobs:
         - name: Toolbox Builds
           run: |
             make .env
-            make
+            make working
+            make build-tools
+            make clean
         # - name: Set up Git
         #   run: |
         #     git config --global user.name 'github-actions[bot]'
