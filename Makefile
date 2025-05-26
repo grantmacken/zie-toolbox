@@ -273,7 +273,7 @@ info/neovim.md: latest/neovim.json
 	buildah run $(WORKING_CONTAINER) whereis nvim
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	VER=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM v\K.+')
+	VER=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+')
 	$(call tr,Neovim,$${VER},The text editor with a focus on extensibility and usability,$@)
 
 luajit: info/luajit.md
@@ -339,7 +339,7 @@ tiktoken: info/tiktoken.md
 info/tiktoken.md: latest/tiktoken.json
 	# echo '##[ $@ ]##'
 	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
-	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $< | sed 's/^v//g'))
+	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
 	# nlua -e 'print(package.)'
@@ -501,8 +501,5 @@ info/nodejs.md: latest/nodejs.json
 	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
 	tar xz --strip-components=1 -C files/nodejs/usr/local
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
-	echo -n 'checking node version...'
-	buildah run $(WORKING_CONTAINER) node --version
-	VER=$$(buildah run $(WORKING_CONTAINER) node --version | sed 's/^v//g')
 	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
 
