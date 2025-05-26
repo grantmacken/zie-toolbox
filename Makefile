@@ -45,7 +45,7 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-DEPS := gcc gcc-c++ pkgconf $(DEVEL)
+DEPS := make gcc gcc-c++ pkgconf $(DEVEL)
 REMOVE := default-editor vim-minimal $(DEVEL)
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
