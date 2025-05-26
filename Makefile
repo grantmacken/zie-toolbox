@@ -54,7 +54,9 @@ REMOVE := default-editor vim-minimal $(DEVEL)
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working cli-tools build-tools host-spawn coding-tools runtimes clean
+default: working 
+
+# cli-tools build-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
@@ -148,7 +150,6 @@ info/working.md:
 
 cli-tools: info/cli-tools.md
 info/cli-tools.md:
-	buildah config --env LANG=C.UTF-8 $(WORKING_CONTAINER)
 	mkdir -p $(dir $@)
 	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
 	for item in $(CLI)
