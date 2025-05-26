@@ -28,7 +28,7 @@ jobs:
           run: |
             make .env
             make working
-            make build-tools
+            make default
             make clean
         # - name: Set up Git
         #   run: |

@@ -5,7 +5,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
-# MAKEFLAGS += --jobs=$(shell nproc)
+MAKEFLAGS += --jobs=$(shell nproc)
 
 unexport MAKEFLAGS
 
