@@ -36,24 +36,20 @@ TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
 # autoconf automake binutils # deps include: gcc glibc libstdc++ 
-## Split DEPS into specific build requirements
-COMMON_DEPS := gcc gcc-c++ make cmake
-ERLANG_DEPS := ncurses-devel openssl-devel
-LUA_DEPS := readline-devel
-# ELIXIR_DEPS := # Elixir uses pre-built OTP, no extra deps needed
-
-DEPS := autoconf automake gcc gcc-c++ \
-		gettext-devel \
+#
+DEVEL := gettext-devel \
 		glibc-devel \
 		libevent-devel \
 		ncurses-devel \
 		openssl-devel \
 		perl-devel \
-		pkgconf \
 		readline-devel \
 		zlib-devel
+
+DEPS := gcc gcc-c++ pkgconf $(DEVEL)
+
 # cargo
-REMOVE := default-editor vim-minimal
+REMOVE := default-editor vim-minimal $(DEVEL)
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
@@ -132,7 +128,7 @@ info/in-the-box.md:
 	The main tool categories are:
 	EOF
 	printf "\n - CLI tools\n" | tee -a $@
-	printf "\n - Build tools\n" | tee -a $@
+	# printf "\n - Build tools\n" | tee -a $@
 	printf "\n - Coding tools\n" | tee -a $@
 	printf "\n - BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 
