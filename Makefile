@@ -58,23 +58,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working build-tools-common otp
-
-# cli-toolsbuild-tools host-spawn coding-tools runtimes clean
-
-build-tools-common: $(addprefix dep-install-,$(COMMON_DEPS))
-
-$(addprefix dep-install-,$(COMMON_DEPS)):
-	@item=$(patsubst dep-install-%,%,$@); \
-	echo "Installing common dependency $$item..."; \
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$$item
-
+default: working cli-tools build-tools host-spawn coding-tools runtimes clean
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
