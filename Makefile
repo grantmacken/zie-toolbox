@@ -13,8 +13,7 @@ unexport MAKEFLAGS
 .ONESHELL:            # All lines of the recipe will be given to a single invocation of the shell
 .DELETE_ON_ERROR:
 .SECONDARY:
-.NOTPARALLEL: .env working info/working.md
-
+#.NOTPARALLEL: .env working info/working.md
 
 HEADING1 := \#
 HEADING2 := $(HEADING1)$(HEADING1)
@@ -47,14 +46,12 @@ DEVEL := gettext-devel \
 		zlib-devel
 
 DEPS := gcc gcc-c++ pkgconf $(DEVEL)
-
-# cargo
 REMOVE := default-editor vim-minimal $(DEVEL)
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: working
+default: runtimes
 
 # cli-tools build-tools host-spawn coding-tools runtimes clean
 
@@ -140,13 +137,7 @@ info/working.md:
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
-	buildah config \
-		--env LANG="C.UTF-8" \
-		--env CPPFLAGS="-D_DEFAULT_SOURCE" \
-		$(WORKING_CONTAINER)
-	buildah run $(WORKING_CONTAINER) pwd
-	buildah run $(WORKING_CONTAINER) printenv
-	buildah run $(WORKING_CONTAINER) nproc
+	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
 
 cli-tools: info/cli-tools.md
 info/cli-tools.md:
