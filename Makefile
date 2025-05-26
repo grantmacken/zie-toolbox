@@ -5,7 +5,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
-MAKEFLAGS += --jobs=$(shell nproc)
+# MAKEFLAGS += --jobs=$(shell nproc)
 
 unexport MAKEFLAGS
 
@@ -347,7 +347,7 @@ latest/erlang.downloads:
 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
 
 
-latest/otp.json:
+latest/otp.json: 
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
@@ -383,12 +383,12 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
 
-latest/elixir.json:
+latest/elixir.json: 
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
-elixir: info/elixir.md
+elixir: info/elixir.md 
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
