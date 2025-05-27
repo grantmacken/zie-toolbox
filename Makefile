@@ -53,7 +53,7 @@ REMOVE := default-editor vim-minimal $(DEVEL)
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  build-tools cli-tools runtimes
+default:  build-tools cli-tools host-spawn coding-tools runtimes
 
 # cli-tools build-tools host-spawn coding-tools runtimes clean
 
@@ -128,17 +128,17 @@ info/in-the-box.md:
 	The idea here is to have a **long running** personal development toolbox containing the tools I require.
 	The main tool categories are:
 	EOF
+	printf "\n - Build tools\n" | tee -a $@
 	printf "\n - CLI tools\n" | tee -a $@
-	# printf "\n - Build tools\n" | tee -a $@
-	printf "\n - Coding tools\n" | tee -a $@
-	printf "\n - BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
+	printf "\n - Coding tools" | tee -a $@
+	printf "\n - Runtimes: This toolbox focus is on BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 
 info/working.md:
 	mkdir -p $(dir $@)
 	printf "$(HEADING2) %s\n\n" "Built with buildah" | tee $@
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
-	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
+	printf "\nToolbox is pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
 
 build-tools: info/build-tools.md
@@ -341,12 +341,12 @@ info/runtimes.md: otp rebar3 elixir gleam nodejs
 	cat info/gleam.md  | tee -a $@
 	cat info/nodejs.md | tee -a $@
 
-latest/erlang.downloads:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O |
-	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
-	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
+# latest/erlang.downloads:
+# 	echo '##[ $@ ]##'
+# 	mkdir -p $(dir $@)
+# 	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O |
+# 	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
+# 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
 
 
 latest/otp.json: 
@@ -386,7 +386,7 @@ info/otp.md: latest/otp.json
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
 
 latest/elixir.json: 
-	# echo '##[ $@ ]##'
+	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
@@ -395,12 +395,11 @@ info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
-	echo $${SRC}
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /tmp && mkdir -p /tmp'
+	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) bash -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
@@ -439,7 +438,6 @@ files/gleam.tar: latest/gleam.json
 
 info/gleam.md: files/gleam.tar
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) bash -c 'rm -Rf /usr/local/bin/gleam && mkdir -p /tmp'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
 	echo -n 'checking gleam version...'
 	buildah run $(WORKING_CONTAINER) gleam --version
