@@ -45,7 +45,9 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-DEPS := make gcc gcc-c++ autoconf pkgconf $(DEVEL)
+BUILDING := make gcc gcc-c++ autoconf pkgconf
+
+DEPS := $(BUILDING) $(DEVEL)
 REMOVE := default-editor vim-minimal $(DEVEL)
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
@@ -139,28 +141,6 @@ info/working.md:
 	printf "\nPulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
 	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
 
-cli-tools: info/cli-tools.md
-info/cli-tools.md:
-	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
-	for item in $(CLI)
-	do
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item}  || { echo "Failed to install $${item}"; exit 1; }; \ 
-	done &>/dev/null
-	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	$(call tr,"Name","Version","Summary",$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
-	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
-	   paste  - - -  | sort -u ' | \
-	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
-
 build-tools: info/build-tools.md
 info/build-tools.md:
 	echo '##[ $@ ]##'
@@ -174,14 +154,36 @@ info/build-tools.md:
 		-y \
 		$${item} &>/dev/null
 	done
-	printf "$(HEADING2) %s\n\n" "Development dependencies for make installs" | tee $@
+	printf "$(HEADING2) %s\n\n" "Selected Build Tooling for Make Installs" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
-	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(DEPS) | \
+	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(BUILDING) | \
 	grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	paste  - - -  | sort -u ' | \
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
+
+cli-tools: info/cli-tools.md
+info/cli-tools.md:
+	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
+	for item in $(CLI)
+	do
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item} &>/dev/null
+	done
+	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
+	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
+	   paste  - - -  | sort -u ' | \
+	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
