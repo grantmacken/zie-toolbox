@@ -33,7 +33,7 @@ CLI_CONTAINER_NAME=tbx-cli-tools
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 TBX_CONTAINER_NAME=zie-toolbox
 
-CLI   := bat direnv eza fd-find fzf gh jq make ripgrep stow wl-clipboard yq zoxide
+CLI   := bat direnv eza fd-find fzf gh jq just ripgrep stow wl-clipboard yq zoxide
 # autoconf automake binutils # deps include: gcc glibc libstdc++ 
 #
 DEVEL := gettext-devel \
@@ -45,13 +45,13 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-DEPS := make gcc gcc-c++ pkgconf $(DEVEL)
+DEPS := make gcc gcc-c++ autoconf pkgconf $(DEVEL)
 REMOVE := default-editor vim-minimal $(DEVEL)
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default: build-tools runtimes
+default:  build-tools cli-tools runtimes
 
 # cli-tools build-tools host-spawn coding-tools runtimes clean
 
