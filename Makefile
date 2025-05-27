@@ -53,13 +53,13 @@ REMOVE := default-editor vim-minimal $(DEVEL)
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  build-tools cli-tools host-spawn coding-tools runtimes
+default:  build-tools cli-tools host-spawn coding-tools runtimes clean checks
 
 # cli-tools build-tools host-spawn coding-tools runtimes clean
 
 clean:
-	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE)
-	buildah run $(WORKING_CONTAINER) dnf autoremove -y
+	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf autoremove -y &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
 
 clear:
@@ -107,6 +107,22 @@ ifdef GITHUB_ACTIONS
 endif
 
 working: info/intro.md info/in-the-box.md info/working.md
+
+checks:
+	echo '##[ $@ ]##'
+	# After removal of devel check ececs in working container
+	echo -n 'checking neovim version...'
+	buildah run $(WORKING_CONTAINER) nvim --version
+	echo -n 'checking luarocks version...'
+	buildah run $(WORKING_CONTAINER) luarocks --version
+	echo -n 'checking erlixir version...'
+	buildah run $(WORKING_CONTAINER) elixir --version
+	echo -n 'checking gleam version...'
+	buildah run $(WORKING_CONTAINER) gleam --version
+	echo -n 'checking nodejs version...'
+	buildah run $(WORKING_CONTAINER) node --version
+	echo -n 'checking beam version...'
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 
 info/intro.md:
 	mkdir -p $(dir $@)
@@ -200,7 +216,7 @@ info/host-spawn.md: latest/host-spawn.json
 	echo -n 'checking host-spawn version...'
 	buildah run $(WORKING_CONTAINER) host-spawn --version
 	VER=$$(buildah run $(WORKING_CONTAINER) host-spawn --version)
-	printf "\n$(HEADING2) %s\n\n" "Host Spawn" | tee -a $@
+	printf "\n$(HEADING2) %s\n\n" "Do More With host-spawn" | tee -a $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,host-spawn,$${VER},Run commands on your host machine from inside toolbox,$@)
@@ -242,7 +258,7 @@ info/neovim.md: latest/neovim.json
 	VER=$$(jq -r '.tag_name' $<)
 	wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C $${TARGET} &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	echo -n 'checking neovim locations...'
 	buildah run $(WORKING_CONTAINER) whereis nvim
 	echo -n 'checking neovim version...'

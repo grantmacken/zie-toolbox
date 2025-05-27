@@ -29,7 +29,6 @@ jobs:
             make .env
             make working
             make default
-            make clean
         # - name: Set up Git
         #   run: |
         #     git config --global user.name 'github-actions[bot]'
