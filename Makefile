@@ -54,7 +54,9 @@ bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .bro
 default:  build-tools cli-tools host-spawn coding-tools runtimes clean checks
 
 clean:
+	buildah run $(WORKING_CONTAINER) ldd $(shell buildah run $(WORKING_CONTAINER) which luarocks)
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf install -y zlib ncurses readline &>/dev/null 
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y &>/dev/null
 	buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
 
