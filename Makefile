@@ -95,8 +95,8 @@ checks:
 	# After removal of devel check ececs in working container
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	echo -n 'checking luarocks version...'
-	buildah run $(WORKING_CONTAINER) luarocks || true
+	# echo -n 'checking luarocks version...'
+	# buildah run $(WORKING_CONTAINER) luarocks || true
 	echo -n 'checking erlixir version...'
 	buildah run $(WORKING_CONTAINER) elixir --version
 	echo -n 'checking gleam version...'
@@ -294,8 +294,8 @@ info/nlua.md:
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
 	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
-	buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua &>/dev/null
+	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua &>/dev/null
 	$(call tr,nlua,$${VER},$${SUM},$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
