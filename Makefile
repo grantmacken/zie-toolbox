@@ -27,11 +27,7 @@ SPACE := $(EMPTY) $(EMPTY)
 include .env
 WORKING_CONTAINER ?= fedora-toolbox-working-container
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
-CLI_IMAGE=ghcr.io/grantmacken/tbx-cli-tools
-CLI_CONTAINER_NAME=tbx-cli-tools
-
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
-TBX_CONTAINER_NAME=zie-toolbox
 
 CLI   := bat direnv eza fd-find fzf gh jq just ripgrep stow wl-clipboard yq zoxide
 DEVEL := gettext-devel \
@@ -52,6 +48,14 @@ tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
 default:  working build-tools cli-tools host-spawn coding-tools runtimes clean checks
+ifdef GITHUB_ACTIONS
+	buildah config \
+	--label summary='a toolbox with cli tools, neovim' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
+endif
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
@@ -83,25 +87,6 @@ latest/fedora-toolbox.json:
 	echo -n "NPROC=" | tee -a .env; \
 	buildah run $(WORKING_CONTAINER) nproc | tee -a .env
 
-xdefault: init cli-tools deps host-spawn neovim luajit luarocks nlua tiktoken dx clean
-ifdef GITHUB_ACTIONS
-	buildah config \
-	--label summary='a toolbox with cli tools, neovim' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(WORKING_CONTAINER)
-	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
-	buildah push $(TBX_IMAGE):latest
-endif
-
-dx: beam nodejs clean
-ifdef GITHUB_ACTIONS
-	buildah config \
-	--label summary='dx toolbox for the gleam lang' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(WORKING_CONTAINER)
-	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)-dx
-	buildah push $(TBX_IMAGE)-dx:latest
-endif
 
 working: info/intro.md info/in-the-box.md info/working.md
 
