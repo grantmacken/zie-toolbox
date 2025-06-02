@@ -1,6 +1,5 @@
 SHELL       := /usr/bin/bash
 .SHELLFLAGS := -eu -o pipefail -c
-
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
@@ -29,7 +28,7 @@ WORKING_CONTAINER ?= fedora-toolbox-working-container
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 
-CLI   := bat direnv eza fd-find fzf gh jq just ripgrep stow wl-clipboard yq zoxide
+CLI   := bat direnv chafa eza fd-find fzf gh imagemagick jq just ripgrep stow wl-clipboard yq zoxide
 DEVEL := gettext-devel \
 		glibc-devel \
 		libevent-devel \
@@ -39,7 +38,7 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-BUILDING := make gcc gcc-c++ autoconf pkgconf
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf
 
 DEPS := $(BUILDING) $(DEVEL)
 REMOVE := default-editor vim-minimal
@@ -75,18 +74,17 @@ latest/fedora-toolbox.json:
 
 .env: latest/fedora-toolbox.json
 	echo '##[ $@ ]##'
-	FROM_REGISTRY=$$(cat $< | jq -r '.Name'); \
-	FROM_VERSION=$$(cat $< | jq -r '.Labels.version'); \
-	FROM_NAME=$$(cat $< | jq -r '.Labels.name'); \
-	printf "FROM_NAME=%s\n" "$$FROM_NAME" | tee $@; \
-	printf "FROM_REGISTRY=%s\n" "$$FROM_REGISTRY" | tee -a $@; \
-	printf "FROM_VERSION=%s\n" "$$FROM_VERSION" | tee -a $@; \
-	buildah pull "$$FROM_REGISTRY:$$FROM_VERSION" &> /dev/null; \
-	echo -n "WORKING_CONTAINER=" | tee -a .env; \
-	buildah from "$${FROM_REGISTRY}:$${FROM_VERSION}" | tee -a .env; \
-	echo -n "NPROC=" | tee -a .env; \
+	FROM_REGISTRY=$$(cat $< | jq -r '.Name')
+	FROM_VERSION=$$(cat $< | jq -r '.Labels.version')
+	FROM_NAME=$$(cat $< | jq -r '.Labels.name')
+	printf "FROM_NAME=%s\n" "$$FROM_NAME" | tee $@
+	printf "FROM_REGISTRY=%s\n" "$$FROM_REGISTRY" | tee -a $@
+	printf "FROM_VERSION=%s\n" "$$FROM_VERSION" | tee -a $@
+	buildah pull "$$FROM_REGISTRY:$$FROM_VERSION" &> /dev/null
+	echo -n "WORKING_CONTAINER=" | tee -a .env
+	buildah from "$${FROM_REGISTRY}:$${FROM_VERSION}" | tee -a .env
+	echo -n "NPROC=" | tee -a .env
 	buildah run $(WORKING_CONTAINER) nproc | tee -a .env
-
 
 working: info/intro.md info/in-the-box.md info/working.md
 
@@ -317,6 +315,8 @@ info/tiktoken.md: latest/tiktoken.json
 	# nlua -e 'print(package.)'
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
 	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
+	#
+
 
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
