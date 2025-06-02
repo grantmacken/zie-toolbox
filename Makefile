@@ -286,7 +286,7 @@ info/luarocks.md: latest/luarocks.json
 nlua: info/nlua.md
 info/nlua.md:
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) luarocks install nlua &>/dev/null
+	buildah run $(WORKING_CONTAINER) luarocks install nlua
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
 	# echo "$${LINE}"
 	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
