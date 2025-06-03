@@ -283,18 +283,28 @@ info/luarocks.md: latest/luarocks.json
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 
-nlua: info/nlua.md
-info/nlua.md:
+latest/nlua.json:
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) luarocks install nlua
-	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
+	mkdir -p $(dir $@)
+	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/luarocks/luarocks/tags -O- | jq '.[0]' > $@
+
+nlua: info/nlua.md
+info/nlua.md: latest/luarocks.json
+	echo '##[ $@ ]##'
+	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
+	# buildah run $(WORKING_CONTAINER) luarocks install nlua
+	# LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
 	# echo "$${LINE}"
-	VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
-	SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
+	# VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
+	# SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
 	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua &>/dev/null
-	$(call tr,nlua,$${VER},$${SUM},$@)
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+	buildah run $(WORKING_CONTAINER) luarocks
+	VER=$$(jq -r '.name' $< )
+	$(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
