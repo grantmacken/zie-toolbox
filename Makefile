@@ -28,7 +28,13 @@ WORKING_CONTAINER ?= fedora-toolbox-working-container
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 
-CLI   := bat direnv chafa eza fd-find fzf gh imagemagick jq just ripgrep stow wl-clipboard yq zoxide
+# direnv chafa texlive-scheme-basic
+# :checkhealth extra tools for neovim plugins
+# texlive-scheme-basic -- render-mardown
+# lynx
+# ast-grep/cli grug-far
+
+CLI   := bat za fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
 DEVEL := gettext-devel \
 		glibc-devel \
 		libevent-devel \
@@ -393,12 +399,12 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
 
-latest/elixir.json: 
+latest/elixir.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
-elixir: info/elixir.md 
+elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
 	echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
@@ -458,7 +464,8 @@ latest/nodejs.json:
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
 
-nodejs: info/nodejs.md
+nodejs: ast-grep
+
 info/nodejs.md: latest/nodejs.json
 	# echo '##[ $@ ]##'
 	VER=$$(jq -r '.tag_name' $< )
@@ -467,4 +474,14 @@ info/nodejs.md: latest/nodejs.json
 	tar xz --strip-components=1 -C files/nodejs/usr/local
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
 	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
+
+ast-grep:
+info/ast-grep.md: info/nodejs.md
+	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli
+	echo -n 'checking ast-grep version...'
+	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
+	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
+
+
 
