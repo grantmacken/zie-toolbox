@@ -289,7 +289,7 @@ latest/nlua.json:
 	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/luarocks/luarocks/tags -O- | jq '.[0]' > $@
 
 nlua: info/nlua.md
-info/nlua.md: latest/luarocks.json
+info/nlua.md: latest/nlua.json
 	echo '##[ $@ ]##'
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
