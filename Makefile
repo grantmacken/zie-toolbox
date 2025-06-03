@@ -286,7 +286,7 @@ info/luarocks.md: latest/luarocks.json
 latest/nlua.json:
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/luarocks/luarocks/tags -O- | jq '.[0]' > $@
+	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/mfussenegger/nlua/tags -O- | jq '.[0]' > $@
 
 nlua: info/nlua.md
 info/nlua.md: latest/nlua.json
