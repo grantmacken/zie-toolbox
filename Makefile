@@ -459,12 +459,12 @@ info/gleam.md: files/gleam.tar
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
+nodejs: info/npm.md
+
 latest/nodejs.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
-
-nodejs: ast-grep
 
 info/nodejs.md: latest/nodejs.json
 	# echo '##[ $@ ]##'
@@ -473,15 +473,20 @@ info/nodejs.md: latest/nodejs.json
 	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
 	tar xz --strip-components=1 -C files/nodejs/usr/local
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
-	$(call tr,Nodejs,$${VER},Nodejs runtime, $@)
+	echo -n 'checking node version...'
+	NODE_VER=$$(buildah run $(WORKING_CONTAINER) node --version | tee)
+	$(call tr,node,$${NODE_VER},Nodejs runtime, $@)
+	echo -n 'checking npm version...'
+	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
+	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
 
-ast-grep:
-info/ast-grep.md: info/nodejs.md
+info/npm.md: info/nodejs.md
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
+	buildah run $(WORKING_CONTAINER) npm install -g neovim
 
 
 
