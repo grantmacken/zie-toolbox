@@ -493,14 +493,21 @@ info/npm.md: info/nodejs.md
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
 	buildah run $(WORKING_CONTAINER) npm install -g neovim
 
+# --root /usr/local/cargo
+
 cargo:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo &>dev/null
+	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall  &>/dev/null
+	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
 	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
 	buildah run $(WORKING_CONTAINER) cargo-binstall --help
 	buildah run $(WORKING_CONTAINER) cargo-binstall --no-confirm --no-symlinks lux-cli
-	ripgrep stylua just wasm-pack
+	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
+	buildah run $(WORKING_CONTAINER) lx --help
+
+	# ripgrep stylua just wasm-pack
 	# cargo binstall lux-cli 
 
 
