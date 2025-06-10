@@ -229,8 +229,8 @@ info/coding-tools.md: neovim luajit luarocks # nlua tiktoken
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
-	# cat info/luajit.md | tee -a $@
-	# cat info/luarocks.md | tee -a $@
+	cat info/luajit.md | tee -a $@
+	cat info/luarocks.md | tee -a $@
 	# cat info/nlua.md | tee -a $@
 	# cat info/tiktoken.md | tee -a $@
 
@@ -285,12 +285,12 @@ info/luarocks.md: latest/luarocks.json
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--with-lua-include=/usr/include/luajit-2.1' 
+		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
 	#buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
-	buildah run $(WORKING_CONTAINER) luarocks config
+	buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.'
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
