@@ -44,7 +44,7 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf rust cargo
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf rust cargo gnupg libgpg-error
 
 DEPS := $(BUILDING) $(DEVEL)
 REMOVE := default-editor vim-minimal
