@@ -223,7 +223,7 @@ info/host-spawn.md: latest/host-spawn.json
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luarocks # nlua tiktoken
+info/coding-tools.md: neovim nlua luarocks # nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -282,10 +282,10 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
-		--with-lua-interpreter=luajit \
+		--with-lua-interpreter=nlua \
 		--sysconfdir=/etc/xdg \
 		--force-config \
-		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
+		--with-lua-include=/usr/include/luajit-2.1' 
 	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
 	# echo -n 'checking luarocks version...'
 	# buildah run $(WORKING_CONTAINER) luarocks --version
