@@ -42,9 +42,10 @@ DEVEL := gettext-devel \
 		openssl-devel \
 		perl-devel \
 		readline-devel \
-		zlib-devel
+		zlib-devel \
+		luajit-devel
 
-BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf rust cargo gnupg libgpg-error
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
 
 DEPS := $(BUILDING) $(DEVEL)
 REMOVE := default-editor vim-minimal
@@ -52,16 +53,17 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools cargo
-# cli-tools host-spawn coding-tools runtimes clean checks
-ifdef GITHUB_ACTIONS
-	buildah config \
-	--label summary='a toolbox with cli tools, neovim' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(WORKING_CONTAINER)
-	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
-	buildah push $(TBX_IMAGE):latest
-endif
+default:  working build-tools nlua 
+
+#cli-tools host-spawn coding-tools runtimes clean checks
+# ifdef GITHUB_ACTIONS
+# 	buildah config \
+# 	--label summary='a toolbox with cli tools, neovim' \
+# 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+# 	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+# 	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
+# 	buildah push $(TBX_IMAGE):latest
+# endif
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
@@ -259,7 +261,7 @@ info/neovim.md: latest/neovim.json
 
 luajit: info/luajit.md
 info/luajit.md:
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
 	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
@@ -281,18 +283,18 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
-		--with-lua-interpreter=luajit \
+		--with-lua-interpreter=nlua \
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	echo -n 'checking luarocks version...'
-	buildah run $(WORKING_CONTAINER) luarocks --version
-	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
-	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
-	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
-	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
-	$(call tr,$${NAME},$${VER},$${SUM},$@)
+	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	# echo -n 'checking luarocks version...'
+	# buildah run $(WORKING_CONTAINER) luarocks --version
+	# LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
+	# NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
+	# VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
+	# SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
+	# $(call tr,$${NAME},$${VER},$${SUM},$@)
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -304,18 +306,13 @@ info/nlua.md: latest/nlua.json
 	echo '##[ $@ ]##'
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
-	# buildah run $(WORKING_CONTAINER) luarocks install nlua
-	# LINE=$$(buildah run $(WORKING_CONTAINER) luarocks show nlua | grep -oP '^nlua.+')
-	# echo "$${LINE}"
-	# VER=$$(echo "$${LINE}" | grep -oP '^nlua.+' | cut -d" " -f2)
-	# SUM=$$(echo "$${LINE}" |  grep -oP '^nlua.+' | cut -d"-" -f3)
-	buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
+	# buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
 	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
-	buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
-	buildah run $(WORKING_CONTAINER) luarocks
-	VER=$$(jq -r '.name' $< )
-	$(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
+	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+	# buildah run $(WORKING_CONTAINER) luarocks
+	# VER=$$(jq -r '.name' $< )
+	# $(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
 	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
@@ -494,6 +491,8 @@ info/npm.md: info/nodejs.md
 	buildah run $(WORKING_CONTAINER) npm install -g neovim
 
 # --root /usr/local/cargo
+#
+#  TODO
 
 cargo:
 	echo '##[ $@ ]##'
