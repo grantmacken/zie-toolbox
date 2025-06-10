@@ -53,8 +53,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools neovim nlua luarocks
-
+default:  working build-tools coding-tools
 #cli-tools host-spawn coding-tools runtimes clean checks
 # ifdef GITHUB_ACTIONS
 # 	buildah config \
@@ -224,7 +223,7 @@ info/host-spawn.md: latest/host-spawn.json
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
 coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luajit luarocks nlua tiktoken
+info/coding-tools.md: neovim luarocks # nlua tiktoken
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -283,7 +282,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
 		--lua-version=5.1 \
-		--with-lua-interpreter=nlua \
+		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
