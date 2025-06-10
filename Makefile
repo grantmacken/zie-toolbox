@@ -43,7 +43,6 @@ DEVEL := gettext-devel \
 		perl-devel \
 		readline-devel \
 		zlib-devel \
-		luajit-devel
 
 BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
 
@@ -53,16 +52,15 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools coding-tools
-#cli-tools host-spawn coding-tools runtimes clean checks
-# ifdef GITHUB_ACTIONS
-# 	buildah config \
-# 	--label summary='a toolbox with cli tools, neovim' \
-# 	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-# 	--env lang=C.UTF-8 $(WORKING_CONTAINER)
-# 	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
-# 	buildah push $(TBX_IMAGE):latest
-# endif
+default:  working build-tools cli-tools host-spawn coding-tools # runtimes clean checks
+ifdef GITHUB_ACTIONS
+	buildah config \
+	--label summary='a toolbox with cli tools, neovim' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+	buildah commit $(WORKING_CONTAINER) $(TBX_IMAGE)
+	buildah push $(TBX_IMAGE):latest
+endif
 
 clean:
 	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
@@ -101,16 +99,16 @@ checks:
 	# After removal of devel check ececs in working container
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	# echo -n 'checking luarocks version...'
-	# buildah run $(WORKING_CONTAINER) luarocks || true
-	echo -n 'checking erlixir version...'
-	buildah run $(WORKING_CONTAINER) elixir --version
-	echo -n 'checking gleam version...'
-	buildah run $(WORKING_CONTAINER) gleam --version
-	echo -n 'checking nodejs version...'
-	buildah run $(WORKING_CONTAINER) node --version
-	echo -n 'checking beam version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	echo -n 'checking luarocks version...'
+	buildah run $(WORKING_CONTAINER) luarocks || true
+	# echo -n 'checking erlixir version...'
+	# buildah run $(WORKING_CONTAINER) elixir --version
+	# echo -n 'checking gleam version...'
+	# buildah run $(WORKING_CONTAINER) gleam --version
+	# echo -n 'checking nodejs version...'
+	# buildah run $(WORKING_CONTAINER) node --version
+	# echo -n 'checking beam version...'
+	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 
 info/intro.md:
 	mkdir -p $(dir $@)
