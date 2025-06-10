@@ -229,10 +229,10 @@ info/coding-tools.md: neovim luarocks # nlua tiktoken
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
-	cat info/luajit.md | tee -a $@
-	cat info/luarocks.md | tee -a $@
-	cat info/nlua.md | tee -a $@
-	cat info/tiktoken.md | tee -a $@
+	# cat info/luajit.md | tee -a $@
+	# cat info/luarocks.md | tee -a $@
+	# cat info/nlua.md | tee -a $@
+	# cat info/tiktoken.md | tee -a $@
 
 ##[[ NEOVIM ]]##
 neovim: info/neovim.md
@@ -260,7 +260,7 @@ info/neovim.md: latest/neovim.json
 
 luajit: info/luajit.md
 info/luajit.md:
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit  &>/dev/null
+	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	buildah run $(WORKING_CONTAINER) luajit -v
 	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
