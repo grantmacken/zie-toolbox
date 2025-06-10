@@ -496,7 +496,12 @@ info/npm.md: info/nodejs.md
 cargo:
 	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo
+	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo &>dev/null
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
+	buildah run $(WORKING_CONTAINER) cargo-binstall --help
+	buildah run $(WORKING_CONTAINER) cargo-binstall --no-confirm --no-symlinks lux-cli
+	ripgrep stylua just wasm-pack
+	# cargo binstall lux-cli 
 
 
 
