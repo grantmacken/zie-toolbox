@@ -44,7 +44,7 @@ DEVEL := gettext-devel \
 		readline-devel \
 		zlib-devel
 
-BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf rust cargo
 
 DEPS := $(BUILDING) $(DEVEL)
 REMOVE := default-editor vim-minimal
@@ -52,7 +52,8 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools cli-tools host-spawn coding-tools runtimes clean checks
+default:  working build-tools cargo
+# cli-tools host-spawn coding-tools runtimes clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -141,7 +142,11 @@ info/working.md:
 	printf "The Toolbox is built from %s" "$(shell cat latest/fedora-toolbox.json | jq -r '.Labels.name')" | tee -a $@
 	printf ", version %s\n" $(FROM_VERSION) | tee -a $@
 	printf "\nToolbox is pulled from registry:  %s\n" $(FROM_REGISTRY) | tee -a $@
-	buildah config --env LANG="C.UTF-8" --env CPPFLAGS="-D_DEFAULT_SOURCE" $(WORKING_CONTAINER)
+	buildah config \
+		--env LANG="C.UTF-8" \
+		--env CPPFLAGS="-D_DEFAULT_SOURCE" \
+		--env CARGO_HOME="/usr/local/cargo" \
+		$(WORKING_CONTAINER)
 
 build-tools: info/build-tools.md
 info/build-tools.md:
@@ -487,6 +492,16 @@ info/npm.md: info/nodejs.md
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
 	buildah run $(WORKING_CONTAINER) npm install -g neovim
+
+cargo:
+	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
+	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo
+
+
+
+
+
 
 
 
