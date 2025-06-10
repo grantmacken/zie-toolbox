@@ -286,14 +286,17 @@ info/luarocks.md: latest/luarocks.json
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' 
-	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	# echo -n 'checking luarocks version...'
-	# buildah run $(WORKING_CONTAINER) luarocks --version
-	# LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
-	# NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
-	# VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
-	# SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
-	# $(call tr,$${NAME},$${VER},$${SUM},$@)
+	#buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	echo -n 'checking luarocks version...'
+	buildah run $(WORKING_CONTAINER) luarocks --version
+	buildah run $(WORKING_CONTAINER) luarocks config
+	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
+	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
+	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
+	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
+	$(call tr,$${NAME},$${VER},$${SUM},$@)
+	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
