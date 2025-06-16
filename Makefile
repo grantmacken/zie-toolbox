@@ -288,7 +288,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
-	buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.'
+	buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
@@ -488,7 +488,10 @@ info/npm.md: info/nodejs.md
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	buildah run $(WORKING_CONTAINER) npm install -g neovim
+	buildah run $(WORKING_CONTAINER) npm install --global neovim 
+	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli
+	echo -n 'tree-sitter...'
+	buildah run $(WORKING_CONTAINER) tree-sitter --version 
 
 # --root /usr/local/cargo
 #
