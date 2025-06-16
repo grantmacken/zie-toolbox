@@ -52,7 +52,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools cli-tools host-spawn coding-tools # runtimes clean checks
+default:  working build-tools cli-tools host-spawn coding-tools nodejs # runtimes clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -461,7 +461,7 @@ info/gleam.md: files/gleam.tar
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
-nodejs: info/npm.md
+nodejs: info/tree-sitter.md
 
 latest/nodejs.json:
 	# echo '##[ $@ ]##'
@@ -488,10 +488,18 @@ info/npm.md: info/nodejs.md
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	buildah run $(WORKING_CONTAINER) npm install --global neovim 
+	buildah run $(WORKING_CONTAINER) npm install --global neovim
+
+info/tree-sitter.md: info/npm.md
+	echo '##[ $@ ]##'
 	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli
 	echo -n 'tree-sitter...'
-	buildah run $(WORKING_CONTAINER) tree-sitter --version 
+	buildah run $(WORKING_CONTAINER) tree-sitter --version
+
+
+
+
+
 
 # --root /usr/local/cargo
 #
