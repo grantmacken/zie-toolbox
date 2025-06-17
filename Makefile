@@ -52,7 +52,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools host-spawn runtimes coding-tools clean checks
+default:  working build-tools host-spawn runtimes coding clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -198,7 +198,7 @@ info/host-spawn.md: latest/host-spawn.json
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
-coding-tools: info/coding-tools.md info/cli-tools.md info/coding-more.md
+coding: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 
 info/cli-tools.md:
 	mkdir -p $(dir $@)
@@ -220,8 +220,6 @@ info/cli-tools.md:
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
-
-
 
 info/coding-tools.md: neovim luajit luarocks
 	echo '##[ $@ ]##'
@@ -475,7 +473,7 @@ info/gleam.md: files/gleam.tar
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
-nodejs: info/tree-sitter.md
+nodejs: info/nodejs.md
 
 latest/nodejs.json:
 	# echo '##[ $@ ]##'
@@ -496,10 +494,7 @@ info/nodejs.md: latest/nodejs.json
 	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
 	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
 
-
-
 # --root /usr/local/cargo
-#
 #  TODO
 
 cargo:
