@@ -285,8 +285,8 @@ info/luarocks.md: latest/luarocks.json
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	# buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
