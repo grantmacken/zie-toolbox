@@ -198,7 +198,7 @@ info/host-spawn.md: latest/host-spawn.json
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
-coding: info/cli-tools.md info/coding-tools.md  info/coding-more.md
+coding: info/cli-tools.md info/coding-tools.md  
 
 info/cli-tools.md:
 	mkdir -p $(dir $@)
@@ -221,7 +221,7 @@ info/cli-tools.md:
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
-info/coding-tools.md: neovim luajit luarocks
+info/coding-tools.md: neovim luajit luarocks coding-more
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -297,6 +297,8 @@ info/luarocks.md: latest/luarocks.json
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
 
+
+coding-more: info/coding-more.md:
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	# these are extra tools that can be used withen the neovim text editor
