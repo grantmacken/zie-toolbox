@@ -298,7 +298,7 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
 
 
-coding-more: info/coding-more.md:
+coding-more: info/coding-more.md
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	# these are extra tools that can be used withen the neovim text editor
