@@ -298,11 +298,25 @@ info/luarocks.md: latest/luarocks.json
 	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
 
 
+TS_ROCKS := gleam diff latex
+TSROCKS  := $(patsubst %,tree-sitter-%,$(TS_ROCKS))
+ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
+
+ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
+
+lr_install =  luarocks install \
+			  --global \
+			  --server $(ROCKS_BINARIES) \
+			  --no-doc \
+			  --force-fast \
+			  --deps-mode one $1
+
+
 coding-more: info/coding-more.md
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	# these are extra tools that can be used withen the neovim text editor
-	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli &>dev/null
+	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli &>/dev/null
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
@@ -312,8 +326,9 @@ info/coding-more.md:
 	echo -n 'checking tree-sitter version ...'
 	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
-
-
+	buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser)
+	buildah run $(WORKING_CONTAINER) list --porcelain
+	buildah run $(WORKING_CONTAINER) luarocks show luarocks-build-treesitter-parser
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
