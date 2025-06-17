@@ -52,7 +52,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools cli-tools host-spawn coding-tools nodejs # runtimes clean checks
+default:  working build-tools host-spawn runtimes coding-tools clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -131,9 +131,8 @@ info/in-the-box.md:
 	The main tool categories are:
 	EOF
 	printf "\n - Build tools\n" | tee -a $@
-	printf "\n - CLI tools\n" | tee -a $@
-	printf "\n - Coding tools" | tee -a $@
-	printf "\n - Runtimes: This toolbox focus is on BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
+	printf "\n - Runtimes: BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
+	printf "\n - Coding tools: Neovim and a selection of terminal CLI tools" | tee -a $@
 
 info/working.md:
 	mkdir -p $(dir $@)
@@ -169,27 +168,6 @@ info/build-tools.md:
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
 
-cli-tools: info/cli-tools.md
-info/cli-tools.md:
-	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
-	for item in $(CLI)
-	do
-	buildah run $(WORKING_CONTAINER) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item} &>/dev/null
-	done
-	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
-	$(call tr,"Name","Version","Summary",$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
-	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
-	   paste  - - -  | sort -u ' | \
-	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
@@ -220,8 +198,32 @@ info/host-spawn.md: latest/host-spawn.json
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
-coding-tools: info/coding-tools.md
-info/coding-tools.md: neovim luajit luarocks # nlua tiktoken
+coding-tools: info/coding-tools.md info/cli-tools.md info/coding-more.md
+
+info/cli-tools.md:
+	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
+	for item in $(CLI)
+	do
+	buildah run $(WORKING_CONTAINER) dnf install \
+		--allowerasing \
+		--skip-unavailable \
+		--skip-broken \
+		--no-allow-downgrade \
+		-y \
+		$${item} &>/dev/null
+	done
+	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
+	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
+	   paste  - - -  | sort -u ' | \
+	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
+
+
+
+info/coding-tools.md: neovim luajit luarocks
 	echo '##[ $@ ]##'
 	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -229,6 +231,7 @@ info/coding-tools.md: neovim luajit luarocks # nlua tiktoken
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
 	cat info/luarocks.md | tee -a $@
+	cat info/coding-more.md | tee -a $@
 	# cat info/nlua.md | tee -a $@
 	# cat info/tiktoken.md | tee -a $@
 
@@ -288,13 +291,29 @@ info/luarocks.md: latest/luarocks.json
 	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
-	buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
+	# buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
 	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
+
+info/coding-more.md:
+	echo '##[ $@ ]##'
+	# these are extra tools that can be used withen the neovim text editor
+	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli &>dev/null
+	echo -n 'checking ast-grep version...'
+	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
+	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
+	# install the nodejs neovim api bridge
+	buildah run $(WORKING_CONTAINER) npm install --global neovim &>/dev/null
+	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli &>/dev/null
+	echo -n 'checking tree-sitter version ...'
+	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
+	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+
+
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -330,15 +349,10 @@ info/tiktoken.md: latest/tiktoken.json
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
-	# nlua -e 'print(package.)'
-	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/lib/lua/5.1
-	# buildah run $(WORKING_CONTAINER) exa --tree /usr/local/share/lua/5.1
-	#
-
 
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: otp rebar3 elixir gleam nodejs
+info/runtimes.md: nodejs otp rebar3 elixir gleam 
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -481,23 +495,6 @@ info/nodejs.md: latest/nodejs.json
 	echo -n 'checking npm version...'
 	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
 	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
-
-info/npm.md: info/nodejs.md
-	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli
-	echo -n 'checking ast-grep version...'
-	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
-	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	buildah run $(WORKING_CONTAINER) npm install --global neovim
-
-info/tree-sitter.md: info/npm.md
-	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli
-	echo -n 'tree-sitter...'
-	buildah run $(WORKING_CONTAINER) tree-sitter --version
-
-
-
 
 
 
