@@ -34,7 +34,7 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 # lynx
 # ast-grep/cli grug-far
 
-CLI   := bat za fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
+CLI   := bat direnv eza fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
 DEVEL := gettext-devel \
 		glibc-devel \
 		libevent-devel \
@@ -63,10 +63,10 @@ ifdef GITHUB_ACTIONS
 endif
 
 clean:
-	buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
-	buildah run $(WORKING_CONTAINER) dnf install -y zlib ncurses readline &>/dev/null 
+	# buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
+	# buildah run $(WORKING_CONTAINER) dnf install -y zlib ncurses readline &>/dev/null 
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y &>/dev/null
-	buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
+	# buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
 
 clear:
 	rm -f info/*.md
@@ -100,15 +100,15 @@ checks:
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
 	echo -n 'checking luarocks version...'
-	buildah run $(WORKING_CONTAINER) luarocks || true
-	# echo -n 'checking erlixir version...'
-	# buildah run $(WORKING_CONTAINER) elixir --version
-	# echo -n 'checking gleam version...'
-	# buildah run $(WORKING_CONTAINER) gleam --version
-	# echo -n 'checking nodejs version...'
-	# buildah run $(WORKING_CONTAINER) node --version
-	# echo -n 'checking beam version...'
-	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	buildah run $(WORKING_CONTAINER) luarocks --version
+	echo -n 'checking erlixir version...'
+	buildah run $(WORKING_CONTAINER) elixir --version
+	echo -n 'checking gleam version...'
+	buildah run $(WORKING_CONTAINER) gleam --version
+	echo -n 'checking nodejs version...'
+	buildah run $(WORKING_CONTAINER) node --version
+	echo -n 'checking beam version...'
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 
 info/intro.md:
 	mkdir -p $(dir $@)
@@ -312,7 +312,6 @@ lr_install =  luarocks install \
 			  --deps-mode one $1
 
 
-coding-more: info/coding-more.md
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	# these are extra tools that can be used withen the neovim text editor
