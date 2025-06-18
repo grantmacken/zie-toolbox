@@ -196,7 +196,17 @@ info/host-spawn.md: latest/host-spawn.json
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
 
-coding: info/cli-tools.md info/coding-tools.md  info/coding-more.md 
+coding: info/coding.md
+info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
+	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	cat info/neovim.md | tee -a $@
+	cat info/luajit.md | tee -a $@
+	cat info/luarocks.md | tee -a $@
+	cat info/coding-more.md | tee -a $@
+	cat info/cli-tools.md | tee -a $@
+
 
 info/cli-tools.md:
 	mkdir -p $(dir $@)
@@ -221,13 +231,7 @@ info/cli-tools.md:
 
 info/coding-tools.md: neovim luajit luarocks
 	echo '##[ $@ ]##'
-	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
-	$(call tr,"Name","Version","Summary",$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	cat info/neovim.md | tee -a $@
-	cat info/luajit.md | tee -a $@
-	cat info/luarocks.md | tee -a $@
-	cat info/coding-more.md | tee -a $@
+
 	# cat info/nlua.md | tee -a $@
 	# cat info/tiktoken.md | tee -a $@
 
