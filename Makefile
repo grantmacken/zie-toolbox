@@ -326,12 +326,12 @@ info/coding-more.md:
 	echo -n 'checking tree-sitter version ...'
 	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
-	buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser)
-	buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser-cpp)
-	buildah run $(WORKING_CONTAINER) $(call lr_install,nlua)
-	buildah run $(WORKING_CONTAINER) $(call lr_install,busted)
-	buildah run $(WORKING_CONTAINER) luarocks list --porcelain
-	buildah run $(WORKING_CONTAINER) luarocks show luarocks-build-treesitter-parser
+	# buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser)
+	# buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser-cpp)
+	# buildah run $(WORKING_CONTAINER) $(call lr_install,nlua)
+	# buildah run $(WORKING_CONTAINER) $(call lr_install,busted)
+	# buildah run $(WORKING_CONTAINER) luarocks list --porcelain
+	# buildah run $(WORKING_CONTAINER) luarocks show luarocks-build-treesitter-parser
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
