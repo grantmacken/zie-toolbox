@@ -158,7 +158,7 @@ info/build-tools.md:
 		-y \
 		$${item} &>/dev/null
 	done
-	printf "$(HEADING2) %s\n\n" "Selected Build Tooling for Make Installs" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Selected Build Tooling for Make Installs" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(BUILDING) | \
@@ -198,7 +198,7 @@ info/host-spawn.md: latest/host-spawn.json
 
 coding: info/coding.md
 info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
-	printf "$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
@@ -206,7 +206,6 @@ info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 	cat info/luarocks.md | tee -a $@
 	cat info/coding-more.md | tee -a $@
 	cat info/cli-tools.md | tee -a $@
-
 
 info/cli-tools.md:
 	mkdir -p $(dir $@)
@@ -314,7 +313,7 @@ lr_install =  luarocks install \
 
 info/coding-more.md:
 	echo '##[ $@ ]##'
-	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
 	cat << EOF | tee -a $@
 	Extra tooling that can be used within the Neovim text editor plugin echo system.
 	These are install via npm or luarocks.
@@ -377,7 +376,7 @@ info/tiktoken.md: latest/tiktoken.json
 
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
-info/runtimes.md: nodejs otp rebar3 elixir gleam 
+info/runtimes.md: nodejs otp rebar3 elixir gleam
 	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
 	cat << EOF | tee -a $@
 	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
@@ -440,7 +439,6 @@ info/otp.md: latest/otp.json
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
 	buildah run $(WORKING_CONTAINER) rm -fR /tmp/otp
-
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -525,7 +523,6 @@ info/nodejs.md: latest/nodejs.json
 	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
 
 # --root /usr/local/cargo
-#  TODO
 
 cargo:
 	echo '##[ $@ ]##'
