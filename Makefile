@@ -314,7 +314,16 @@ lr_install =  luarocks install \
 
 info/coding-more.md:
 	echo '##[ $@ ]##'
-	# these are extra tools that can be used withen the neovim text editor
+	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
+	cat << EOF | tee -a $@
+	Extra tooling that can be used within the Neovim text editor plugin echo system.
+	These are install via npm or luarocks.
+	EOF
+	echo >> $@
+	$(call tr,"----","-------","----------------------------",$@)
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	# these are 
 	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli &>/dev/null
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
