@@ -66,7 +66,6 @@ clean:
 	# buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
 	# buildah run $(WORKING_CONTAINER) dnf install -y zlib ncurses readline &>/dev/null 
 	buildah run $(WORKING_CONTAINER) dnf autoremove -y &>/dev/null
-	# buildah run $(WORKING_CONTAINER) rm -Rf /tmp && mkdir -p /tmp
 
 clear:
 	rm -f info/*.md
@@ -99,8 +98,8 @@ checks:
 	# After removal of devel check ececs in working container
 	echo -n 'checking neovim version...'
 	buildah run $(WORKING_CONTAINER) nvim --version
-	echo -n 'checking luarocks version...'
-	buildah run $(WORKING_CONTAINER) luarocks --version
+	# echo -n 'checking luarocks version...'
+	# buildah run $(WORKING_CONTAINER) luarocks --version
 	echo -n 'checking erlixir version...'
 	buildah run $(WORKING_CONTAINER) elixir --version
 	echo -n 'checking gleam version...'
@@ -167,7 +166,6 @@ info/build-tools.md:
 	paste  - - -  | sort -u ' | \
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
 	tee -a $@
-
 
 ## HOST-SPAWN
 host-spawn: info/host-spawn.md
@@ -276,17 +274,17 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	SRC=$$(jq -r '.tarball_url' $<)
-	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf /tmp && mkdir -p /tmp && mkdir -p /etc/xdg/luarocks'
+	buildah run $(WORKING_CONTAINER) mkdir -p 	/tmp/luarocks /etc/xdg/luarocks
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp/luarocks &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/luarocks && ./configure \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
 	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make && make install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/luarocks && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
 	buildah run $(WORKING_CONTAINER) luarocks --version
 	# buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
@@ -295,8 +293,7 @@ info/luarocks.md: latest/luarocks.json
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
-	buildah run $(WORKING_CONTAINER) sh -c 'test -d /tmp && rm -Rf  && mkdir -p /tmp'
-
+	buildah run $(WORKING_CONTAINER) rm -fR tmp/luarocks
 
 TS_ROCKS := gleam diff latex
 TSROCKS  := $(patsubst %,tree-sitter-%,$(TS_ROCKS))
@@ -311,7 +308,6 @@ lr_install =  luarocks install \
 			  --force-fast \
 			  --deps-mode one $1
 
-
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	# these are extra tools that can be used withen the neovim text editor
@@ -324,13 +320,12 @@ info/coding-more.md:
 	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli &>/dev/null
 	echo -n 'checking tree-sitter version ...'
 	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
-	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
-	# buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser)
-	# buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser-cpp)
-	# buildah run $(WORKING_CONTAINER) $(call lr_install,nlua)
-	# buildah run $(WORKING_CONTAINER) $(call lr_install,busted)
-	# buildah run $(WORKING_CONTAINER) luarocks list --porcelain
-	# buildah run $(WORKING_CONTAINER) luarocks show luarocks-build-treesitter-parser
+	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@) 
+	for ROCK in $(ROCKS)
+	do
+	buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser) &>/dev/null
+	done
+	buildah run $(WORKING_CONTAINER) luarocks list --porcelain
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -405,15 +400,15 @@ otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp'
+	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/otp
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
 	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
 	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && ./configure \
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp/otp &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -427,10 +422,12 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking otp version...'
 	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
+	buildah run $(WORKING_CONTAINER) rm -fR /tmp/otp
+
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -444,9 +441,9 @@ info/elixir.md: latest/elixir.json
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'rm -Rf /tmp && mkdir -p /tmp'
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/elixir
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp/elixir &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/elixir && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking elixir version...'
 	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	buildah run $(WORKING_CONTAINER) elixir --version
@@ -455,6 +452,7 @@ info/elixir.md: latest/elixir.json
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
 	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
+	buildah run $(WORKING_CONTAINER) rm -fR /tmp/elixir
 
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
