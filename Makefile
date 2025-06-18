@@ -5,7 +5,6 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-builtin-variables
 MAKEFLAGS += --silent
 # MAKEFLAGS += --jobs=$(shell nproc)
-
 unexport MAKEFLAGS
 
 .SUFFIXES:            # Delete the default suffixes
@@ -27,6 +26,7 @@ include .env
 WORKING_CONTAINER ?= fedora-toolbox-working-container
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
+BEAM_IMAGE=ghcr.io/grantmacken/beam-me-up
 
 # direnv chafa texlive-scheme-basic
 # :checkhealth extra tools for neovim plugins
@@ -195,6 +195,182 @@ info/host-spawn.md: latest/host-spawn.json
 	When doing this remember to pop back into the toolbox with exit.
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
+
+
+##[[ RUNTIMES ]]##
+runtimes: info/runtimes.md
+info/runtimes.md: nodejs otp rebar3 elixir gleam
+	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
+	cat << EOF | tee -a $@
+	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
+	The Erlang programming language is a general-purpose, concurrent, functional programming language
+	and **runtime** system. It is used to build massively scalable soft real-time systems with high availability.
+	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
+	The included Elixir and Gleam programming languages also run on the BEAM.
+	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
+	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
+	EOF
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
+	cat info/otp.md    | tee -a $@
+	cat info/rebar3.md | tee -a $@
+	cat info/elixir.md | tee -a $@
+	cat info/gleam.md  | tee -a $@
+	cat info/nodejs.md | tee -a $@
+ifdef GITHUB_ACTIONS
+	buildah config \
+	--label summary='a toolbox with the beam runtime and associated languages' \
+	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
+	--env lang=C.UTF-8 $(WORKING_CONTAINER)
+	buildah commit $(WORKING_CONTAINER) $(BEAM_IMAGE)
+	buildah push $(BEAM_IMAGE):latest
+endif
+
+# latest/erlang.downloads:
+# 	echo '##[ $@ ]##'
+# 	mkdir -p $(dir $@)
+# 	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O |
+# 	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
+# 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
+
+
+latest/otp.json: 
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
+
+otp: info/otp.md
+info/otp.md: latest/otp.json
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/otp
+	TAGNAME=$$(jq -r '.tag_name' $<)
+	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
+	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
+	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
+	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
+	tar xz --strip-components=1 -C files/otp &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp/otp &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && ./configure \
+		--prefix=/usr/local \
+		--enable-threads \
+		--enable-shared-zlib \
+		--enable-ssl=dynamic-ssl-lib \
+		--enable-jit \
+		--enable-kernel-poll \
+		--without-debugger \
+		--without-observer \
+		--without-wx \
+		--without-et \
+		--without-megaco \
+		--without-cosEvent \
+		--without-odbc' &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	echo -n 'checking otp version...'
+	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
+	buildah run $(WORKING_CONTAINER) rm -fR /tmp/otp
+
+latest/elixir.json:
+	echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
+
+elixir: info/elixir.md
+info/elixir.md: latest/elixir.json
+	echo '##[ $@ ]##'
+	TAGNAME=$$(jq -r '.tag_name' $<)
+	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
+	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
+	tar xz --strip-components=1 -C files/elixir &>/dev/null
+	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/elixir
+	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp/elixir &>/dev/null
+	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/elixir && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	echo -n 'checking elixir version...'
+	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	buildah run $(WORKING_CONTAINER) elixir --version
+	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
+	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
+	$(call tr,Elixir,$${VER},Elixir programming language, $@)
+	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	$(call tr,Mix,$${VER},Elixir build tool, $@)
+	buildah run $(WORKING_CONTAINER) rm -fR /tmp/elixir
+
+latest/rebar3.json:
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
+
+rebar3: info/rebar3.md
+info/rebar3.md: latest/rebar3.json
+	# echo '##[ $@ ]##'
+	VER=$$(jq -r '.tag_name' $<)
+	SRC=$(shell $(call bdu,rebar3,$<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
+	$(call tr,Rebar3,$${VER},the erlang build tool,$@)
+
+##[[ GLEAM ]]##
+latest/gleam.json:
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget --timeout=10 --tries=3 https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
+	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
+
+gleam: info/gleam.md
+files/gleam.tar: latest/gleam.json
+	mkdir -p $(dir $@)
+	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
+	SRC=$$(jq -r '.browser_download_url' $<)
+	wget $${SRC} -q -O- | gzip -d > $@
+
+info/gleam.md: files/gleam.tar
+	echo '##[ $@ ]##'
+	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
+	echo -n 'checking gleam version...'
+	buildah run $(WORKING_CONTAINER) gleam --version
+	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
+	$(call tr,Gleam,$${VER},Gleam programming language,$@)
+
+##[[ NODEJS ]]##
+nodejs: info/nodejs.md
+
+latest/nodejs.json:
+	# echo '##[ $@ ]##'
+	mkdir -p $(dir $@)
+	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
+
+info/nodejs.md: latest/nodejs.json
+	# echo '##[ $@ ]##'
+	VER=$$(jq -r '.tag_name' $< )
+	mkdir -p files/nodejs/usr/local
+	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
+	tar xz --strip-components=1 -C files/nodejs/usr/local
+	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
+	echo -n 'checking node version...'
+	NODE_VER=$$(buildah run $(WORKING_CONTAINER) node --version | tee)
+	$(call tr,node,$${NODE_VER},Nodejs runtime, $@)
+	echo -n 'checking npm version...'
+	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
+	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
+
+# --root /usr/local/cargo
+
+cargo:
+	echo '##[ $@ ]##'
+	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
+	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo
+	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
+	buildah run $(WORKING_CONTAINER) cargo-binstall --help
+	buildah run $(WORKING_CONTAINER) cargo-binstall --no-confirm --no-symlinks --root /usr/local/cargo lux-cli
+	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
+	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
+	buildah run $(WORKING_CONTAINER) lx --help
+
+	# ripgrep stylua just wasm-pack
+	# cargo binstall lux-cli 
+
+## CODING TOOLS
 
 coding: info/coding.md
 info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
@@ -373,176 +549,4 @@ info/tiktoken.md: latest/tiktoken.json
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
-
-##[[ RUNTIMES ]]##
-runtimes: info/runtimes.md
-info/runtimes.md: nodejs otp rebar3 elixir gleam
-	printf "\n$(HEADING2) %s\n\n" "Runtimes and associated languages" | tee $@
-	cat << EOF | tee -a $@
-	Included in this toolbox are the latest releases of the Erlang, Elixir and Gleam programming languages.
-	The Erlang programming language is a general-purpose, concurrent, functional programming language
-	and **runtime** system. It is used to build massively scalable soft real-time systems with high availability.
-	The BEAM is the virtual machine at the core of the Erlang Open Telecom Platform (OTP).
-	The included Elixir and Gleam programming languages also run on the BEAM.
-	BEAM tooling included is the latest versions of the Rebar3 and the Mix build tools.
-	The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
-	EOF
-	$(call tr,"Name","Version","Summary",$@)
-	$(call tr,"----","-------","----------------------------",$@)
-	cat info/otp.md    | tee -a $@
-	cat info/rebar3.md | tee -a $@
-	cat info/elixir.md | tee -a $@
-	cat info/gleam.md  | tee -a $@
-	cat info/nodejs.md | tee -a $@
-
-# latest/erlang.downloads:
-# 	echo '##[ $@ ]##'
-# 	mkdir -p $(dir $@)
-# 	wget -q --timeout=10 --tries=3 https://www.erlang.org/downloads -O |
-# 	grep -oP 'href="\K(otp-.*\.tar\.gz)' | grep -oP 'https://.*' > $@
-# 	VER=$$(grep -oP 'The latest version of Erlang/OTP is(.+)>\K(\d+\.){2}\d+' $< )
-
-
-latest/otp.json: 
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
-
-otp: info/otp.md
-info/otp.md: latest/otp.json
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/otp
-	TAGNAME=$$(jq -r '.tag_name' $<)
-	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
-	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
-	SRC=$$(echo $${ASSET} | jq -r '.browser_download_url')
-	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
-	tar xz --strip-components=1 -C files/otp &>/dev/null
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp/otp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && ./configure \
-		--prefix=/usr/local \
-		--enable-threads \
-		--enable-shared-zlib \
-		--enable-ssl=dynamic-ssl-lib \
-		--enable-jit \
-		--enable-kernel-poll \
-		--without-debugger \
-		--without-observer \
-		--without-wx \
-		--without-et \
-		--without-megaco \
-		--without-cosEvent \
-		--without-odbc' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
-	echo -n 'checking otp version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
-	buildah run $(WORKING_CONTAINER) rm -fR /tmp/otp
-
-latest/elixir.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
-
-elixir: info/elixir.md
-info/elixir.md: latest/elixir.json
-	echo '##[ $@ ]##'
-	TAGNAME=$$(jq -r '.tag_name' $<)
-	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
-	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
-	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/elixir
-	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/elixir && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
-	echo -n 'checking elixir version...'
-	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	buildah run $(WORKING_CONTAINER) elixir --version
-	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
-	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
-	$(call tr,Elixir,$${VER},Elixir programming language, $@)
-	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
-	$(call tr,Mix,$${VER},Elixir build tool, $@)
-	buildah run $(WORKING_CONTAINER) rm -fR /tmp/elixir
-
-latest/rebar3.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/rebar3/releases/latest -O $@
-
-rebar3: info/rebar3.md
-info/rebar3.md: latest/rebar3.json
-	# echo '##[ $@ ]##'
-	VER=$$(jq -r '.tag_name' $<)
-	SRC=$(shell $(call bdu,rebar3,$<))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/rebar3 &>/dev/null
-	$(call tr,Rebar3,$${VER},the erlang build tool,$@)
-
-##[[ GLEAM ]]##
-latest/gleam.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget --timeout=10 --tries=3 https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
-	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
-
-gleam: info/gleam.md
-files/gleam.tar: latest/gleam.json
-	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
-	SRC=$$(jq -r '.browser_download_url' $<)
-	wget $${SRC} -q -O- | gzip -d > $@
-
-info/gleam.md: files/gleam.tar
-	echo '##[ $@ ]##'
-	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
-	echo -n 'checking gleam version...'
-	buildah run $(WORKING_CONTAINER) gleam --version
-	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
-	$(call tr,Gleam,$${VER},Gleam programming language,$@)
-
-##[[ NODEJS ]]##
-nodejs: info/nodejs.md
-
-latest/nodejs.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q 'https://api.github.com/repos/nodejs/node/releases/latest' -O $@
-
-info/nodejs.md: latest/nodejs.json
-	# echo '##[ $@ ]##'
-	VER=$$(jq -r '.tag_name' $< )
-	mkdir -p files/nodejs/usr/local
-	wget -q https://nodejs.org/download/release/$${VER}/node-$${VER}-linux-x64.tar.gz -O- |
-	tar xz --strip-components=1 -C files/nodejs/usr/local
-	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
-	echo -n 'checking node version...'
-	NODE_VER=$$(buildah run $(WORKING_CONTAINER) node --version | tee)
-	$(call tr,node,$${NODE_VER},Nodejs runtime, $@)
-	echo -n 'checking npm version...'
-	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
-	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
-
-# --root /usr/local/cargo
-
-cargo:
-	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
-	buildah run $(WORKING_CONTAINER) cargo-binstall --help
-	buildah run $(WORKING_CONTAINER) cargo-binstall --no-confirm --no-symlinks --root /usr/local/cargo lux-cli
-	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
-	buildah run $(WORKING_CONTAINER) lx --help
-
-	# ripgrep stylua just wasm-pack
-	# cargo binstall lux-cli 
-
-
-
-
-
-
-
 
