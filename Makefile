@@ -217,14 +217,6 @@ info/runtimes.md: nodejs otp rebar3 elixir gleam
 	cat info/elixir.md | tee -a $@
 	cat info/gleam.md  | tee -a $@
 	cat info/nodejs.md | tee -a $@
-ifdef GITHUB_ACTIONS
-	buildah config \
-	--label summary='a toolbox with the beam runtime and associated languages' \
-	--label maintainer='Grant MacKenzie <grantmacken@gmail.com>' \
-	--env lang=C.UTF-8 $(WORKING_CONTAINER)
-	buildah commit $(WORKING_CONTAINER) $(BEAM_IMAGE)
-	buildah push $(BEAM_IMAGE):latest
-endif
 
 # latest/erlang.downloads:
 # 	echo '##[ $@ ]##'
