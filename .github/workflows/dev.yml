@@ -1,0 +1,29 @@
+name: worktree tbx-dev
+on:
+  push:
+    branches:
+    - tbx-dev
+    paths-ignore:
+    - '**/README.md'
+jobs:
+  buildah_images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: false
+    # https://docs.github.com/en/actions/reference/authentication-in-a-workflow
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:
+        - uses: docker/login-action@v3
+          with:
+            registry: ghcr.io
+            username: ${{ github.repository_owner }}
+            password: ${{ github.token }}
+        - uses: actions/checkout@v4
+        - name: Toolbox Build
+          run: |
+            make .env
+            make
+
