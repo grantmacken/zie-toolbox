@@ -459,6 +459,14 @@ info/luarocks.md: latest/luarocks.json
 NPM_TOOLS := ast-grep # tree-sitter
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
 ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
+
+# --tree $(ROCKS_PATH) 
+lrInstall =  luarocks install \
+			  --server $(ROCKS_BINARIES) \
+			  --no-doc \
+			  --force-fast \
+			  --deps-mode one $1
+
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
@@ -486,12 +494,7 @@ info/coding-more.md:
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
-	$(RUN) luarocks install \
-		--server $(ROCKS_BINARIES) \
-		--global \
-		--no-doc \
-		--force-fast \
-		--deps-mode one $${rock} || true
+	$(RUN) $(call lrInstall, $${rock})
 	done
 	# $(RUN) luarocks list --porcelain || true
 	$(RUN) ls -alR /usr/local/lib/lua
