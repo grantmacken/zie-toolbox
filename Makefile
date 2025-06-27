@@ -47,8 +47,6 @@ DEVEL := gettext-devel \
 		zlib-devel
 DEPS := $(BUILDING) $(DEVEL)
 CLI  := bat direnv eza fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
-NPM_TOOLS := ast-grep tree-sitter
-ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
 
 REMOVE := default-editor vim-minimal
 
@@ -95,7 +93,6 @@ latest/fedora-toolbox.json:
 	$(RUN) nproc | tee -a .env
 
 working: info/intro.md info/in-the-box.md info/working.md
-
 checks:
 	echo '##[ $@ ]##'
 	# After removal of devel check ececs in working container
@@ -464,6 +461,8 @@ info/luarocks.md: latest/luarocks.json
 	$(RUN) rm -fR tmp/luarocks
 
 
+NPM_TOOLS := ast-grep # tree-sitter
+ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
