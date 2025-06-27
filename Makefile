@@ -504,8 +504,8 @@ info/coding-more.md:
 		--force-fast \
 		--deps-mode one $$rock &>/dev/null
 	done
-	buildah run $(WORKING_CONTAINER) luarocks list --porcelain
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/lib/lua/5.1/
+	buildah run $(WORKING_CONTAINER) luarocks list --porcelain || true
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/lib/lua/5.1/ || true
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
