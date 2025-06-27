@@ -53,7 +53,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools host-spawn runtimes coding clean checks
+default:  working build-tools host-spawn runtimes coding api clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -189,7 +189,6 @@ info/host-spawn.md: latest/host-spawn.json
 	When doing this remember to pop back into the toolbox with exit.
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
-
 
 ##[[ RUNTIMES ]]##
 runtimes: info/runtimes.md
@@ -353,11 +352,7 @@ cargo:
 	$(RUN) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
 	$(RUN) lx --help
 
-	# ripgrep stylua just wasm-pack
-	# cargo binstall lux-cli 
-
 ## CODING TOOLS
-
 coding: info/coding.md
 info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
@@ -529,4 +524,14 @@ info/tiktoken.md: latest/tiktoken.json
 	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
+
+api:
+	echo '##[ $@ ]##'
+	$(RUN) echo "[google-cloud-cli]" > /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) echo "name=Google Cloud CLI" >> /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) echo "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64" >> /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) echo "enabled=1" >> /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) echo "gpgcheck=1" >> /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) echo "gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg" >> /etc/yum.repos.d/google-cloud-cli.repo
+	$(RUN) dnf install -y google-cloud-cli &>/dev/null
 
