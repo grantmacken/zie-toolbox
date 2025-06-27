@@ -457,12 +457,12 @@ info/luarocks.md: latest/luarocks.json
 	# Set the luarocks config to use the luajit interpreter
 	$(RUN) luarocks --global config variables.LUA || true
 	$(RUN) luarocks --global config variables.LUA_INCDIR || true
-	$(RUN) luarocks config lua_version || true
-	$(RUN) luarocks config lua_interpreter || true
-	$(RUN) luarocks config variables.LUA /usr/local/bin/luajit || true
-	$(RUN) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
-	$(RUN) luarocks config lua_version 5.1 || true
-	$(RUN) luarocks config lua_interpreter luajit || true
+	$(RUN) luarocks --global config lua_version || true
+	$(RUN) luarocks --global config lua_interpreter || true
+	$(RUN) luarocks --global config variables.LUA /usr/local/bin/luajit || true
+	$(RUN) luarocks --global config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
+	$(RUN) luarocks --global config lua_version 5.1 || true
+	$(RUN) luarocks --global config lua_interpreter luajit || true
 
 
 
