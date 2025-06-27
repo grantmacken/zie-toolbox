@@ -454,6 +454,16 @@ info/luarocks.md: latest/luarocks.json
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	$(RUN) rm -fR tmp/luarocks
+	# Set the luarocks config to use the luajit interpreter
+	$(RUN) luarocks --global config variables.LUA || true
+	$(RUN) luarocks --global config variables.LUA_INCDIR || true
+	$(RUN) luarocks config lua_version || true
+	$(RUN) luarocks config lua_interpreter || true
+	$(RUN) luarocks config variables.LUA /usr/local/bin/luajit || true
+	$(RUN) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
+	$(RUN) luarocks config lua_version 5.1 || true
+	$(RUN) luarocks config lua_interpreter luajit || true
+
 
 
 NPM_TOOLS := ast-grep # tree-sitter
@@ -494,7 +504,7 @@ info/coding-more.md:
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
-	$(RUN) $(call lrInstall, $${rock})
+	$(RUN) $(call lrInstall, $${rock}) || true
 	done
 	# $(RUN) luarocks list --porcelain || true
 	$(RUN) ls -alR /usr/local/lib/lua
