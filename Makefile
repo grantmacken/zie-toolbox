@@ -484,9 +484,9 @@ info/coding-more.md:
 	echo -n 'checking ast-grep version...'
 	VER=$$($(RUN) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	echo -n 'checking tree-sitter version ...'
-	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
-	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+	# echo -n 'checking tree-sitter version ...'
+	# VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
+	# $(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
