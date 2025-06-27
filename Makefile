@@ -30,13 +30,15 @@ BEAM_IMAGE=ghcr.io/grantmacken/beam-me-up
 
 RUN := $(RUN)
 
+
+
 # direnv chafa texlive-scheme-basic
 # :checkhealth extra tools for neovim plugins
 # texlive-scheme-basic -- render-mardown
 # lynx
 # ast-grep/cli grug-far
 
-CLI   := bat direnv eza fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
 DEVEL := gettext-devel \
 		glibc-devel \
 		libevent-devel \
@@ -44,11 +46,12 @@ DEVEL := gettext-devel \
 		openssl-devel \
 		perl-devel \
 		readline-devel \
-		zlib-devel \
-
-BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
-
+		zlib-devel
 DEPS := $(BUILDING) $(DEVEL)
+CLI  := bat direnv eza fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
+NPM_TOOLS := ast-grep tree-sitter
+ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
+
 REMOVE := default-editor vim-minimal
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
@@ -152,13 +155,7 @@ info/build-tools.md:
 	echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
-	$(RUN) dnf install \
-		--allowerasing \
-		--skip-unavailable \
-		--skip-broken \
-		--no-allow-downgrade \
-		-y \
-		$${item} &>/dev/null
+	$(RUN) dnf install --allowerasing --skip-unavailable --skip-broken --no-allow-downgrade -y $${item} &>/dev/null
 	done
 	printf "\n$(HEADING2) %s\n\n" "Selected Build Tooling for Make Installs" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -468,7 +465,6 @@ info/luarocks.md: latest/luarocks.json
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	$(RUN) rm -fR tmp/luarocks
 
-NPM := ast-grep tree-sitter
 
 info/coding-more.md:
 	echo '##[ $@ ]##'
@@ -483,9 +479,9 @@ info/coding-more.md:
 	$(call tr,"----","-------","----------------------------",$@)
 	# these are 
 	echo ' - tools are installed via npm'
-	for item in $(NPM)
+	for item in $(NPM_TOOLS)
 	do
-	$(RUN) npm install --global $${item} &>/dev/null
+	$(RUN) npm install --global $${item}
 	done
 	$(RUN) npm list --global --depth=0 
 	echo -n 'checking ast-grep version...'
@@ -495,16 +491,9 @@ info/coding-more.md:
 	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
 	echo ' - tools are installed via luarocks'
-	for rock in luafilesystem \
-		luarocks-build-treesitter-parser \
-		luarocks-build-treesitter-parser-cpp \
-		tiktoken-core
+	for rock in $(ROCKS)
 	do
-	$(RUN) luarocks install \
-		--global \
-		--no-doc \
-		--force-fast \
-		--deps-mode one $$rock &>/dev/null
+	$(RUN) luarocks install --global --no-doc --force-fast --deps-mode one $$rock
 	done
 	$(RUN) luarocks list --porcelain || true
 	$(RUN) ls -al /usr/local/lib/lua/5.1/ || true
