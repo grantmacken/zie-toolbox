@@ -468,7 +468,7 @@ info/luarocks.md: latest/luarocks.json
 
 NPM_TOOLS := ast-grep # tree-sitter
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
-ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
+ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
 
 # --tree $(ROCKS_PATH) 
 lrInstall =  luarocks install \
@@ -507,7 +507,7 @@ info/coding-more.md:
 	$(RUN) $(call lrInstall, $${rock}) || true
 	done
 	# $(RUN) luarocks list --porcelain || true
-	$(RUN) ls -alR /usr/local/lib/lua
+	$(RUN) ls -alR /usr/local
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -544,13 +544,21 @@ info/tiktoken.md: latest/tiktoken.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
 	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
 
-api:
+files/etc/yum.repos.d/google-cloud-cli.repo:
+	mkdir -p $(dir $@)
+	cat << EOF | tee $@
+	[google-cloud-cli]
+	name=Google Cloud CLI
+	baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64
+	enabled=1
+	gpgcheck=1
+	gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
+	EOF
+
+
+
+api: files/etc/yum.repos.d/google-cloud-cli.repo
 	echo '##[ $@ ]##'
-	$(RUN) echo "[google-cloud-cli]" > /etc/yum.repos.d/google-cloud-cli.repo
-	$(RUN) echo "name=Google Cloud CLI" >> /etc/yum.repos.d/google-cloud-cli.repo
-	$(RUN) echo "baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64" >> /etc/yum.repos.d/google-cloud-cli.repo
-	$(RUN) echo "enabled=1" >> /etc/yum.repos.d/google-cloud-cli.repo
-	$(RUN) echo "gpgcheck=1" >> /etc/yum.repos.d/google-cloud-cli.repo
-	$(RUN) echo "gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg" >> /etc/yum.repos.d/google-cloud-cli.repo
+	buildah add $(WORKING_CONTAINER) $< /etc/yum.repos.d/google-cloud-cli.repo &>/dev/null
 	$(RUN) dnf install -y google-cloud-cli &>/dev/null
 
