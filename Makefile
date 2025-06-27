@@ -478,19 +478,31 @@ info/coding-more.md:
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	# these are 
-	buildah run $(WORKING_CONTAINER) npm install --global @ast-grep/cli &>/dev/null
+	echo ' - tools are installed via npm'
+	for app in \
+		@ast-grep/cli \
+		neovim \
+		tree-sitter-cli \
+	do
+	buildah run $(WORKING_CONTAINER) npm install --global $$app &>/dev/null
+	done
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	# install the nodejs neovim api bridge
-	buildah run $(WORKING_CONTAINER) npm install --global neovim &>/dev/null
-	buildah run $(WORKING_CONTAINER) npm install --global tree-sitter-cli &>/dev/null
 	echo -n 'checking tree-sitter version ...'
 	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
-	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@) 
-	for rock in luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
+	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+	echo ' - tools are installed via luarocks'
+	for rock in luafilesystem \
+		luarocks-build-treesitter-parser \
+		luarocks-build-treesitter-parser-cpp \
+		tiktoken-core
 	do
-	buildah run $(WORKING_CONTAINER) luarocks install --global --no-doc --force-fast --deps-mode one $$rock &>/dev/null
+	buildah run $(WORKING_CONTAINER) luarocks install \
+		--global \
+		--no-doc \
+		--force-fast \
+		--deps-mode one $$rock &>/dev/null
 	done
 	buildah run $(WORKING_CONTAINER) luarocks list --porcelain
 	buildah run $(WORKING_CONTAINER) ls -al /usr/local/lib/lua/5.1/
