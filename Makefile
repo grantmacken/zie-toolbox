@@ -492,8 +492,8 @@ info/coding-more.md:
 	do
 	$(RUN) luarocks install --global --no-doc --force-fast --deps-mode one $$rock
 	done
-	$(RUN) luarocks list --porcelain || true
-	$(RUN) ls -al /usr/local/lib/lua/5.1/ || true
+	# $(RUN) luarocks list --porcelain || true
+	$(RUN) ls -alR /usr/local/lib/lua
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
