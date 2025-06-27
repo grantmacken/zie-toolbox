@@ -466,6 +466,8 @@ info/luarocks.md: latest/luarocks.json
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	buildah run $(WORKING_CONTAINER) rm -fR tmp/luarocks
 
+NPM := ast-grep tree-sitter
+
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
@@ -479,13 +481,11 @@ info/coding-more.md:
 	$(call tr,"----","-------","----------------------------",$@)
 	# these are 
 	echo ' - tools are installed via npm'
-	for app in \
-		@ast-grep/cli \
-		neovim \
-		tree-sitter-cli \
+	for item in $(NPM)
 	do
-	buildah run $(WORKING_CONTAINER) npm install --global $$app &>/dev/null
+	buildah run $(WORKING_CONTAINER) npm install --global $${item} &>/dev/null
 	done
+	buildah run $(WORKING_CONTAINER) npm list --global --depth=0 
 	echo -n 'checking ast-grep version...'
 	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
