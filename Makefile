@@ -28,6 +28,8 @@ FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 BEAM_IMAGE=ghcr.io/grantmacken/beam-me-up
 
+RUN := $(RUN)
+
 # direnv chafa texlive-scheme-basic
 # :checkhealth extra tools for neovim plugins
 # texlive-scheme-basic -- render-mardown
@@ -63,9 +65,9 @@ ifdef GITHUB_ACTIONS
 endif
 
 clean:
-	# buildah run $(WORKING_CONTAINER) dnf remove -y $(REMOVE) &>/dev/null
-	# buildah run $(WORKING_CONTAINER) dnf install -y zlib ncurses readline &>/dev/null 
-	buildah run $(WORKING_CONTAINER) dnf autoremove -y &>/dev/null
+	# $(RUN) dnf remove -y $(REMOVE) &>/dev/null
+	# $(RUN) dnf install -y zlib ncurses readline &>/dev/null 
+	$(RUN) dnf autoremove -y &>/dev/null
 
 clear:
 	rm -f info/*.md
@@ -89,7 +91,7 @@ latest/fedora-toolbox.json:
 	echo -n "WORKING_CONTAINER=" | tee -a .env
 	buildah from "$${FROM_REGISTRY}:$${FROM_VERSION}" | tee -a .env
 	echo -n "NPROC=" | tee -a .env
-	buildah run $(WORKING_CONTAINER) nproc | tee -a .env
+	$(RUN) nproc | tee -a .env
 
 working: info/intro.md info/in-the-box.md info/working.md
 
@@ -97,17 +99,17 @@ checks:
 	echo '##[ $@ ]##'
 	# After removal of devel check ececs in working container
 	echo -n 'checking neovim version...'
-	buildah run $(WORKING_CONTAINER) nvim --version
+	$(RUN) nvim --version
 	# echo -n 'checking luarocks version...'
-	# buildah run $(WORKING_CONTAINER) luarocks --version
+	# $(RUN) luarocks --version
 	echo -n 'checking erlixir version...'
-	buildah run $(WORKING_CONTAINER) elixir --version
+	$(RUN) elixir --version
 	echo -n 'checking gleam version...'
-	buildah run $(WORKING_CONTAINER) gleam --version
+	$(RUN) gleam --version
 	echo -n 'checking nodejs version...'
-	buildah run $(WORKING_CONTAINER) node --version
+	$(RUN) node --version
 	echo -n 'checking beam version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	$(RUN) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 
 info/intro.md:
 	mkdir -p $(dir $@)
@@ -150,7 +152,7 @@ info/build-tools.md:
 	echo '##[ $@ ]##'
 	for item in $(DEPS)
 	do
-	buildah run $(WORKING_CONTAINER) dnf install \
+	$(RUN) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
@@ -161,7 +163,7 @@ info/build-tools.md:
 	printf "\n$(HEADING2) %s\n\n" "Selected Build Tooling for Make Installs" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
-	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(BUILDING) | \
+	$(RUN) sh -c  'dnf info -q installed $(BUILDING) | \
 	grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	paste  - - -  | sort -u ' | \
 	awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | \
@@ -180,8 +182,8 @@ info/host-spawn.md: latest/host-spawn.json
 	SRC=$(shell $(call bdu,x86_64,$<))
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/host-spawn &>/dev/null
 	echo -n 'checking host-spawn version...'
-	buildah run $(WORKING_CONTAINER) host-spawn --version
-	VER=$$(buildah run $(WORKING_CONTAINER) host-spawn --version)
+	$(RUN) host-spawn --version
+	VER=$$($(RUN) host-spawn --version)
 	printf "\n$(HEADING2) %s\n\n" "Do More With host-spawn" | tee -a $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
@@ -235,7 +237,7 @@ otp: info/otp.md
 info/otp.md: latest/otp.json
 	echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/otp
+	$(RUN) mkdir -p /tmp/otp
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	$(eval ver := $(shell jq -r '.name' $< | cut -d' ' -f2))
 	ASSET=$$(jq -r '.assets[] | select(.name=="otp_src_$(ver).tar.gz") ' $<)
@@ -243,7 +245,7 @@ info/otp.md: latest/otp.json
 	mkdir -p files/otp && wget -q --timeout=10 --tries=3  $${SRC} -O- |
 	tar xz --strip-components=1 -C files/otp &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/otp /tmp/otp &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && ./configure \
+	$(RUN) sh -c 'cd /tmp/otp && ./configure \
 		--prefix=/usr/local \
 		--enable-threads \
 		--enable-shared-zlib \
@@ -257,11 +259,11 @@ info/otp.md: latest/otp.json
 		--without-megaco \
 		--without-cosEvent \
 		--without-odbc' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/otp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	$(RUN) sh -c 'cd /tmp/otp && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking otp version...'
-	buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	$(RUN) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
 	$(call tr ,Erlang/OTP,$(ver),the Erlang Open Telecom Platform OTP,$@)
-	buildah run $(WORKING_CONTAINER) rm -fR /tmp/otp
+	$(RUN) rm -fR /tmp/otp
 
 latest/elixir.json:
 	echo '##[ $@ ]##'
@@ -275,18 +277,18 @@ info/elixir.md: latest/elixir.json
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
 	tar xz --strip-components=1 -C files/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) mkdir -p /tmp/elixir
+	$(RUN) mkdir -p /tmp/elixir
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/elixir /tmp/elixir &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/elixir && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
+	$(RUN) sh -c 'cd /tmp/elixir && make -j$(NPROC) && make -j$(NPROC) install' &>/dev/null
 	echo -n 'checking elixir version...'
-	# buildah run $(WORKING_CONTAINER) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
-	buildah run $(WORKING_CONTAINER) elixir --version
-	LINE=$$(buildah run $(WORKING_CONTAINER) elixir --version | grep -oP '^Elixir.+')
+	# $(RUN) erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().'  -noshell
+	$(RUN) elixir --version
+	LINE=$$($(RUN) elixir --version | grep -oP '^Elixir.+')
 	VER=$$(echo "$${LINE}" | grep -oP 'Elixir\s\K.+' | cut -d' ' -f1)
 	$(call tr,Elixir,$${VER},Elixir programming language, $@)
-	VER=$$(buildah run $(WORKING_CONTAINER) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
+	VER=$$($(RUN) mix --version | grep -oP 'Mix \K.+' | cut -d' ' -f1)
 	$(call tr,Mix,$${VER},Elixir build tool, $@)
-	buildah run $(WORKING_CONTAINER) rm -fR /tmp/elixir
+	$(RUN) rm -fR /tmp/elixir
 
 latest/rebar3.json:
 	# echo '##[ $@ ]##'
@@ -311,7 +313,7 @@ latest/gleam.json:
 gleam: info/gleam.md
 files/gleam.tar: latest/gleam.json
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) rm -f /usr/local/bin/gleam
+	$(RUN) rm -f /usr/local/bin/gleam
 	SRC=$$(jq -r '.browser_download_url' $<)
 	wget $${SRC} -q -O- | gzip -d > $@
 
@@ -319,8 +321,8 @@ info/gleam.md: files/gleam.tar
 	echo '##[ $@ ]##'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
 	echo -n 'checking gleam version...'
-	buildah run $(WORKING_CONTAINER) gleam --version
-	VER=$$(buildah run $(WORKING_CONTAINER) gleam --version | cut -d' ' -f2)
+	$(RUN) gleam --version
+	VER=$$($(RUN) gleam --version | cut -d' ' -f2)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
@@ -339,25 +341,25 @@ info/nodejs.md: latest/nodejs.json
 	tar xz --strip-components=1 -C files/nodejs/usr/local
 	buildah add --chmod 755  $(WORKING_CONTAINER) files/nodejs &>/dev/null
 	echo -n 'checking node version...'
-	NODE_VER=$$(buildah run $(WORKING_CONTAINER) node --version | tee)
+	NODE_VER=$$($(RUN) node --version | tee)
 	$(call tr,node,$${NODE_VER},Nodejs runtime, $@)
 	echo -n 'checking npm version...'
-	NPM_VER=$$(buildah run $(WORKING_CONTAINER) npm --version | tee)
+	NPM_VER=$$($(RUN) npm --version | tee)
 	$(call tr,npm,$${NPM_VER},Node Package Manager, $@)
 
 # --root /usr/local/cargo
 
 cargo:
 	echo '##[ $@ ]##'
-	buildah run $(WORKING_CONTAINER) mkdir -p /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) cargo install cargo-binstall --root /usr/local/cargo
-	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
-	buildah run $(WORKING_CONTAINER) cargo-binstall --help
-	buildah run $(WORKING_CONTAINER) cargo-binstall --no-confirm --no-symlinks --root /usr/local/cargo lux-cli
-	buildah run $(WORKING_CONTAINER) ls /usr/local/cargo/bin/
-	buildah run $(WORKING_CONTAINER) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
-	buildah run $(WORKING_CONTAINER) lx --help
+	$(RUN) mkdir -p /usr/local/cargo
+	$(RUN) cargo install cargo-binstall --root /usr/local/cargo
+	$(RUN) ls /usr/local/cargo/bin/
+	$(RUN) ln -sf /usr/local/cargo/bin/cargo-binstall /usr/local/bin/cargo-binstall
+	$(RUN) cargo-binstall --help
+	$(RUN) cargo-binstall --no-confirm --no-symlinks --root /usr/local/cargo lux-cli
+	$(RUN) ls /usr/local/cargo/bin/
+	$(RUN) ln -sf /usr/local/cargo/bin/* /usr/local/bin/
+	$(RUN) lx --help
 
 	# ripgrep stylua just wasm-pack
 	# cargo binstall lux-cli 
@@ -377,10 +379,10 @@ info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 
 info/cli-tools.md:
 	mkdir -p $(dir $@)
-	buildah run $(WORKING_CONTAINER) dnf upgrade -y --minimal &>/dev/null
+	$(RUN) dnf upgrade -y --minimal &>/dev/null
 	for item in $(CLI)
 	do
-	buildah run $(WORKING_CONTAINER) dnf install \
+	$(RUN) dnf install \
 		--allowerasing \
 		--skip-unavailable \
 		--skip-broken \
@@ -391,7 +393,7 @@ info/cli-tools.md:
 	printf "\n$(HEADING2) %s\n\n" "Handpicked CLI tools available in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
-	buildah run $(WORKING_CONTAINER) sh -c  'dnf info -q installed $(CLI) | \
+	$(RUN) sh -c  'dnf info -q installed $(CLI) | \
 	   grep -oP "(Name.+:\s\K.+)|(Ver.+:\s\K.+)|(Sum.+:\s\K.+)" | \
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
@@ -420,18 +422,18 @@ info/neovim.md: latest/neovim.json
 	tar xz --strip-components=1 -C $${TARGET} &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/neovim &>/dev/null
 	echo -n 'checking neovim locations...'
-	buildah run $(WORKING_CONTAINER) whereis nvim
+	$(RUN) whereis nvim
 	echo -n 'checking neovim version...'
-	buildah run $(WORKING_CONTAINER) nvim --version
-	VER=$$(buildah run $(WORKING_CONTAINER) nvim --version| grep -oP 'NVIM \K.+')
+	$(RUN) nvim --version
+	VER=$$($(RUN) nvim --version| grep -oP 'NVIM \K.+')
 	$(call tr,Neovim,$${VER},The text editor with a focus on extensibility and usability,$@)
 
 luajit: info/luajit.md
 info/luajit.md:
-	buildah run $(WORKING_CONTAINER) dnf install -y luajit-devel luajit  &>/dev/null
+	$(RUN) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
-	buildah run $(WORKING_CONTAINER) luajit -v
-	VERSION=$$(buildah run $(WORKING_CONTAINER) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
+	$(RUN) luajit -v
+	VERSION=$$($(RUN) luajit -v | grep -oP 'LuaJIT \K\d+\.\d+\.\d{1,3}')
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 latest/luarocks.json:
@@ -445,26 +447,26 @@ info/luarocks.md: latest/luarocks.json
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	SRC=$$(jq -r '.tarball_url' $<)
-	buildah run $(WORKING_CONTAINER) mkdir -p 	/tmp/luarocks /etc/xdg/luarocks
+	$(RUN) mkdir -p 	/tmp/luarocks /etc/xdg/luarocks
 	wget -q --timeout=10 --tries=3 $${SRC} -O- | tar xz --strip-components=1 -C files/luarocks &>/dev/null
 	buildah add --chmod 755 $(WORKING_CONTAINER) files/luarocks /tmp/luarocks &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/luarocks && ./configure \
+	$(RUN) sh -c 'cd /tmp/luarocks && ./configure \
 		--lua-version=5.1 \
 		--with-lua-interpreter=luajit \
 		--sysconfdir=/etc/xdg \
 		--force-config \
 		--with-lua-include=/usr/include/luajit-2.1' &>/dev/null
-	# buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp && make bootstrap' &>/dev/null
-	buildah run $(WORKING_CONTAINER) sh -c 'cd /tmp/luarocks && make && make install' &>/dev/null
+	# $(RUN) sh -c 'cd /tmp && make bootstrap' &>/dev/null
+	$(RUN) sh -c 'cd /tmp/luarocks && make && make install' &>/dev/null
 	echo -n 'checking luarocks version...'
-	buildah run $(WORKING_CONTAINER) luarocks --version
-	# buildah run $(WORKING_CONTAINER) luarocks config --json | jq '.' &>/dev/null
-	LINE=$$(buildah run $(WORKING_CONTAINER) luarocks | grep -oP '^Lua.+')
+	$(RUN) luarocks --version
+	# $(RUN) luarocks config --json | jq '.' &>/dev/null
+	LINE=$$($(RUN) luarocks | grep -oP '^Lua.+')
 	NAME=$$(echo $$LINE | grep -oP '^Lua\w+')
 	VER=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f1)
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
-	buildah run $(WORKING_CONTAINER) rm -fR tmp/luarocks
+	$(RUN) rm -fR tmp/luarocks
 
 NPM := ast-grep tree-sitter
 
@@ -483,14 +485,14 @@ info/coding-more.md:
 	echo ' - tools are installed via npm'
 	for item in $(NPM)
 	do
-	buildah run $(WORKING_CONTAINER) npm install --global $${item} &>/dev/null
+	$(RUN) npm install --global $${item} &>/dev/null
 	done
-	buildah run $(WORKING_CONTAINER) npm list --global --depth=0 
+	$(RUN) npm list --global --depth=0 
 	echo -n 'checking ast-grep version...'
-	VER=$$(buildah run $(WORKING_CONTAINER) ast-grep --version | cut -d ' ' -f2 | tee)
+	VER=$$($(RUN) ast-grep --version | cut -d ' ' -f2 | tee)
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
 	echo -n 'checking tree-sitter version ...'
-	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
+	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
 	echo ' - tools are installed via luarocks'
 	for rock in luafilesystem \
@@ -498,14 +500,14 @@ info/coding-more.md:
 		luarocks-build-treesitter-parser-cpp \
 		tiktoken-core
 	do
-	buildah run $(WORKING_CONTAINER) luarocks install \
+	$(RUN) luarocks install \
 		--global \
 		--no-doc \
 		--force-fast \
 		--deps-mode one $$rock &>/dev/null
 	done
-	buildah run $(WORKING_CONTAINER) luarocks list --porcelain || true
-	buildah run $(WORKING_CONTAINER) ls -al /usr/local/lib/lua/5.1/ || true
+	$(RUN) luarocks list --porcelain || true
+	$(RUN) ls -al /usr/local/lib/lua/5.1/ || true
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -517,14 +519,14 @@ info/nlua.md: latest/nlua.json
 	echo '##[ $@ ]##'
 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
-	# buildah run $(WORKING_CONTAINER) luarocks config lua_version 5.1 &>/dev/null
-	# buildah run $(WORKING_CONTAINER) luarocks config lua_interpreter nlua
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA /usr/local/bin/nlua
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
-	# buildah run $(WORKING_CONTAINER) luarocks
+	# $(RUN) luarocks config lua_version 5.1 &>/dev/null
+	# $(RUN) luarocks config lua_interpreter nlua
+	# $(RUN) luarocks config variables.LUA /usr/local/bin/nlua
+	# $(RUN) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+	# $(RUN) luarocks
 	# VER=$$(jq -r '.name' $< )
 	# $(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
-	# buildah run $(WORKING_CONTAINER) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
+	# $(RUN) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
 TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
