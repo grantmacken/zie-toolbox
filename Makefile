@@ -466,19 +466,6 @@ info/luarocks.md: latest/luarocks.json
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	buildah run $(WORKING_CONTAINER) rm -fR tmp/luarocks
 
-TS_ROCKS := gleam diff latex
-TSROCKS  := $(patsubst %,tree-sitter-%,$(TS_ROCKS))
-ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
-
-ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
-
-lr_install =  luarocks install \
-			  --global \
-			  --server $(ROCKS_BINARIES) \
-			  --no-doc \
-			  --force-fast \
-			  --deps-mode one $1
-
 info/coding-more.md:
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
@@ -501,11 +488,12 @@ info/coding-more.md:
 	echo -n 'checking tree-sitter version ...'
 	VER=$$(buildah run $(WORKING_CONTAINER) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@) 
-	for ROCK in $(ROCKS)
+	for rock in luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp tiktoken-core
 	do
-	buildah run $(WORKING_CONTAINER) $(call lr_install,luarocks-build-treesitter-parser) &>/dev/null
+	buildah run $(WORKING_CONTAINER) luarocks install --global --no-doc --force-fast --deps-mode one $$rock &>/dev/null
 	done
 	buildah run $(WORKING_CONTAINER) luarocks list --porcelain
+	buildah run $(WORKING_CONTAINER) ls -al /usr/local/lib/lua/5.1/
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
