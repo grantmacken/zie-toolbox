@@ -27,10 +27,8 @@ WORKING_CONTAINER ?= fedora-toolbox-working-container
 FED_IMAGE := registry.fedoraproject.org/fedora-toolbox
 TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 BEAM_IMAGE=ghcr.io/grantmacken/beam-me-up
-
-RUN := $(RUN)
-
-
+# SHORTCUT
+RUN := buildah run $(WORKING_CONTAINER) 
 
 # direnv chafa texlive-scheme-basic
 # :checkhealth extra tools for neovim plugins
