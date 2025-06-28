@@ -387,11 +387,8 @@ info/cli-tools.md:
 
 info/coding-tools.md: neovim luajit luarocks
 	echo '##[ $@ ]##'
+	printf "\n$(HEADING2) %s\n\n" "Coding Tools" | tee $@
 
-	# cat info/nlua.md | tee -a $@
-	# cat info/tiktoken.md | tee -a $@
-
-##[[ NEOVIM ]]##
 neovim: info/neovim.md
 latest/neovim.json:
 	echo '##[ $@ ]##'
@@ -455,17 +452,14 @@ info/luarocks.md: latest/luarocks.json
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	$(RUN) rm -fR tmp/luarocks
 	# Set the luarocks config to use the luajit interpreter
-	$(RUN) luarocks --global config variables.LUA || true
-	$(RUN) luarocks --global config variables.LUA_INCDIR || true
-	$(RUN) luarocks --global config lua_version || true
-	$(RUN) luarocks --global config lua_interpreter || true
+	# $(RUN) luarocks --global config variables.LUA || true
+	# $(RUN) luarocks --global config variables.LUA_INCDIR || true
+	# $(RUN) luarocks --global config lua_version || true
+	# $(RUN) luarocks --global config lua_interpreter || true
 	# $(RUN) luarocks --global config variables.LUA /usr/local/bin/luajit || true
 	# $(RUN) luarocks --global config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
 	# $(RUN) luarocks --global config lua_version 5.1 || true
 	# $(RUN) luarocks --global config lua_interpreter luajit || true
-
-
-
 
 info/coding-more.md: tiktoken npm-more rocks-more
 	echo '##[ $@ ]##'
@@ -474,7 +468,6 @@ info/coding-more.md: tiktoken npm-more rocks-more
 	Extra tooling that can be used within the Neovim text editor plugin echo system.
 	These are install via npm or luarocks.
 	EOF
-	echo >> $@
 
 
 NPM_TOOLS := ast-grep tree-sitter
@@ -497,13 +490,11 @@ info/npm-more.md:
 	done
 	$(RUN) npm list --global --depth=0 
 	echo -n 'checking ast-grep version...'
-	VER=$$($(RUN) ast-grep --version | cut -d ' ' -f2 | tee)
+	VER=$$($(RUN) ast-grep --version | cut -d ' ' -f2 | tee))
 	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
 	# echo -n 'checking tree-sitter version ...'
 	# VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	# $(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
-
-
 
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
 ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
