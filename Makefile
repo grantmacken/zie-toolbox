@@ -482,7 +482,6 @@ info/npm-more.md:
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
-	# these are 
 	echo ' - tools are installed via npm'
 	for item in $(NPM_TOOLS)
 	do
@@ -490,11 +489,11 @@ info/npm-more.md:
 	done
 	$(RUN) npm list --global --depth=0 
 	echo -n 'checking ast-grep version...'
-	VER=$$($(RUN) ast-grep --version | cut -d ' ' -f2 | tee))
-	$(call tr,ast-grep,$${VER},Tool for code structural search, lint, and rewriting., $@)
-	# echo -n 'checking tree-sitter version ...'
-	# VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
-	# $(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+	VER=$(shell $(RUN) ast-grep --version | cut -d ' ' -f2 | tee)
+	$(call tr,ast-grep,$${VER},Tool for code structural search\, lint\, and rewriting, $@)
+	echo -n 'checking tree-sitter version ...'
+	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
+	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
 
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
 ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
