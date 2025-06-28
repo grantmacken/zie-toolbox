@@ -53,7 +53,7 @@ REMOVE := default-editor vim-minimal
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
 bdu = jq -r ".assets[] | select(.browser_download_url | contains(\"$1\")) | .browser_download_url" $2
 
-default:  working build-tools host-spawn runtimes coding api clean checks
+default:  working build-tools host-spawn runtimes coding clean checks
 ifdef GITHUB_ACTIONS
 	buildah config \
 	--label summary='a toolbox with cli tools, neovim' \
@@ -353,7 +353,7 @@ cargo:
 	$(RUN) lx --help
 
 ## CODING TOOLS
-coding: info/coding.md
+coding: info/coding.md 
 info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
 	$(call tr,"Name","Version","Summary",$@)
@@ -459,10 +459,10 @@ info/luarocks.md: latest/luarocks.json
 	$(RUN) luarocks --global config variables.LUA_INCDIR || true
 	$(RUN) luarocks --global config lua_version || true
 	$(RUN) luarocks --global config lua_interpreter || true
-	$(RUN) luarocks --global config variables.LUA /usr/local/bin/luajit || true
-	$(RUN) luarocks --global config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
-	$(RUN) luarocks --global config lua_version 5.1 || true
-	$(RUN) luarocks --global config lua_interpreter luajit || true
+	# $(RUN) luarocks --global config variables.LUA /usr/local/bin/luajit || true
+	# $(RUN) luarocks --global config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
+	# $(RUN) luarocks --global config lua_version 5.1 || true
+	# $(RUN) luarocks --global config lua_interpreter luajit || true
 
 
 
@@ -477,7 +477,7 @@ lrInstall =  luarocks install \
 			  --force-fast \
 			  --deps-mode one $1
 
-info/coding-more.md:
+info/coding-more.md: tiktoken
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
 	cat << EOF | tee -a $@
@@ -529,7 +529,7 @@ info/nlua.md: latest/nlua.json
 	# $(RUN) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
 
 tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
-TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core-linux.so
+TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core.so
 
 latest/tiktoken.json:
 	# echo '##[ $@ ]##'
@@ -539,26 +539,8 @@ latest/tiktoken.json:
 tiktoken: info/tiktoken.md
 info/tiktoken.md: latest/tiktoken.json
 	# echo '##[ $@ ]##'
-	$(eval tiktoken_src := $(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<)))
-	$(eval tiktoken_ver := $(shell jq -r '.tag_name' $<))
-	buildah add --chmod 755 $(WORKING_CONTAINER) $(tiktoken_src) $(TIKTOKEN_TARGET) &>/dev/null
-	$(call tr,tiktoken,$(tiktoken_ver),The lua module for generating tiktok tokens,$@)
-
-files/etc/yum.repos.d/google-cloud-cli.repo:
-	mkdir -p $(dir $@)
-	cat << EOF | tee $@
-	[google-cloud-cli]
-	name=Google Cloud CLI
-	baseurl=https://packages.cloud.google.com/yum/repos/cloud-sdk-el9-x86_64
-	enabled=1
-	gpgcheck=1
-	gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg
-	EOF
-
-
-
-api: files/etc/yum.repos.d/google-cloud-cli.repo
-	echo '##[ $@ ]##'
-	buildah add $(WORKING_CONTAINER) $< /etc/yum.repos.d/google-cloud-cli.repo &>/dev/null
-	$(RUN) dnf install -y google-cloud-cli &>/dev/null
+	SRC=$(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<))
+	VER=$$(jq -r '.tag_name' $<))
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET) &>/dev/null
+	$(call tr,tiktoken,$${VER},The lua module for generating tiktok tokens,$@)
 
