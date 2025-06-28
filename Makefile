@@ -466,18 +466,8 @@ info/luarocks.md: latest/luarocks.json
 
 
 
-NPM_TOOLS := ast-grep # tree-sitter
-ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
-ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
 
-# --tree $(ROCKS_PATH) 
-lrInstall =  luarocks install \
-			  --server $(ROCKS_BINARIES) \
-			  --no-doc \
-			  --force-fast \
-			  --deps-mode one $1
-
-info/coding-more.md: tiktoken
+info/coding-more.md: tiktoken npm-more rocks-more
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
 	cat << EOF | tee -a $@
@@ -485,6 +475,17 @@ info/coding-more.md: tiktoken
 	These are install via npm or luarocks.
 	EOF
 	echo >> $@
+
+
+NPM_TOOLS := ast-grep tree-sitter
+lrInstall =  luarocks install \
+			  --server $(ROCKS_BINARIES) \
+			  --no-doc \
+			  --force-fast \
+			  --deps-mode one $1
+
+npm-more: info/npm-more.md
+info/npm-more.md:
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
@@ -501,6 +502,22 @@ info/coding-more.md: tiktoken
 	# echo -n 'checking tree-sitter version ...'
 	# VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	# $(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+
+
+
+ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
+ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
+rocks-more: info/rocks-more.md
+info/rocks-more.md:
+	echo '##[ $@ ]##'
+	printf "\n$(HEADING2) %s\n\n" "Lua Rocks" | tee $@
+	cat << EOF | tee -a $@
+	These are Lua rocks that can be used within the Neovim text editor plugin echo system.
+	EOF
+	echo >> $@
+	$(call tr,"----","-------","----------------------------",$@)
+	$(call tr,"Name","Version","Summary",$@)
+	$(call tr,"----","-------","----------------------------",$@)
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
@@ -508,6 +525,9 @@ info/coding-more.md: tiktoken
 	done
 	# $(RUN) luarocks list --porcelain || true
 	$(RUN) ls -alR /usr/local
+
+
+
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
