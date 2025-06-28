@@ -470,8 +470,7 @@ info/coding-more.md: tiktoken npm-more rocks-more
 	EOF
 
 
-NPM_TOOLS := ast-grep 
-# tree-sitter
+NPM_TOOLS := ast-grep tree-sitter-cli
 lrInstall =  luarocks install \
 			  --server $(ROCKS_BINARIES) \
 			  --no-doc \
