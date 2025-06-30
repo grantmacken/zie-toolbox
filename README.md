@@ -51,8 +51,8 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.11.1   | Gleam programming language                                                          |
-| node           | v24.2.0  | Nodejs runtime                                                                      |
-| npm            | 11.3.0   | Node Package Manager                                                                |
+| node           | v24.3.0  | Nodejs runtime                                                                      |
+| npm            | 11.4.2   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
 
@@ -74,7 +74,7 @@ Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more i
 | ----           | -------  | ----------------------------                                                        |
 | Neovim         | v0.11.2  | The text editor with a focus on extensibility and usability                         |
 | luajit         | 2.1.174  | The LuaJIT compiler                                                                 |
-| LuaRocks       | 3.12.1   |  the Lua package manager                                                            |
+| LuaRocks       | 3.12.2   |  the Lua package manager                                                            |
 
 ## More Coding Tools
 
