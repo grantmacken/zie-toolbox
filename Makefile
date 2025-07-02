@@ -194,12 +194,12 @@ info/host-spawn.md: latest/host-spawn.json
 	When doing this remember to pop back into the toolbox with exit.
 	EOF
 	printf "Checkout the %s for more information.\n\n" "[host-spawn repo](https://github.com/1player/host-spawn)" | tee -a $@
-	printf "%s\n" "Host-spawn (version: $${NAME}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
+	printf "%s\n" "Host-spawn (version: $${VER}) allows the running of commands on your host machine from inside the toolbox" | tee -a $@
 	# close table
 	printf "\n%s\n" "For conveniance I have made the following host executables can be used from this toolbox" | tee -a $@
 	for item in $(SPAWN)
 	do
-	buildah run $(CONTAINER) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
+	$(RUN) ln -fs /usr/local/bin/host-spawn /usr/local/bin/$${item}
 	printf " - %s\n" "$${item}" | tee -a $@
 	done
 
