@@ -29,15 +29,6 @@ TBX_IMAGE=ghcr.io/grantmacken/zie-toolbox
 BEAM_IMAGE=ghcr.io/grantmacken/beam-me-up
 # SHORTCUT
 RUN := buildah run $(WORKING_CONTAINER) 
-
-# direnv chafa texlive-scheme-basic
-# :checkhealth extra tools for neovim plugins
-# texlive-scheme-basic -- render-mardown
-# lynx
-# ast-grep/cli grug-far
-
-
-
 REMOVE := default-editor vim-minimal
 
 tr = printf "| %-14s | %-8s | %-83s |\n" "$(1)" "$(2)" "$(3)" | tee -a $(4)
@@ -233,13 +224,13 @@ info/runtimes.md: nodejs otp rebar3 elixir gleam
 
 
 latest/otp.json: 
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 https://api.github.com/repos/erlang/otp/releases/latest -O $@
 
 otp: info/otp.md
 info/otp.md: latest/otp.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	$(RUN) mkdir -p /tmp/otp
 	TAGNAME=$$(jq -r '.tag_name' $<)
@@ -270,13 +261,13 @@ info/otp.md: latest/otp.json
 	$(RUN) rm -fR /tmp/otp
 
 latest/elixir.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3  https://api.github.com/repos/elixir-lang/elixir/releases/latest -O $@
 
 elixir: info/elixir.md
 info/elixir.md: latest/elixir.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	TAGNAME=$$(jq -r '.tag_name' $<)
 	SRC=https://github.com/elixir-lang/elixir/archive/$${TAGNAME}.tar.gz
 	mkdir -p files/elixir && wget -q --timeout=10 --tries=3 $${SRC} -O- |
@@ -311,7 +302,7 @@ info/rebar3.md: latest/rebar3.json
 latest/gleam.json:
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
-	wget --timeout=10 --tries=3 https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
+	wget -q --timeout=10 --tries=3 https://api.github.com/repos/gleam-lang/gleam/releases/latest -O- |
 	jq -r '.assets[] | select(.name | endswith("x86_64-unknown-linux-musl.tar.gz"))' > $@
 
 gleam: info/gleam.md
@@ -322,11 +313,10 @@ files/gleam.tar: latest/gleam.json
 	wget $${SRC} -q -O- | gzip -d > $@
 
 info/gleam.md: files/gleam.tar
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	buildah add --chmod 755 $(WORKING_CONTAINER) $< /usr/local/bin/  &>/dev/null
 	echo -n 'checking gleam version...'
-	$(RUN) gleam --version
-	VER=$$($(RUN) gleam --version | cut -d' ' -f2)
+	VER=$$($(RUN) gleam --version | cut -d' ' -f2 | tee)
 	$(call tr,Gleam,$${VER},Gleam programming language,$@)
 
 ##[[ NODEJS ]]##
@@ -366,23 +356,31 @@ cargo:
 	$(RUN) lx --help
 
 ## CODING TOOLS
-coding: info/coding.md 
-info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
-	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee $@
+coding: info/coding.md
+info/coding.md: cli-tools coding-tools coding-more
+	cat info/cli-tools.md | tee $@
+	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee -a $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
 	cat info/luajit.md | tee -a $@
 	cat info/luarocks.md | tee -a $@
-	cat info/coding-more.md | tee -a $@
-	cat info/cli-tools.md | tee -a $@
+	echo '##[ $@ ]##'
+	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
+	cat << EOF | tee -a $@
+	Extra tooling that can be used within the Neovim text editor plugin echo system.
+	These are install via npm or luarocks.
+	EOF
+	cat info/info/rocks-more.md | tee -a $@
+	cat info/info/npm-more.md | tee -a $@
+	cat info/info/pip-more.md | tee -a $@
 
 
-CLI := bat direnv eza fd-find fzf gh imagemagick jq just lynx python3-pip ripgrep stow \
-	   texlive-scheme-basic wl-clipboard yq zoxide
+
+CLI := bat direnv eza fd-find fzf gh imagemagick jq just lynx python3-pip ripgrep stow wl-clipboard yq zoxide
+cli-tools: info/cli-tools.md
 info/cli-tools.md:
 	mkdir -p $(dir $@)
-	$(RUN) dnf upgrade -y --minimal &>/dev/null
 	for item in $(CLI)
 	do
 	$(RUN) dnf install \
@@ -401,18 +399,15 @@ info/cli-tools.md:
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
-info/coding-tools.md: neovim luajit luarocks
-	echo '##[ $@ ]##'
-	printf "\n$(HEADING2) %s\n\n" "Coding Tools" | tee $@
-
+coding-tools: neovim luajit luarocks
 neovim: info/neovim.md
 latest/neovim.json:
-	echo '##[ $@ ]##'
+	#  echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget -q --timeout=10 --tries=3 'https://api.github.com/repos/neovim/neovim/releases/latest' -O  $@
 
 info/neovim.md: latest/neovim.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	TARGET=files/neovim/usr/local
 	mkdir -p $${TARGET}
@@ -430,6 +425,7 @@ info/neovim.md: latest/neovim.json
 
 luajit: info/luajit.md
 info/luajit.md:
+	# echo '##[ $@ ]##'
 	$(RUN) dnf install -y luajit-devel luajit  &>/dev/null
 	echo -n 'checking luajit version...'
 	$(RUN) luajit -v
@@ -437,13 +433,13 @@ info/luajit.md:
 	$(call tr,luajit,$${VERSION},The LuaJIT compiler,$@)
 
 latest/luarocks.json:
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/luarocks/luarocks/tags -O- | jq '.[0]' > $@
 
 luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
-	echo '##[ $@ ]##'
+	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
 	mkdir -p files/luarocks
 	SRC=$$(jq -r '.tarball_url' $<)
@@ -477,19 +473,15 @@ info/luarocks.md: latest/luarocks.json
 	# $(RUN) luarocks --global config lua_version 5.1 || true
 	# $(RUN) luarocks --global config lua_interpreter luajit || true
 
-info/coding-more.md: tiktoken npm-more rocks-more
-	echo '##[ $@ ]##'
-	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
-	cat << EOF | tee -a $@
-	Extra tooling that can be used within the Neovim text editor plugin echo system.
-	These are install via npm or luarocks.
-	EOF
+coding-more: npm-more rocks-more pip-more
+
 
 
 NPM_TOOLS := ast-grep tree-sitter-cli neovim
 
 npm-more: info/npm-more.md
 info/npm-more.md:
+	echo '##[ $@ ]##'
 	$(call tr,"----","-------","----------------------------",$@)
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
@@ -531,8 +523,15 @@ info/rocks-more.md:
 	do
 	$(RUN) $(call lrInstall, $${rock}) || true
 	done
-	# $(RUN) luarocks list --porcelain || true
-	$(RUN) ls -alR /usr/local
+	$(RUN) luarocks list --porcelain || true
+
+pip-more:
+	echo '##[ $@ ]##'
+	$(RUN) pip install pylatexenc
+	echo -n 'checking latex2text version ... '
+	VER=$$($(RUN) latex2text --version | cut -d" " -f2 | tee)
+	$(call tr,latex2text,$${VER}, ,$@)#
+	#
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
@@ -569,4 +568,8 @@ info/tiktoken.md: latest/tiktoken.json
 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET)
 	$(RUN) ls /usr/local/lib/lua/5.1 
 	$(call tr,tiktoken,$${VER},The lua module for generating tiktok tokens,$@)
+
+
+
+ 
 
