@@ -358,10 +358,14 @@ cargo:
 	$(RUN) lx --help
 
 ## CODING TOOLS
-coding: info/coding.md
-info/coding.md: cli-tools coding-tools coding-more
+info/coding.md: info/cli-tools.md \
+	info/neovim.md \
+	info/luajit.md \
+	info/luarocks.md \
+	info/npm-more.md \
+	info/rocks-more.md
 	cat info/cli-tools.md | tee $@
-	printf "\n$(HEADING2) %s\n\n" "Tools available for coding in the toolbox" | tee -a $@
+	printf "\n$(HEADING2) %s\n\n" "Coding Tools available for coding in the toolbox" | tee -a $@
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
@@ -374,13 +378,11 @@ info/coding.md: cli-tools coding-tools coding-more
 	These are install via npm or luarocks.
 	EOF
 	# cat info/info/rocks-more.md | tee -a $@
-	cat info/info/npm-more.md | tee -a $@
+	cat info/npm-more.md | tee -a $@
+	cat info/rocks-more.md | tee -a $@
 	# cat info/info/pip-more.md | tee -a $@
 
-
-
 CLI := bat direnv eza fd-find fzf gh imagemagick jq just lynx python3-pip ripgrep stow wl-clipboard yq zoxide
-cli-tools: info/cli-tools.md
 info/cli-tools.md:
 	mkdir -p $(dir $@)
 	for item in $(CLI)
@@ -401,8 +403,6 @@ info/cli-tools.md:
 	   paste  - - -  | sort -u ' | \
 	   awk -F'\t' '{printf "| %-14s | %-8s | %-83s |\n", $$1, $$2, $$3}' | tee -a $@
 
-coding-tools: neovim luajit luarocks
-neovim: info/neovim.md
 latest/neovim.json:
 	#  echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -425,7 +425,6 @@ info/neovim.md: latest/neovim.json
 	VER=$$($(RUN) nvim --version| grep -oP 'NVIM \K.+')
 	$(call tr,Neovim,$${VER},The text editor with a focus on extensibility and usability,$@)
 
-luajit: info/luajit.md
 info/luajit.md:
 	# echo '##[ $@ ]##'
 	$(RUN) dnf install -y luajit-devel luajit  &>/dev/null
@@ -439,7 +438,6 @@ latest/luarocks.json:
 	mkdir -p $(dir $@)
 	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/luarocks/luarocks/tags -O- | jq '.[0]' > $@
 
-luarocks: info/luarocks.md
 info/luarocks.md: latest/luarocks.json
 	# echo '##[ $@ ]##'
 	mkdir -p $(dir $@)
@@ -465,21 +463,9 @@ info/luarocks.md: latest/luarocks.json
 	SUM=$$(echo $$LINE | grep -oP '^Lua\w+\s\K.+' | cut -d, -f2)
 	$(call tr,$${NAME},$${VER},$${SUM},$@)
 	$(RUN) rm -fR tmp/luarocks
-	# Set the luarocks config to use the luajit interpreter
-	# $(RUN) luarocks --global config variables.LUA || true
-	# $(RUN) luarocks --global config variables.LUA_INCDIR || true
-	# $(RUN) luarocks --global config lua_version || true
-	# $(RUN) luarocks --global config lua_interpreter || true
-	# $(RUN) luarocks --global config variables.LUA /usr/local/bin/luajit || true
-	# $(RUN) luarocks --global config variables.LUA_INCDIR /usr/include/luajit-2.1 || true
-	# $(RUN) luarocks --global config lua_version 5.1 || true
-	# $(RUN) luarocks --global config lua_interpreter luajit || true
 
-coding-more: npm-more rocks-more # pip-more
 
 NPM_TOOLS := ast-grep tree-sitter-cli neovim
-
-npm-more: info/npm-more.md
 info/npm-more.md:
 	echo '##[ $@ ]##'
 	$(call tr,"----","-------","----------------------------",$@)
@@ -498,7 +484,6 @@ info/npm-more.md:
 	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
 
-
 lrInstall =  luarocks install \
 			  --server $(ROCKS_BINARIES) \
 			  --no-doc \
@@ -507,7 +492,6 @@ lrInstall =  luarocks install \
 
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
 ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
-rocks-more: info/rocks-more.md
 info/rocks-more.md:
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "Lua Rocks" | tee $@
@@ -523,52 +507,53 @@ info/rocks-more.md:
 	do
 	$(RUN) $(call lrInstall, $${rock}) &>/dev/null
 	done
+	## TODO!
 	$(RUN) luarocks list --porcelain || true
 
-pip-more:
-	echo '##[ $@ ]##'
-	$(RUN) pip install pylatexenc
-	echo -n 'checking latex2text version ... '
-	VER=$$($(RUN) latex2text --version | cut -d" " -f2 | tee)
-	$(call tr,latex2text,$${VER}, ,$@)#
-	#
+# pip-more:
+# 	echo '##[ $@ ]##'
+# 	$(RUN) pip install pylatexenc
+# 	echo -n 'checking latex2text version ... '
+# 	VER=$$($(RUN) latex2text --version | cut -d" " -f2 | tee)
+# 	$(call tr,latex2text,$${VER}, ,$@)#
+# 	#
 
-latest/nlua.json:
-	echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/mfussenegger/nlua/tags -O- | jq '.[0]' > $@
-
-nlua: info/nlua.md
-info/nlua.md: latest/nlua.json
-	echo '##[ $@ ]##'
-	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
-	# $(RUN) luarocks config lua_version 5.1 &>/dev/null
-	# $(RUN) luarocks config lua_interpreter nlua
-	# $(RUN) luarocks config variables.LUA /usr/local/bin/nlua
-	# $(RUN) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
-	# $(RUN) luarocks
-	# VER=$$(jq -r '.name' $< )
-	# $(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
-	# $(RUN) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
-
-tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
-TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core.so
-
-latest/tiktoken.json:
-	# echo '##[ $@ ]##'
-	mkdir -p $(dir $@)
-	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
-
-tiktoken: info/tiktoken.md
-info/tiktoken.md: latest/tiktoken.json
-	# echo '##[ $@ ]##'
-	SRC=$(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<))
-	VER=$$(jq -r '.tag_name' $<)
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET)
-	$(RUN) ls /usr/local/lib/lua/5.1 
-	$(call tr,tiktoken,$${VER},The lua module for generating tiktok tokens,$@)
-
+# latest/nlua.json:
+# 	echo '##[ $@ ]##'
+# 	mkdir -p $(dir $@)
+# 	wget  -q --timeout=10 --tries=3 https://api.github.com/repos/mfussenegger/nlua/tags -O- | jq '.[0]' > $@
+#
+# nlua: info/nlua.md
+# info/nlua.md: latest/nlua.json
+# 	echo '##[ $@ ]##'
+# 	SRC=https://raw.githubusercontent.com/mfussenegger/nlua/main/nlua
+# 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} /usr/local/bin/nlua &>/dev/null
+# 	# $(RUN) luarocks config lua_version 5.1 &>/dev/null
+# 	# $(RUN) luarocks config lua_interpreter nlua
+# 	# $(RUN) luarocks config variables.LUA /usr/local/bin/nlua
+# 	# $(RUN) luarocks config variables.LUA_INCDIR /usr/include/luajit-2.1
+# 	# $(RUN) luarocks
+# 	# VER=$$(jq -r '.name' $< )
+# 	# $(call tr,nlua,$${VER},Neovim as a Lua interpreter,$@)
+# 	# $(RUN) luarocks config variables.LUA_INCDIR /usr/local/include/luajit-2.1
+#
+# tiktoken_src = https://github.com/gptlang/lua-tiktoken/releases/download/v0.2.3/tiktoken_core-linux-x86_64-lua51.so
+# TIKTOKEN_TARGET := /usr/local/lib/lua/5.1/tiktoken_core.so
+#
+# latest/tiktoken.json:
+# 	# echo '##[ $@ ]##'
+# 	mkdir -p $(dir $@)
+# 	wget -q -O - https://api.github.com/repos/gptlang/lua-tiktoken/releases/latest | jq '.' > $@
+#
+# tiktoken: info/tiktoken.md
+# info/tiktoken.md: latest/tiktoken.json
+# 	# echo '##[ $@ ]##'
+# 	SRC=$(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<))
+# 	VER=$$(jq -r '.tag_name' $<)
+# 	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET)
+# 	$(RUN) ls /usr/local/lib/lua/5.1 
+# 	$(call tr,tiktoken,$${VER},The lua module for generating tiktok tokens,$@)
+#
 
 
  
