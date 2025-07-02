@@ -562,6 +562,7 @@ info/tiktoken.md: latest/tiktoken.json
 	# echo '##[ $@ ]##'
 	SRC=$(shell $(call bdu,tiktoken_core-linux-x86_64-lua51.so,$<))
 	VER=$$(jq -r '.tag_name' $<)
-	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET) &>/dev/null
+	buildah add --chmod 755 $(WORKING_CONTAINER) $${SRC} $(TIKTOKEN_TARGET)
+	$(RUN) ls /usr/local/lib/lua/5.1 
 	$(call tr,tiktoken,$${VER},The lua module for generating tiktok tokens,$@)
 
