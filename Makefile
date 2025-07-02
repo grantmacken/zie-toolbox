@@ -521,7 +521,7 @@ info/rocks-more.md:
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
-	$(RUN) $(call lrInstall, $${rock}) $>/dev/null
+	$(RUN) $(call lrInstall, $${rock}) &>/dev/null
 	done
 	$(RUN) luarocks list --porcelain || true
 
