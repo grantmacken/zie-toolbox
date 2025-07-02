@@ -36,17 +36,7 @@ RUN := buildah run $(WORKING_CONTAINER)
 # lynx
 # ast-grep/cli grug-far
 
-BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
-DEVEL := gettext-devel \
-		glibc-devel \
-		libevent-devel \
-		ncurses-devel \
-		openssl-devel \
-		perl-devel \
-		readline-devel \
-		zlib-devel
-DEPS := $(BUILDING) $(DEVEL)
-CLI  := bat direnv eza fd-find fzf gh imagemagick jq just lynx ripgrep stow texlive-scheme-basic wl-clipboard yq zoxide
+
 
 REMOVE := default-editor vim-minimal
 
@@ -144,6 +134,18 @@ info/working.md:
 		--env CPPFLAGS="-D_DEFAULT_SOURCE" \
 		--env CARGO_HOME="/usr/local/cargo" \
 		$(WORKING_CONTAINER)
+
+BUILDING := make gcc gcc-c++ pcre2 autoconf pkgconf #  rust cargo gnupg libgpg-error
+DEVEL := gettext-devel \
+		glibc-devel \
+		libevent-devel \
+		ncurses-devel \
+		openssl-devel \
+		perl-devel \
+		readline-devel \
+		zlib-devel
+DEPS := $(BUILDING) $(DEVEL)
+
 
 build-tools: info/build-tools.md
 info/build-tools.md:
@@ -375,6 +377,9 @@ info/coding.md: info/cli-tools.md info/coding-tools.md  info/coding-more.md
 	cat info/coding-more.md | tee -a $@
 	cat info/cli-tools.md | tee -a $@
 
+
+CLI := bat direnv eza fd-find fzf gh imagemagick jq just lynx python3-pip ripgrep stow \
+	   texlive-scheme-basic wl-clipboard yq zoxide
 info/cli-tools.md:
 	mkdir -p $(dir $@)
 	$(RUN) dnf upgrade -y --minimal &>/dev/null
@@ -481,12 +486,7 @@ info/coding-more.md: tiktoken npm-more rocks-more
 	EOF
 
 
-NPM_TOOLS := ast-grep tree-sitter-cli
-lrInstall =  luarocks install \
-			  --server $(ROCKS_BINARIES) \
-			  --no-doc \
-			  --force-fast \
-			  --deps-mode one $1
+NPM_TOOLS := ast-grep tree-sitter-cli neovim
 
 npm-more: info/npm-more.md
 info/npm-more.md:
@@ -505,6 +505,13 @@ info/npm-more.md:
 	echo -n 'checking tree-sitter version ...'
 	VER=$$($(RUN) tree-sitter --version | cut -d ' ' -f2 | tee)
 	$(call tr,tree-sitter,$${VER},The tree-sitter Command Line Interface, $@)
+
+
+lrInstall =  luarocks install \
+			  --server $(ROCKS_BINARIES) \
+			  --no-doc \
+			  --force-fast \
+			  --deps-mode one $1
 
 ROCKS_BINARIES := https://nvim-neorocks.github.io/rocks-binaries
 ROCKS := luafilesystem luarocks-build-treesitter-parser luarocks-build-treesitter-parser-cpp
@@ -526,9 +533,6 @@ info/rocks-more.md:
 	done
 	# $(RUN) luarocks list --porcelain || true
 	$(RUN) ls -alR /usr/local
-
-
-
 
 latest/nlua.json:
 	echo '##[ $@ ]##'
