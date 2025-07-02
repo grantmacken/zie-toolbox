@@ -113,6 +113,8 @@ info/in-the-box.md:
 	printf "\n - Build tools\n" | tee -a $@
 	printf "\n - Runtimes: BEAM and Nodejs Runtimes and associated languages\n" | tee -a $@
 	printf "\n - Coding tools: Neovim and a selection of terminal CLI tools" | tee -a $@
+	printf "\n - The focus is on providing terminal cli tooling around the the neovim editor and its plugin envronment" | tee -a $@
+
 
 info/working.md:
 	mkdir -p $(dir $@)
@@ -371,9 +373,9 @@ info/coding.md: cli-tools coding-tools coding-more
 	Extra tooling that can be used within the Neovim text editor plugin echo system.
 	These are install via npm or luarocks.
 	EOF
-	cat info/info/rocks-more.md | tee -a $@
+	# cat info/info/rocks-more.md | tee -a $@
 	cat info/info/npm-more.md | tee -a $@
-	cat info/info/pip-more.md | tee -a $@
+	# cat info/info/pip-more.md | tee -a $@
 
 
 
@@ -473,9 +475,7 @@ info/luarocks.md: latest/luarocks.json
 	# $(RUN) luarocks --global config lua_version 5.1 || true
 	# $(RUN) luarocks --global config lua_interpreter luajit || true
 
-coding-more: npm-more rocks-more pip-more
-
-
+coding-more: npm-more rocks-more # pip-more
 
 NPM_TOOLS := ast-grep tree-sitter-cli neovim
 
@@ -521,7 +521,7 @@ info/rocks-more.md:
 	echo ' - tools are installed via luarocks'
 	for rock in $(ROCKS)
 	do
-	$(RUN) $(call lrInstall, $${rock}) || true
+	$(RUN) $(call lrInstall, $${rock}) $>/dev/null
 	done
 	$(RUN) luarocks list --porcelain || true
 
