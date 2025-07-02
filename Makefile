@@ -358,6 +358,7 @@ cargo:
 	$(RUN) lx --help
 
 ## CODING TOOLS
+coding: info/coding.md
 info/coding.md: info/cli-tools.md \
 	info/neovim.md \
 	info/luajit.md \
