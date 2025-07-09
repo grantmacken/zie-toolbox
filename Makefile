@@ -359,7 +359,8 @@ cargo:
 
 ## CODING TOOLS
 coding: info/coding.md
-info/coding.md: info/cli-tools.md \
+info/coding.md: \
+	info/cli-tools.md \
 	info/neovim.md \
 	info/luajit.md \
 	info/luarocks.md \
@@ -367,6 +368,9 @@ info/coding.md: info/cli-tools.md \
 	info/rocks-more.md
 	cat info/cli-tools.md | tee $@
 	printf "\n$(HEADING2) %s\n\n" "Coding Tools available for coding in the toolbox" | tee -a $@
+	cat << EOF | tee -a $@
+	Coding with the Neovim text editor with luajit to install luarocks.
+	EOF
 	$(call tr,"Name","Version","Summary",$@)
 	$(call tr,"----","-------","----------------------------",$@)
 	cat info/neovim.md | tee -a $@
@@ -375,7 +379,7 @@ info/coding.md: info/cli-tools.md \
 	echo '##[ $@ ]##'
 	printf "\n$(HEADING2) %s\n\n" "More Coding Tools" | tee $@
 	cat << EOF | tee -a $@
-	Extra tooling that can be used within the Neovim text editor plugin echo system.
+	Extra tooling that can be used within the Neovim text editor plugin ecosystem.
 	These are install via npm or luarocks.
 	EOF
 	# cat info/info/rocks-more.md | tee -a $@
@@ -383,7 +387,8 @@ info/coding.md: info/cli-tools.md \
 	cat info/rocks-more.md | tee -a $@
 	# cat info/info/pip-more.md | tee -a $@
 
-CLI := bat direnv eza fd-find fzf gh imagemagick jq just lynx python3-pip ripgrep stow wl-clipboard yq zoxide
+KITTY := kitty kitty-shell-integration kitty-terminfo kitty-kitten
+CLI := $(KITTY) bat direnv eza fd-find fzf gh imagemagick jq kitty lynx python3-pip ripgrep stow wl-clipboard yq zoxide
 info/cli-tools.md:
 	mkdir -p $(dir $@)
 	for item in $(CLI)
