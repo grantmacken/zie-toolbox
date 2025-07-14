@@ -51,7 +51,7 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.11.1   | Gleam programming language                                                          |
-| node           | v24.3.0  | Nodejs runtime                                                                      |
+| node           | v24.4.0  | Nodejs runtime                                                                      |
 | npm            | 11.4.2   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
@@ -72,7 +72,7 @@ Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more i
 
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
-| Neovim         | v0.11.2  | The text editor with a focus on extensibility and usability                         |
+| Neovim         | v0.11.3  | The text editor with a focus on extensibility and usability                         |
 | luajit         | 2.1.174  | The LuaJIT compiler                                                                 |
 | LuaRocks       | 3.12.2   |  the Lua package manager                                                            |
 
@@ -84,7 +84,7 @@ These are install via npm or luarocks.
 | ----           | -------  | ----------------------------                                                        |
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
-| tree-sitter    | 0.25.6   | The tree-sitter Command Line Interface                                              |
+| tree-sitter    | 0.25.8   | The tree-sitter Command Line Interface                                              |
 
 ## Handpicked CLI tools available in the toolbox
 
