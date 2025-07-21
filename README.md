@@ -46,12 +46,12 @@ BEAM tooling included is the latest versions of the Rebar3 and the Mix build too
 The latest nodejs **runtime** is also installed, as Gleam can compile to javascript as well a Erlang.
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
-| Erlang/OTP     | 28.0.1   | the Erlang Open Telecom Platform OTP                                                |
+| Erlang/OTP     | 28.0.2   | the Erlang Open Telecom Platform OTP                                                |
 | Rebar3         | 3.25.0   | the erlang build tool                                                               |
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.11.1   | Gleam programming language                                                          |
-| node           | v24.4.0  | Nodejs runtime                                                                      |
+| node           | v24.4.1  | Nodejs runtime                                                                      |
 | npm            | 11.4.2   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
@@ -95,7 +95,7 @@ These are install via npm or luarocks.
 | direnv         | 2.35.0   | Per-directory shell configuration tool                                              |
 | fd-find        | 10.2.0   | Fd is a simple, fast and user-friendly alternative to find                          |
 | fzf            | 0.62.0   | A command-line fuzzy finder written in Go                                           |
-| gh             | 2.74.0   | GitHub's official command line tool                                                 |
+| gh             | 2.75.0   | GitHub's official command line tool                                                 |
 | jq             | 1.7.1    | Command-line JSON processor                                                         |
 | just           | 1.40.0   | Just a command runner                                                               |
 | lynx           | 2.9.2    | A text-based Web browser                                                            |
