@@ -47,7 +47,7 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
 | Erlang/OTP     | 28.0.2   | the Erlang Open Telecom Platform OTP                                                |
-| Rebar3         | 3.25.0   | the erlang build tool                                                               |
+| Rebar3         | 3.25.1   | the erlang build tool                                                               |
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.11.1   | Gleam programming language                                                          |
