@@ -51,14 +51,14 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.11.1   | Gleam programming language                                                          |
-| node           | v24.4.1  | Nodejs runtime                                                                      |
-| npm            | 11.4.2   | Node Package Manager                                                                |
+| node           | v24.5.0  | Nodejs runtime                                                                      |
+| npm            | 11.5.1   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
 
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
-| host-spawn     | v1.6.1   | Run commands on your host machine from inside toolbox                               |
+| host-spawn     | v1.6.2   | Run commands on your host machine from inside toolbox                               |
 
 The host-spawn tool is a wrapper around the toolbox command that allows you to run
 commands on your host machine from inside the toolbox.
@@ -97,7 +97,7 @@ These are install via npm or luarocks.
 | fzf            | 0.62.0   | A command-line fuzzy finder written in Go                                           |
 | gh             | 2.75.0   | GitHub's official command line tool                                                 |
 | jq             | 1.7.1    | Command-line JSON processor                                                         |
-| just           | 1.40.0   | Just a command runner                                                               |
+| just           | 1.42.3   | Just a command runner                                                               |
 | lynx           | 2.9.2    | A text-based Web browser                                                            |
 | ripgrep        | 14.1.1   | Line-oriented search tool                                                           |
 | stow           | 2.4.1    | Manage the installation of software packages from source                            |
