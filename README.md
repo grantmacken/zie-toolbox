@@ -50,7 +50,7 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Rebar3         | 3.25.1   | the erlang build tool                                                               |
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
-| Gleam          | 1.11.1   | Gleam programming language                                                          |
+| Gleam          | 1.12.0   | Gleam programming language                                                          |
 | node           | v24.5.0  | Nodejs runtime                                                                      |
 | npm            | 11.5.1   | Node Package Manager                                                                |
 
@@ -94,8 +94,8 @@ These are install via npm or luarocks.
 | bat            | 0.25.0   | Cat(1) clone with wings                                                             |
 | direnv         | 2.35.0   | Per-directory shell configuration tool                                              |
 | fd-find        | 10.2.0   | Fd is a simple, fast and user-friendly alternative to find                          |
-| fzf            | 0.62.0   | A command-line fuzzy finder written in Go                                           |
-| gh             | 2.75.0   | GitHub's official command line tool                                                 |
+| fzf            | 0.65.0   | A command-line fuzzy finder written in Go                                           |
+| gh             | 2.76.1   | GitHub's official command line tool                                                 |
 | jq             | 1.7.1    | Command-line JSON processor                                                         |
 | just           | 1.42.3   | Just a command runner                                                               |
 | lynx           | 2.9.2    | A text-based Web browser                                                            |
