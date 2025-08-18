@@ -28,9 +28,9 @@ The main tool categories are:
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
 | autoconf       | 2.72     | A GNU tool for automatically configuring source code                                |
-| gcc            | 15.1.1   | Various compilers (C, C++, Objective-C, ...)                                        |
+| gcc            | 15.2.1   | Various compilers (C, C++, Objective-C, ...)                                        |
 | gcc-c++        | 15.0.1   | C++ support for GCC                                                                 |
-| gcc-c++        | 15.1.1   | C++ support for GCC                                                                 |
+| gcc-c++        | 15.2.1   | C++ support for GCC                                                                 |
 | make           | 4.4.1    | A GNU tool which simplifies the build process for users                             |
 | pcre2          | 10.45    | Perl-compatible regular expression library                                          |
 | pkgconf        | 2.3.0    | Package compiler and linker metadata toolkit                                        |
@@ -51,7 +51,7 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.12.0   | Gleam programming language                                                          |
-| node           | v24.5.0  | Nodejs runtime                                                                      |
+| node           | v24.6.0  | Nodejs runtime                                                                      |
 | npm            | 11.5.1   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
@@ -94,7 +94,7 @@ These are install via npm or luarocks.
 | bat            | 0.25.0   | Cat(1) clone with wings                                                             |
 | direnv         | 2.35.0   | Per-directory shell configuration tool                                              |
 | fd-find        | 10.2.0   | Fd is a simple, fast and user-friendly alternative to find                          |
-| fzf            | 0.65.0   | A command-line fuzzy finder written in Go                                           |
+| fzf            | 0.65.1   | A command-line fuzzy finder written in Go                                           |
 | gh             | 2.76.1   | GitHub's official command line tool                                                 |
 | jq             | 1.7.1    | Command-line JSON processor                                                         |
 | just           | 1.42.3   | Just a command runner                                                               |
