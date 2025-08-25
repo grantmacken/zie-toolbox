@@ -97,7 +97,7 @@ These are install via npm or luarocks.
 | fzf            | 0.65.1   | A command-line fuzzy finder written in Go                                           |
 | gh             | 2.76.1   | GitHub's official command line tool                                                 |
 | jq             | 1.7.1    | Command-line JSON processor                                                         |
-| just           | 1.42.3   | Just a command runner                                                               |
+| just           | 1.42.4   | Just a command runner                                                               |
 | lynx           | 2.9.2    | A text-based Web browser                                                            |
 | ripgrep        | 14.1.1   | Line-oriented search tool                                                           |
 | stow           | 2.4.1    | Manage the installation of software packages from source                            |
