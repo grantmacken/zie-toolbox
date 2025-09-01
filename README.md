@@ -51,7 +51,7 @@ The latest nodejs **runtime** is also installed, as Gleam can compile to javascr
 | Elixir         | 1.18.4   | Elixir programming language                                                         |
 | Mix            | 1.18.4   | Elixir build tool                                                                   |
 | Gleam          | 1.12.0   | Gleam programming language                                                          |
-| node           | v24.6.0  | Nodejs runtime                                                                      |
+| node           | v24.7.0  | Nodejs runtime                                                                      |
 | npm            | 11.5.1   | Node Package Manager                                                                |
 
 ## Do More With host-spawn
@@ -72,7 +72,7 @@ Checkout the [host-spawn repo](https://github.com/1player/host-spawn) for more i
 
 | Name           | Version  | Summary                                                                             |
 | ----           | -------  | ----------------------------                                                        |
-| Neovim         | v0.11.3  | The text editor with a focus on extensibility and usability                         |
+| Neovim         | v0.11.4  | The text editor with a focus on extensibility and usability                         |
 | luajit         | 2.1.174  | The LuaJIT compiler                                                                 |
 | LuaRocks       | 3.12.2   |  the Lua package manager                                                            |
 
@@ -104,4 +104,4 @@ These are install via npm or luarocks.
 | texlive-scheme-basic | svn54191 | basic scheme (plain and latex)                                                      |
 | wl-clipboard   | 2.2.1    | Command-line copy/paste utilities for Wayland                                       |
 | yq             | 4.43.1   | Yq is a portable command-line YAML, JSON, XML, CSV, TOML  and properties processor  |
-| zoxide         | 0.9.4    | Smarter cd command for your terminal                                                |
+| zoxide         | 0.9.8    | Smarter cd command for your terminal                                                |
